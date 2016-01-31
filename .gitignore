@@ -185,7 +185,6 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 KinectBridgeWithOpenCVBasics-D2D.sln
-*.vcxproj
 KinectBridgeWithOpenCVBasics-D2D.vcxproj.filters
 *.bat
 *.jpg
