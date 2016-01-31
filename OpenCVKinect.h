@@ -4,6 +4,7 @@
 #include <cv.h>
 #include <highgui.h>
 #include <vector>
+#include <mutex>
 
 #define C_DEPTH_STREAM 0
 #define C_COLOR_STREAM 1
@@ -13,6 +14,7 @@
 #define C_STREAM_TIMEOUT 2000
 class OpenCVKinect
 {
+	std::mutex color_mutex, depth_mutex;
 	openni::Status m_status;
 	openni::Device m_device;
 	openni::VideoStream m_depth, m_color, **m_streams;
@@ -21,15 +23,28 @@ class OpenCVKinect
 	uint64_t m_depthTimeStamp, m_colorTimeStamp;
 	cv::Mat m_depthImage, m_colorImage;
 	bool m_alignedStreamStatus, m_colorStreamStatus, m_depthStreamStatus;
+
 public:
+	static enum MatFlag
+	{
+		None = 0,
+		ColorOnly = 1,
+		DepthRawOnly = 2,
+		ColorDepthRaw = 3,
+		Depth8bit = 4,
+		ColorDepth8bit = 5,
+		DepthRawDepth8bit = 6,
+		All = 7
+	};
+
 	OpenCVKinect(void);
 	~OpenCVKinect(void);
 
 	bool init();
 
 	void updateData();
-	cv::Mat getDepthRaw();
-	cv::Mat getDepth8bit(cv::Mat &result);
-	cv::Mat getColor();
-
+	void getDepthRaw(cv::Mat &depthRaw, uint64_t &depthTimeStamp);
+	void getDepth8bit(cv::Mat &depth8bit, uint64_t &depthTimeStamp);
+	void getColor(cv::Mat &colorMat, uint64_t &colorTimeStamp);
+	void getMatrix(MatFlag type, cv::Mat &color, cv::Mat &depthRaw, cv::Mat &depth8bit, uint64_t &timestamp);
 };

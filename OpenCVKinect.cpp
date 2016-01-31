@@ -92,6 +92,7 @@ bool OpenCVKinect::init()
 void OpenCVKinect::updateData()
 {
 	bool depthCaptured = false, colorCaptured = false;
+	uint64_t newtime;
 
 	while( !depthCaptured || !colorCaptured || m_depthTimeStamp != m_colorTimeStamp)
 	{
@@ -106,23 +107,39 @@ void OpenCVKinect::updateData()
 		{
 		case C_DEPTH_STREAM:
 			m_depth.readFrame(&m_depthFrame);
+			newtime = m_depthFrame.getTimestamp() >> 16;
+
+			if (newtime <= this->m_depthTimeStamp)
+				continue;
+
+			depth_mutex.lock();
+			this->m_depthTimeStamp = newtime;
 			m_depthImage.create(m_depthFrame.getHeight(), m_depthFrame.getWidth(), CV_16UC1);
 			m_depthImage.data = (uchar*)m_depthFrame.getData();
 
-			this->m_depthTimeStamp = m_depthFrame.getTimestamp() >> 16;
 			std::cout << "Depth Timestamp: " << this->m_depthTimeStamp << std::endl;
 			depthCaptured = true;
+			depth_mutex.unlock();
+
 			break;
 		case C_COLOR_STREAM:
 			m_color.readFrame(&m_colorFrame);
+			newtime = m_colorFrame.getTimestamp() >> 16;
+
+			if (newtime <= this->m_colorTimeStamp)
+				continue;
+
+			color_mutex.lock();
+			this->m_colorTimeStamp = newtime;
 			m_colorImage.create(m_colorFrame.getHeight(), m_colorFrame.getWidth(), CV_8UC3);
 			m_colorImage.data = (uchar*)m_colorFrame.getData();
 
 			cv::cvtColor(m_colorImage, m_colorImage, CV_BGR2RGB);
 
-			this->m_colorTimeStamp = m_colorFrame.getTimestamp() >> 16;
 			std::cout << "Color Timestamp: " << m_colorTimeStamp << std::endl;
 			colorCaptured = true;
+			color_mutex.unlock();
+
 			break;
 		default:
 			break;
@@ -130,23 +147,61 @@ void OpenCVKinect::updateData()
 	}
 }
 
-cv::Mat OpenCVKinect::getColor()
+void OpenCVKinect::getColor(cv::Mat &colorMat, uint64_t &colorTimeStamp)
 {
-	return m_colorImage;
+	color_mutex.lock();
+	colorMat = m_colorImage.clone();
+	colorTimeStamp = m_colorTimeStamp;
+	color_mutex.unlock();
 }
 
-cv::Mat OpenCVKinect::getDepthRaw()
+void OpenCVKinect::getDepthRaw(cv::Mat &depthRaw, uint64_t &depthTimeStamp)
 {
-	return m_depthImage;
+	depth_mutex.lock();
+	depthRaw = m_depthImage.clone();
+	depthTimeStamp = m_depthTimeStamp;
+	depth_mutex.unlock();
 }
 
-cv::Mat OpenCVKinect::getDepth8bit(cv::Mat &result)
+void OpenCVKinect::getDepth8bit(cv::Mat &depth8bit, uint64_t &depthTimeStamp)
 {
+	depth_mutex.lock();
 	double min, max;
-	minMaxLoc(m_depthImage, &min, &max);
-	m_depthImage.convertTo(result, CV_8U, 255.0/max);
-	return result;
+	cv::minMaxLoc(m_depthImage, &min, &max);
+	m_depthImage.convertTo(depth8bit, CV_8U, 255.0 / max);
+	depth_mutex.unlock();
 }
+
+void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawMat, cv::Mat &depth8bitMat, uint64_t &timestamp)
+{
+	bool color = type & 1;
+	bool depthRaw = type & 2;
+	bool depth8bit = type & 4;
+
+	if (color)
+		color_mutex.lock();
+	if (depthRaw || depth8bit)
+		depth_mutex.lock();
+
+	if (color)
+		colorMat = m_colorImage.clone();
+	if (depthRaw)
+		depthRawMat = m_depthImage.clone();
+	if (depth8bit) {
+		double min, max;
+		cv::minMaxLoc(m_depthImage, &min, &max);
+		m_depthImage.convertTo(depth8bitMat, CV_8U, 255.0 / max);
+	}
+
+	/// both color/depth timestamps are guaranteed same value
+	timestamp = m_colorTimeStamp;
+
+	if (color)
+		color_mutex.unlock();
+	if (depthRaw || depth8bit)
+		depth_mutex.unlock();
+}
+
 
 OpenCVKinect::~OpenCVKinect(void)
 {
