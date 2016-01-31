@@ -17,9 +17,14 @@ TextToSpeech m_tts;
 //HumanFaceRecognizer m_face;
 ObstacleDetection m_obstacle(800);
 
+bool finished = false;
+
 void KinectThread_Process()
 {
 	while (1) {
+		if (finished)
+			return;
+
 		m_Kinect.updateData();
 	}
 }
@@ -29,6 +34,9 @@ void TextToSpeechThread_Process()
 	m_tts.Initialize();
 
 	while (1) {
+		if (finished)
+			return;
+
 		m_tts.speak();
 	}
 }
@@ -39,6 +47,9 @@ void ObstacleDetectionThread_Process()
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 
 	while (waitKey(1) != 27) {
+		if (finished)
+			return;
+
 		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depthImg, newTimeStamp);
 		if (newTimeStamp <= oldTimeStamp)
 			continue;
@@ -49,35 +60,41 @@ void ObstacleDetectionThread_Process()
 	}
 }
 
-//void FaceDetectionThread_Process()
-//{
-//	cv::Mat colorImg;
-//	uint64_t oldTimeStamp, newTimeStamp;
-//
-//	while (1) {
-//		m_Kinect.getColor(colorImg, newTimeStamp);
-//
-//		if (oldTimeStamp < newTimeStamp) {
-//			oldTimeStamp = newTimeStamp;
-//			m_face.runFaceRecognizer(&colorImg);
-//		}
-//	}
-//}
-//
-//void SignDetectionThread_Process()
-//{
-//	cv::Mat colorImg;
-//	uint64_t oldTimeStamp, newTimeStamp;
-//
-//	while (1) {
-//		m_Kinect.getColor(colorImg, newTimeStamp);
-//
-//		if (oldTimeStamp < newTimeStamp) {
-//			oldTimeStamp = newTimeStamp;
-//			m_sign.runRecognizer(colorImg);
-//		}
-//	}
-//}
+void FaceDetectionThread_Process()
+{
+	cv::Mat colorImg;
+	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
+
+	while (waitKey(1) != 27) {
+		if (finished)
+			return;
+
+		m_Kinect.getColor(colorImg, newTimeStamp);
+		if (newTimeStamp <= oldTimeStamp)
+			continue;
+		oldTimeStamp = newTimeStamp;
+
+		//m_face.runFaceRecognizer(&colorImg);
+	}
+}
+
+void SignDetectionThread_Process()
+{
+	cv::Mat colorImg;
+	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
+
+	while (waitKey(1) != 27) {
+		if (finished)
+			return;
+
+		m_Kinect.getColor(colorImg, newTimeStamp);
+		if (newTimeStamp <= oldTimeStamp)
+			continue;
+		oldTimeStamp = newTimeStamp;
+
+		//m_sign.runRecognizer(colorImg);
+	}
+}
 
 int main()
 {
@@ -98,8 +115,8 @@ int main()
 	auto KinectThread_Future = std::async(std::launch::async, KinectThread_Process);
 	auto TextToSpeechThread_Future = std::async(std::launch::async, TextToSpeechThread_Process);
 	auto ObstacleDetectionThread_Future = std::async(std::launch::async, ObstacleDetectionThread_Process);
-	//auto FaceDetectionThread_Future = std::async(std::launch::async, FaceDetectionThread_Process);
-	//auto SignDetectionThread_Future = std::async(std::launch::async, SignDetectionThread_Process);
+	auto FaceDetectionThread_Future = std::async(std::launch::async, FaceDetectionThread_Process);
+	auto SignDetectionThread_Future = std::async(std::launch::async, SignDetectionThread_Process);
 
 
 	/// Idle Main thread to prevent from closing.
@@ -113,6 +130,12 @@ int main()
 		imshow("Main Idle Window", Mat(100,100,CV_8U));
 	}
 
+	finished = true;
+	KinectThread_Future.get();
+	TextToSpeechThread_Future.get();
+	ObstacleDetectionThread_Future.get();
+	FaceDetectionThread_Future.get();
+	SignDetectionThread_Future.get();
 	return 1;
 }
 
