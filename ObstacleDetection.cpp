@@ -52,11 +52,6 @@ void ObstacleDetection::getCurrentColor(Mat* pImg)
 	currentColor = pImg->clone();
 }
 
-Mat* ObstacleDetection::getRawDepthImg()
-{
-	return &currentRawDepth;
-}
-
 void ObstacleDetection::getOutputDepthImg(Mat *depth)
 {	
 	//imwrite("C:/Users/HOHO/Pictures/sample/result/result" + to_string(ObstacleList.size()) + "_" + to_string(picNum) + ".jpg", currentDepth);

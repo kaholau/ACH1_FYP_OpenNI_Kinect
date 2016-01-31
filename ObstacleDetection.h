@@ -115,7 +115,6 @@ public:
 	void getOutputColorImg(Mat *color);
 	void getCurrentColor(Mat* src);
 	void setCameraAngle(int degree);
-	Mat* getRawDepthImg();
 	void SetCurrentRawDepth(Mat* rawDepth);
 	void test();
 
