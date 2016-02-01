@@ -1,7 +1,3 @@
-#include <Windows.h>
-#include <NuiApi.h>
-#include <stdlib.h>
-
 #include <iostream>
 
 #include "Multithreading.h"
