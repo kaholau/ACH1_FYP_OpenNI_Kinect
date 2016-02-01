@@ -14,8 +14,8 @@ class Multithreading
 {
 	OpenCVKinect m_Kinect;
 	TextToSpeech m_tts;
-	//SignRecognizer m_sign;
-	//HumanFaceRecognizer m_face;
+	SignRecognizer m_sign;
+	HumanFaceRecognizer m_face;
 	ObstacleDetection m_obstacle;
 	bool finished = false;
 

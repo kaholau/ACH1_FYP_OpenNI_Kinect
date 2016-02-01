@@ -9,6 +9,7 @@ Multithreading::Multithreading()
 
 Multithreading::~Multithreading()
 {
+	finished = true;
 	KinectThread_Future.get();
 	TextToSpeechThread_Future.get();
 	ObstacleDetectionThread_Future.get();
@@ -59,11 +60,17 @@ void Multithreading::Hold()
 
 void Multithreading::KinectThread_Process()
 {
+	cv::Mat colorImg, depth8bit;
+	uint64_t t = 0;
 	while (1) {
 		if (finished)
 			return;
 
 		m_Kinect.updateData();
+		//m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit, t);
+
+		//cv::imshow("ORIGINAL COLOR", colorImg);
+		//cv::imshow("ORIGINAL DEPTH", depth8bit);
 	}
 }
 
@@ -81,20 +88,27 @@ void Multithreading::TextToSpeechThread_Process()
 
 void Multithreading::ObstacleDetectionThread_Process()
 {
-	cv::Mat colorImg, depthImg;
+	cv::Mat colorImg, depth8bit, depthRaw;
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 
 	while (waitKey(1) != 27) {
 		if (finished)
 			return;
 
-		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depthImg, newTimeStamp);
+		m_Kinect.getMatrix(m_Kinect.All, colorImg, depthRaw, depth8bit, newTimeStamp);
 		if (newTimeStamp <= oldTimeStamp)
 			continue;
 		oldTimeStamp = newTimeStamp;
 
+		m_obstacle.getCurrentColor(&colorImg);
+		m_obstacle.setCameraAngle(0);
+		m_obstacle.SetCurrentRawDepth(&depthRaw);
+		m_obstacle.run(&depth8bit);
+		m_obstacle.getOutputDepthImg(&depth8bit);
+		m_obstacle.getOutputColorImg(&colorImg);
+
+		cv::imshow("DEPTH", depth8bit);
 		cv::imshow("COLOR", colorImg);
-		cv::imshow("DEPTH", depthImg);
 	}
 }
 
@@ -112,7 +126,9 @@ void Multithreading::FaceDetectionThread_Process()
 			continue;
 		oldTimeStamp = newTimeStamp;
 
-		//m_face.runFaceRecognizer(&colorImg);
+		m_face.runFaceRecognizer(&colorImg);
+
+		cv::imshow("FACE DETECTION", colorImg);
 	}
 }
 
@@ -130,6 +146,7 @@ void Multithreading::SignDetectionThread_Process()
 			continue;
 		oldTimeStamp = newTimeStamp;
 
-		//m_sign.runRecognizer(colorImg);
+		m_sign.runRecognizer(colorImg);
+		cv::imshow("SIGN DETECTION", colorImg);
 	}
 }
