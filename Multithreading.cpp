@@ -40,8 +40,8 @@ void Multithreading::CreateAsyncThreads()
 	KinectThread_Future = std::async(std::launch::async, &Multithreading::KinectThread_Process, this);
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
-	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
+	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
 }
 
 void Multithreading::Hold()
@@ -100,8 +100,8 @@ void Multithreading::ObstacleDetectionThread_Process()
 			continue;
 		oldTimeStamp = newTimeStamp;
 
-		m_obstacle.getCurrentColor(&colorImg);
-		m_obstacle.setCameraAngle(0);
+		m_obstacle.setCurrentColor(&colorImg);
+		m_obstacle.setCameraAngle(-4);
 		m_obstacle.SetCurrentRawDepth(&depthRaw);
 		m_obstacle.run(&depth8bit);
 		m_obstacle.getOutputDepthImg(&depth8bit);

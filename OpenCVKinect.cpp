@@ -189,6 +189,7 @@ void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawM
 		depthRawMat = m_depthImage.clone();
 	if (depth8bit) {
 		double min, max;
+		cv::Mat output, temp;
 		depth8bitMat = m_depthImage.clone();
 		cv::minMaxLoc(depth8bitMat, &min, &max);
 		m_depthImage.convertTo(depth8bitMat, CV_8U, 255.0 / max);

@@ -41,13 +41,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(OPENCV_DIR)\build\include;$(OPENCV_DIR)\build\include\opencv;$(KINECTSDK10_DIR)\inc;$(TESSERACT_INCLUDE);$(IncludePath)</IncludePath>
+    <IncludePath>$(OPENCV_DIR)\build\include;$(OPENNI2_INCLUDE);$(OPENCV_DIR)\build\include\opencv;$(KINECTSDK10_DIR)\inc;$(TESSERACT_INCLUDE);$(IncludePath)</IncludePath>
     <LibraryPath>$(OPENNI2_LIB);$(OPENCV_DIR)\build\x86\vc12\lib;$(KINECTSDK10_DIR)\lib\x86;$(TESSERACT_LIB);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\OpenCVFiles\OpenCV-2.4.7.2VC\include;C:\OpenCVFiles\OpenCV-2.4.7.2VC\include\opencv;C:\OpenCVFiles\OpenCV-2.4.7.2VC\include\opencv2;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\OpenCVFiles\OpenCV-2.4.7.2VC\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(KINECTSDK10_DIR)\inc;$(OPENCV_DIR)\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(KINECTSDK10_DIR)\lib\x86;$(OPENCV_DIR)\build\x86\vc12\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -62,16 +62,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files (x86)\OpenNI2\Redist\OpenNI2\Drivers;$(OPENNI2_LIB);$(OPENCV_DIR)\build\x86\vc12\lib;$(KINECTSDK10_DIR)\lib\x86</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_core$(OPENCV_VER)d.lib;
-opencv_imgproc$(OPENCV_VER)d.lib;
-opencv_highgui$(OPENCV_VER)d.lib
-;opencv_features2d$(OPENCV_VER)d.lib
-;opencv_ml$(OPENCV_VER)d.lib
-;opencv_objdetect$(OPENCV_VER)d.lib;
-opencv_calib3d$(OPENCV_VER)d.lib
-;opencv_contrib$(OPENCV_VER)d.lib
-;opencv_flann$(OPENCV_VER)d.lib
-;opencv_video$(OPENCV_VER)d.lib;OpenNI2.lib;Comctl32.lib;Kinect10.lib;libtesseract302.lib;liblept168.lib;sapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_core$(OPENCV_VER)d.lib;opencv_imgproc$(OPENCV_VER)d.lib;opencv_highgui$(OPENCV_VER)d.lib;opencv_features2d$(OPENCV_VER)d.lib;opencv_ml$(OPENCV_VER)d.lib;opencv_objdetect$(OPENCV_VER)d.lib;opencv_calib3d$(OPENCV_VER)d.lib;opencv_contrib$(OPENCV_VER)d.lib;opencv_flann$(OPENCV_VER)d.lib;opencv_video$(OPENCV_VER)d.lib;OpenNI2.lib;Comctl32.lib;Kinect10.lib;libtesseract302.lib;liblept168.lib;sapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -84,6 +75,7 @@ opencv_calib3d$(OPENCV_VER)d.lib
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(OPENNI2_INCLUDE)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -91,7 +83,7 @@ opencv_calib3d$(OPENCV_VER)d.lib
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(OPENNI2_LIB)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_imgproc247d.lib;opencv_core247d.lib;opencv_highgui247d.lib;OpenNI2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_core$(OPENCV_VER).lib;opencv_imgproc$(OPENCV_VER).lib;opencv_highgui$(OPENCV_VER).lib;opencv_features2d$(OPENCV_VER).lib;opencv_ml$(OPENCV_VER).lib;opencv_objdetect$(OPENCV_VER).lib;opencv_calib3d$(OPENCV_VER).lib;opencv_contrib$(OPENCV_VER).lib;opencv_flann$(OPENCV_VER).lib;opencv_video$(OPENCV_VER).lib;OpenNI2.lib;sapi.lib;libtesseract302.lib;Kinect10.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

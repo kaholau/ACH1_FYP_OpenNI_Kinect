@@ -39,8 +39,8 @@ using namespace cv;
 //#define planeEdgeForPlaneRemove 4 //e.g 20X20 square for 320x240
 #define planeEdgeForPlaneRemove 12 //e.g 20X20 square for 640x480
 #define planeAreaForPlaneRemove (planeEdgeForPlaneRemove * planeEdgeForPlaneRemove) *4
-#define maxThreashold_horizontalPlane 0.8
-#define minThreashold_horizontalPlane -0.8
+#define maxThreashold_horizontalPlane 0.33
+#define minThreashold_horizontalPlane -0.33
 #define maxThreashold_VerticalPlane   1.6
 #define minThreashold_VerticalPlane   0.8
 
@@ -78,7 +78,6 @@ class ObstacleDetection
 	static Point pos;
 	int mUserHeight;
 	int CameraAngle;
-	int picNum;
 	
 private:
 	//Height
@@ -89,19 +88,19 @@ private:
 	void createObstacle(vector<Point> contour, ObjectType type, double area);
 	
 	//Plane filter
-	void drawPlanefilter(Mat& img, Point& location, Vec3f& vector);
-	void drawArrow(Mat& img, Vec3f& vector, Point& start);
-	void fillPlaneUnit(Mat& fill, Point& pt);
+	void GroundMaskFill(Mat& img, Point& location, Vec3f& vector);
+	void GroundArrowDraw(Mat& img, Vec3f& vector, Point& start);
+	void GroundMaskUnitFill(Mat& fill, Point& pt);
 	void createPlaneObject(Mat& src, Mat& img, ObjectType type);
-	void filterPlane(Mat &img);
+	void GroundMaskCreate(Mat &img);
 
 	//Histogram Segmentation
-	Mat calHistogram(Mat& img);
-	vector<int> findLocalMinima(Mat& hist);
+	Mat HistogramCal(Mat& img);
+	vector<int> HistogramLocalMinima(Mat& hist);
 	int getColorIndex(int pixelValue, int index[], int indexSize);
-	void HistogramSegmentation(Mat& src);
-	void Segementation(Mat& src, vector<int> &localMin);
-	void drawObstacle(Mat& img, Mat& output);
+	void Segmentation(Mat& src);
+	void SegementLabel(Mat& src, vector<int> &localMin);
+	void obstacleDetect(Mat& img, Mat& output);
 
 	//find path
 	int findPath();
@@ -113,7 +112,7 @@ public:
 	void run(Mat* src);
 	void getOutputDepthImg(Mat* depth);
 	void getOutputColorImg(Mat *color);
-	void getCurrentColor(Mat* src);
+	void setCurrentColor(Mat* src);
 	void setCameraAngle(int degree);
 	void SetCurrentRawDepth(Mat* rawDepth);
 	void test();

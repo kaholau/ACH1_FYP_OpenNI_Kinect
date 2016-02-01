@@ -29,7 +29,6 @@ void ObstacleDetection::test()
 ObstacleDetection::ObstacleDetection(int userHeight)
 {
 	mUserHeight = userHeight;
-	picNum = 0;
 	myfile.open(MYFILE_PATH);
 };
 
@@ -43,38 +42,31 @@ void ObstacleDetection::run(Mat* pImg)
 	GaussianBlur(*pImg, *pImg, Size(1, 13), 0, 0);
 	currentDepth =pImg->clone();
 	ObstacleList.clear();
-	filterPlane(*pImg);
- 	HistogramSegmentation(*pImg);
+	GroundMaskCreate(*pImg);
+ 	Segmentation(*pImg);
 }
 
-void ObstacleDetection::getCurrentColor(Mat* pImg)
+void ObstacleDetection::setCurrentColor(Mat* pImg)
 {
 	currentColor = pImg->clone();
 }
 
 void ObstacleDetection::getOutputDepthImg(Mat *depth)
 {	
-	//imwrite("C:/Users/HOHO/Pictures/sample/result/result" + to_string(ObstacleList.size()) + "_" + to_string(picNum) + ".jpg", currentDepth);
-	String filename = std::to_string(picNum) + "_" + std::to_string(ObstacleList.size());
-	//imwrite("C:/Users/HOHO/Pictures/sample/result/result" + filename + ".jpg", currentDepth);
-	picNum++;
 	currentDepth.copyTo(*depth);
-
 }
 
 void ObstacleDetection::getOutputColorImg(Mat *color)
-{
-	
+{	
 	currentColor.copyTo(*color);
-
 }
 
-void ObstacleDetection::HistogramSegmentation(Mat& src)
+void ObstacleDetection::Segmentation(Mat& src)
 {
 
-	Mat hist = calHistogram(src);	
-	vector<int> LocalMinima = findLocalMinima(hist);	
-	Segementation(src, LocalMinima);
+	Mat hist = HistogramCal(src);	
+	vector<int> LocalMinima = HistogramLocalMinima(hist);	
+	SegementLabel(src, LocalMinima);
 }
 
 int ObstacleDetection::getColorIndex(int pixelValue, int index[], int indexSize){
@@ -90,7 +82,7 @@ int ObstacleDetection::getColorIndex(int pixelValue, int index[], int indexSize)
 	return indexSize;
 }
 
-Mat ObstacleDetection::calHistogram(Mat& img)
+Mat ObstacleDetection::HistogramCal(Mat& img)
 {
 	int depth = 8;
 	if (img.depth() == CV_32F)
@@ -106,10 +98,29 @@ Mat ObstacleDetection::calHistogram(Mat& img)
 	Mat hist;
 	calcHist(&img, 1, 0, Mat(), hist, 1, &numOfbin, &histRange, uniform, accumulate);
 	GaussianBlur(hist, hist, Size(1, 17), 0, 0);
+
+	/*int histSize = hist.rows;
+	int hist_w = 512; int hist_h = 400;
+	int bin_w = 512 / histSize;
+	Mat histImg(hist_h, hist_w, CV_8UC3, Scalar(255, 255, 255));
+	normalize(hist, hist, 0, histImg.rows, NORM_MINMAX, -1, Mat());
+
+	for (int i = 1; i < histSize; i++)
+	{
+		line(histImg, Point(bin_w*(i - 1), hist_h - cvRound(hist.at<float>(i - 1))),
+			Point(bin_w*(i), hist_h - cvRound(hist.at<float>(i))),
+			Scalar(0, 0, 0), 2, 8, 0);
+		if (i % 10 == 0)
+			putText(histImg, std::to_string(i), Point(bin_w*i - 5, hist_h - 10), FONT_HERSHEY_PLAIN, 0.5, Scalar(128, 128, 128), 1);
+	}
+
+	imshow("histImg", histImg);
+	waitKey();*/
+
 	return hist;
 }
 
-vector<int> ObstacleDetection::findLocalMinima(Mat& hist)
+vector<int> ObstacleDetection::HistogramLocalMinima(Mat& hist)
 {
 
 	struct buffer{
@@ -136,7 +147,7 @@ vector<int> ObstacleDetection::findLocalMinima(Mat& hist)
 }
 
 
-void ObstacleDetection::Segementation(Mat& src, vector<int> &localMin)
+void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 {
 	//for loop that contains vector is very slow, so convert the data into array
 	int numOfSegement = localMin.size();
@@ -168,7 +179,7 @@ void ObstacleDetection::Segementation(Mat& src, vector<int> &localMin)
 	//draw conuter to eliminate small segement, the 0th Image is alaways black with no segment and the last one will always the ignore segment
 	for (int i = 1; i < numOfThreashold - 1; i++)
 	{
-		drawObstacle(pThreasholdImageList[i], obstacleMask);
+		obstacleDetect(pThreasholdImageList[i], obstacleMask);
 		/*imshow("threashold", pThreasholdImageList[i]);
 		waitKey();*/
 	}
@@ -231,7 +242,7 @@ void ObstacleDetection::Segementation(Mat& src, vector<int> &localMin)
 	
 }
 
-void ObstacleDetection::drawObstacle(Mat& img, Mat& output)
+void ObstacleDetection::obstacleDetect(Mat& img, Mat& output)
 {
 	vector<vector<Point> > contours;
 	vector<Vec4i> hierarchy;
@@ -271,14 +282,15 @@ void ObstacleDetection::drawObstacle(Mat& img, Mat& output)
 
 
 
-void ObstacleDetection::filterPlane(Mat &img)
+void ObstacleDetection::GroundMaskCreate(Mat &img)
 {
+	
 	int edge = planeEdgeForPlaneRemove;
-	//ofstream file("C:/Users/HOHO/Pictures/sample/output.txt", ofstream::app);
 
 	//(col,row)=(x,y)
-	Point startPoint = Point(0, img.rows / 2 - 1);
-	//Point startPoint = Point(0, edge-1);
+	//Point startPoint = Point(0, img.rows / 2 - 1);
+	//myfile << "img.rows: " << img.rows << std::endl;
+	Point startPoint = Point(0, edge-1);
 	Ground.img = Mat(img.size(), CV_8UC1,Scalar(255));
 	for (int center_r = startPoint.y + edge / 2, pt1_r = startPoint.y, pt2_r = startPoint.y + edge;
 		center_r < img.rows&&pt1_r < img.rows&&pt2_r < img.rows;
@@ -287,6 +299,8 @@ void ObstacleDetection::filterPlane(Mat &img)
 		float vec1_y = (float)(pt1_r - center_r);
 		float vec2_y = (float)(pt2_r - center_r);
 
+		//myfile << "{" << center_r << "}" << std::endl;
+
 		for (int center_c = startPoint.x + edge / 2, pt1_c = startPoint.x + edge, pt2_c = startPoint.x + edge;
 			center_c < img.cols&&pt1_c < img.cols&&pt2_c < img.cols;
 			center_c += edge, pt1_c += edge, pt2_c += edge)
@@ -294,22 +308,36 @@ void ObstacleDetection::filterPlane(Mat &img)
 			Vec3f vec1 = { (float)(pt1_c - center_c), vec1_y, (float)(img.at<uchar>(pt1_r, pt1_c) - img.at<uchar>(center_r, center_c)) };
 			Vec3f vec2 = { (float)(pt2_c - center_c), vec2_y, (float)(img.at<uchar>(pt2_r, pt2_c) - img.at<uchar>(center_r, center_c)) };
 			Vec3f	crossProduct = vec1.cross(vec2);
-			//myfile << vec1 << " " << vec2 << " " << crossProduct << std::endl;
-			drawPlanefilter(Ground.img, Point(center_c, center_r), crossProduct);
+			//myfile <<"["<< crossProduct.val[1]<<"]";
+			//myfile << crossProduct;
+			//myfile << "[" << atan(crossProduct.val[0] / crossProduct.val[1]) << "]";
+			
+			GroundMaskFill(Ground.img, Point(center_c, center_r), crossProduct);
 
 		}
+		//myfile<< std::endl;
 	}
+	
+
 	bitwise_and(img, Ground.img, img);
+	//imshow("for ground", Ground.img);
+	//imshow("depth", img);
+	//waitKey();
 }
 
 
 /*parameter:
 img : image contains result of cross product
 */
-void ObstacleDetection::drawPlanefilter(Mat& img, Point& location, Vec3f& vector)
+void ObstacleDetection::GroundMaskFill(Mat& img, Point& location, Vec3f& vector)
 {
 	//from experiment, ground's vector has -ve y coordinate
-	if ((vector.val[0]>0 || vector.val[2]>0) && vector.val[1]<0)
+
+	//if (vector.val[0]>0 || vector.val[1]>0 || vector.val[2]>0)
+	//	GroundArrowDraw(img, vector, location);
+
+
+	if ((vector.val[0]>0 || vector.val[2]>0) && vector.val[1]>0)
 	{
 		float angal = atan(vector.val[0] / vector.val[1]);
 
@@ -318,8 +346,8 @@ void ObstacleDetection::drawPlanefilter(Mat& img, Point& location, Vec3f& vector
 		if (angal > minThreashold_horizontalPlane && angal < maxThreashold_horizontalPlane)
 		{
 
-			//drawArrow(img, vector, location);
-			fillPlaneUnit(img, location);
+			//GroundArrowDraw(img, vector, location);
+			GroundMaskUnitFill(img, location);
 			//imshow("img", img);
 			//waitKey();
 
@@ -329,15 +357,16 @@ void ObstacleDetection::drawPlanefilter(Mat& img, Point& location, Vec3f& vector
 		//horizontal plane
 		if (angal > minThreashold_horizontalPlane && angal < maxThreashold_horizontalPlane)
 		{
-			int h =(int) GetHeight(location.y, currentRawDepth.at<ushort>(location) >> 3);
+			int h =(int) GetHeight(location.y, currentRawDepth.at<ushort>(location));
+			//myfile << "[" << h << "]";
 			if (h < Ground_height && h != -1)
 			{
-				//drawArrow(img, vector, location);
-				fillPlaneUnit(img, location);
+				
+				GroundMaskUnitFill(img, location);
 				//imshow("img", img);
 				//waitKey();
-	}
-}
+			}
+		}
 #endif
 	}
 
@@ -348,7 +377,7 @@ img : image to be draw
 vector : the vector of normal
 start: the arrow's starting point
 */
-void ObstacleDetection::drawArrow(Mat& img, Vec3f& vector, Point& start)
+void ObstacleDetection::GroundArrowDraw(Mat& img, Vec3f& vector, Point& start)
 {
 
 	//cal unit vector<x,y,z>=<col,row,depth>
@@ -359,11 +388,11 @@ void ObstacleDetection::drawArrow(Mat& img, Vec3f& vector, Point& start)
 	vector *= 15;
 	//cal point of arrow	//(col,row)=point(x,y)
 	Point end = Point((int)(start.x + vector.val[0]), (int)(start.y + vector.val[1]));
-	arrowedLine(img, start, end, Scalar(255, 255, 255), 1, 8, 0, 0.5);
+	arrowedLine(img, start, end, Scalar(0), 1, 8, 0, 0.5);
 
 }
 
-void ObstacleDetection::fillPlaneUnit(Mat& fill, Point& pt)
+void ObstacleDetection::GroundMaskUnitFill(Mat& fill, Point& pt)
 {
 #define edge planeEdgeForPlaneRemove
 	// Draw the ground in white
@@ -545,8 +574,8 @@ int ObstacleDetection::findPath()
 
 
 	int SecondPath = maxLoc.y;
-	int beginMax;
-	int endMax;
+	int beginMax=0;
+	int endMax=-1;
 		for (int i = 0; i < count.rows; i++)
 		{
 			if (std::abs(((float)max - count.at<float>(i))) < ((float)area*0.01))
@@ -593,6 +622,7 @@ int ObstacleDetection::findPath()
 	//imshow("Ground.img", Ground.img);
 	//waitKey();
 
+		return 1;
 }
 
 void ObstacleDetection::Enhance1DMax(Mat *pImg)
