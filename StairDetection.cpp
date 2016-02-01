@@ -102,9 +102,6 @@ void StairDetection::ApplyFilter(cv::Mat &src, cv::InputArray &filter, double th
 	/// Apply the erosion operation
 	dilate(threshold, threshold, element);
 
-	/// TODO:: DEBUG REMOVE
-	imshow(std::to_string(cv::getTickCount()), threshold);
-
 	src.setTo(0, threshold);
 }
 
@@ -171,6 +168,7 @@ void StairDetection::DetermineStairAngle(std::vector<std::vector<int>> &angles, 
 // The lines are defined by (o1, p1) and (o2, p2).
 bool intersection(cv::Point2f o1, cv::Point2f p1, cv::Point2f o2, cv::Point2f p2)
 {
+  cv::Point2f r;
 	cv::Point2f x = o2 - o1;
 	cv::Point2f d1 = p1 - o1;
 	cv::Point2f d2 = p2 - o2;
@@ -180,6 +178,12 @@ bool intersection(cv::Point2f o1, cv::Point2f p1, cv::Point2f o2, cv::Point2f p2
 		return false;
 
 	double t1 = (x.x * d2.y - x.y * d2.x) / cross;
+  r = o1 + d1 * t1;
+
+  if (r.x < 0 || r.x > 640)
+		return false;
+	if (r.y < 0 || r.y > 480)
+		return false;
 	return true;
 }
 
@@ -206,16 +210,16 @@ void StairDetection::GetStairMidLine(std::vector<cv::Vec4i> &allLines, std::vect
 /// Using the found best fit line that represents the stairs,
 /// find all lines that intersect with the fit line
 /// all lines that intersect belong to the stairs
-void StairDetection::GetStairPoints(std::vector<cv::Vec4i> &allLines, cv::Vec4f stairMidLine, int stairsAngle, std::vector<cv::Point> &stairPoints)
+void StairDetection::GetStairPoints(std::vector<cv::Vec4i> &allLines, cv::Vec4f &stairMidLine, int &stairsAngle, std::vector<cv::Point> &stairPoints)
 {
 	cv::Point pt1, pt2;
 	double theta = stairsAngle * CV_PI / 180;
 	double a = cos(theta), b = sin(theta);
 
-	pt1.x = cvRound(stairMidLine[2] + 1000 * -b);
-	pt1.y = cvRound(stairMidLine[3] + 1000 * a);
-	pt2.x = cvRound(stairMidLine[2] - 1000 * -b);
-	pt2.y = cvRound(stairMidLine[3] - 1000 * a);
+	pt1.x = cvRound(stairMidLine[2] + 640  * -b);
+	pt1.y = cvRound(stairMidLine[3] + 480  * a);
+	pt2.x = cvRound(stairMidLine[2] - 640 * -b);
+	pt2.y = cvRound(stairMidLine[3] - 480 * a);
 
 	for (cv::Vec4i vec : allLines) {
 		cv::Point l1(vec[0], vec[1]);

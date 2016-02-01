@@ -25,8 +25,8 @@ private:
 	void ApplyFilter(cv::Mat &src, cv::InputArray &filter, double thres, double maxval, int type);
 	void SortLinesByAngle(std::vector<cv::Vec4i> &p_lines, std::vector<std::vector<int>> &angles);
 	void DetermineStairAngle(std::vector<std::vector<int>> &angles, int &stairsAngle);
-	void GetStairMidLine(std::vector<cv::Vec4i> &allLines, std::vector<int> &stairIndexes, cv::Vec4f stairMidLine);
-	void GetStairPoints(std::vector<cv::Vec4i> &allLines, cv::Vec4f stairMidLine, int stairsAngle, std::vector<cv::Point> &stairPoints);
+	void GetStairMidLine(std::vector<cv::Vec4i> &allLines, std::vector<int> &stairIndexes, cv::Vec4f &stairMidLine);
+	void GetStairPoints(std::vector<cv::Vec4i> &allLines, cv::Vec4f &stairMidLine, int &stairsAngle, std::vector<cv::Point> &stairPoints);
 	void ExtractStairsHull(std::vector<cv::Point> &stairPoints, std::vector<cv::Point> &stairsHull);
 	void RunInternal(cv::Mat detected_edges, cv::InputArray groundImg, int groundInverseType, std::vector<cv::Point> &stairsConvexHull);
 	void GetIntersectHull(std::vector<cv::Point> &stairsConvexHull_normal, std::vector<cv::Point> &stairsConvexHull_inverse, std::vector<cv::Point> &intersectConvexHull);
