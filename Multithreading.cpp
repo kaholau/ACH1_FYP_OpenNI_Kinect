@@ -91,6 +91,31 @@ void Multithreading::ObstacleDetectionThread_Process()
 {
 	cv::Mat colorImg, depth8bit, depthRaw;
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
+	LONG angle = 0;
+
+	INuiSensor *pNuiSensor = NULL;
+	int iSensorCount = 0;
+	HRESULT hr = S_OK;
+	hr = NuiGetSensorCount(&iSensorCount);
+
+	// Look at each Kinect sensor
+	for (int i = 0; i < iSensorCount; ++i)
+	{
+		// Create the sensor so we can check status, if we can't create it, move on to the next
+		hr = NuiCreateSensorByIndex(i, &pNuiSensor);
+		if (FAILED(hr))
+		{
+			continue;
+		}
+
+		// Get the status of the sensor, and if connected, then we can initialize it
+		hr = pNuiSensor->NuiStatus();
+		if (S_OK == hr)
+		{
+			break;
+		}
+	}
+
 
 	while (waitKey(1) != 27) {
 		if (finished)
@@ -102,8 +127,11 @@ void Multithreading::ObstacleDetectionThread_Process()
 			continue;
 		oldTimeStamp = newTimeStamp;
 
+		std::cout << "ANGLE: " << angle << std::endl;
+		pNuiSensor->NuiCameraElevationGetAngle(&angle);
+
 		m_obstacle.setCurrentColor(&colorImg);
-		m_obstacle.setCameraAngle(-4);
+		m_obstacle.setCameraAngle(angle);
 		m_obstacle.SetCurrentRawDepth(&depthRaw);
 		m_obstacle.run(&depth8bit);
 		m_obstacle.getOutputDepthImg(&depth8bit);

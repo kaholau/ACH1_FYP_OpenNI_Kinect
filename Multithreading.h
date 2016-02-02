@@ -1,4 +1,7 @@
 #pragma once
+#include <Windows.h>
+#include <NuiApi.h>
+#include <stdlib.h>
 
 #include "OpenCVKinect.h"
 #include "TextToSpeech.h"
