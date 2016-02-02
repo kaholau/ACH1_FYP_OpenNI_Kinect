@@ -189,7 +189,7 @@ bool intersection(cv::Point2f o1, cv::Point2f p1, cv::Point2f o2, cv::Point2f p2
 
 /// From confident stair points,
 /// find the best fit line that represents stairs.
-void StairDetection::GetStairMidLine(std::vector<cv::Vec4i> &allLines, std::vector<int> &stairIndexes, cv::Vec4f stairMidLine)
+void StairDetection::GetStairMidLine(std::vector<cv::Vec4i> &allLines, std::vector<int> &stairIndexes, cv::Vec4f &stairMidLine)
 {
 	std::vector<cv::Point2f> points;
 

@@ -12,12 +12,13 @@ void ObstacleDetection::test()
 	cvtColor(src, gray, CV_BGR2GRAY);
 	//if ((gray.depth() == CV_8U) && (gray.channels() == 1))
 	//	std::cout << "gray is 8UC1" << std::endl;
-	//double t = (double)getTickCount();
+	
 
 	run(&gray);
 	getOutputDepthImg(&src);
 	imshow("src", src);
 	waitKey();
+	//double t = (double)getTickCount();
 	//t = ((double)getTickCount() - t) / getTickFrequency();
 	//std::cout << " Total used : " << t << " seconds" << std::endl;
 
@@ -39,12 +40,23 @@ ObstacleDetection::~ObstacleDetection()
 
 void ObstacleDetection::run(Mat* pImg)
 {
+	//double t = (double)getTickCount();
 	GaussianBlur(*pImg, *pImg, Size(1, 13), 0, 0);
 	currentDepth =pImg->clone();
-	ObstacleList.clear();
+	//ObstacleList.clear();
+	
+	
+	//std::cout << " Total used : " << t << " seconds" << std::endl;
 	GroundMaskCreate(*pImg);
- 	Segmentation(*pImg);
+
+	
+	Segmentation(*pImg);
+	/*t = ((double)getTickCount() - t) / getTickFrequency();
+	OutputDebugString(L"time: ");
+	OutputDebugStringA(std::to_string(t).c_str());
+	OutputDebugString(L"\n");*/
 }
+
 
 void ObstacleDetection::setCurrentColor(Mat* pImg)
 {
@@ -190,15 +202,22 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 	if (!Ground.img.empty())
 	{
 		Ground.img &= obstacleMask;
-		createPlaneObject(currentDepth, Ground.img, GROUND);
+		//createPlaneObject(currentDepth, Ground.img, GROUND);
 
-		bitwise_not(Ground.img, Ground.img);	
-		if(findPath()>0)
-			currentDepth &= Ground.img;		
+		bitwise_not(Ground.img, Ground.img);
+		std::string path = findPath();
+
+		if (currentPath.compare(path) != 0)
+		{
+			currentPath = path;
+			TextToSpeech::pushBack(path);
+		}
+		if (path.compare("no path") != 0)
+			currentDepth &= Ground.img;
 	}
 	delete[] pThreasholdImageList;
 	
-	cvtColor(currentDepth, currentDepth, CV_GRAY2RGBA);	
+	//cvtColor(currentDepth, currentDepth, CV_GRAY2RGBA);	
 
 	//find path just using ground img
 	//imshow("Ground.img",Ground.img);
@@ -273,8 +292,8 @@ void ObstacleDetection::obstacleDetect(Mat& img, Mat& output)
 		if (contourArea(contours[i]) / arcLength(contours[i], true) < 3) continue;
 
 
-		mc[i] = Point2f((float)(mu[i].m10 / mu[i].m00), (float)(mu[i].m01 / mu[i].m00));
-		createObstacle(hull[i], OBSTACLE, Point((int)mc[i].x, (int)mc[i].y));	
+		//mc[i] = Point2f((float)(mu[i].m10 / mu[i].m00), (float)(mu[i].m01 / mu[i].m00));
+		//createObstacle(hull[i], OBSTACLE, Point((int)mc[i].x, (int)mc[i].y));	
 
 	}
 		
@@ -333,8 +352,8 @@ void ObstacleDetection::GroundMaskFill(Mat& img, Point& location, Vec3f& vector)
 {
 	//from experiment, ground's vector has -ve y coordinate
 
-	//if (vector.val[0]>0 || vector.val[1]>0 || vector.val[2]>0)
-	//	GroundArrowDraw(img, vector, location);
+	/*if (vector.val[0]>0 || vector.val[1]>0 || vector.val[2]>0)
+		GroundArrowDraw(img, vector, location);*/
 
 
 	if ((vector.val[0]>0 || vector.val[2]>0) && vector.val[1]>0)
@@ -493,7 +512,7 @@ void ObstacleDetection::SetCurrentRawDepth(Mat* rawDepth)
 	//GaussianBlur(currentRawDepth, currentRawDepth, Size(1, 13), 0, 0);
 }
 
-int ObstacleDetection::findPath()
+string ObstacleDetection::findPath()
 {
 
 	//histogram with bin width=cols/10, then guassin blur, then find global max, another rect with size row/100 x col/100 repeat the same method
@@ -519,7 +538,7 @@ int ObstacleDetection::findPath()
 //	OutputDebugStringA(std::to_string(sum).c_str());
 
 	if (sum < (area*FirstNumOfBin*TooLessGroundPercentage))
-		return -1;
+		return "no path";
 
 	double max;
 	Point maxLoc;
@@ -537,8 +556,8 @@ int ObstacleDetection::findPath()
 	}
 	
 	//putText(Ground.img, std::to_string(max), Point(FirstPath*width, height), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
-	circle(Ground.img, Point(FirstPath*width, height), 1, Scalar(128), 3);
-	arrowedLine(Ground.img, Point(FirstPath*width, Ground.img.rows), Point(FirstPath*width, 0), Scalar(100), 2, 8, 0, 0.1);
+	//circle(Ground.img, Point(FirstPath*width, height), 1, Scalar(128), 3);
+	//arrowedLine(Ground.img, Point(FirstPath*width, Ground.img.rows), Point(FirstPath*width, 0), Scalar(100), 2, 8, 0, 0.1);
 	//imshow("Ground.img", Ground.img);
 	//waitKey();
 	//smaller rect
@@ -561,8 +580,8 @@ int ObstacleDetection::findPath()
 		
 		binImg = Ground.img(Rect(Point(i, Ground.img.rows), Point(i + width, height)));
 		count.at<float >(j) = (float)area - countNonZero(binImg);
-		Point pt1(i, Ground.img.rows), pt2(i + width, height);
-		rectangle(Ground.img, pt1, pt2, Scalar(128), 1);
+		//Point pt1(i, Ground.img.rows), pt2(i + width, height);
+		//rectangle(Ground.img, pt1, pt2, Scalar(128), 1);
 		//putText(Ground.img, std::to_string(j), Point(i + width, height), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
 		//imshow("binImg", Ground.img);
 		//waitKey();
@@ -614,15 +633,22 @@ int ObstacleDetection::findPath()
 		else
 			SecondPath = beginMax;
 
-
+		int finalPath = (SecondPath + 1)*width + start;
 		//circle(Ground.img, Point(SecondPath*width + start, height), 1, Scalar(128), 3);
-		arrowedLine(Ground.img, Point((SecondPath + 1)*width + start, Ground.img.rows), Point((SecondPath + 1)*width + start, height), Scalar(255), 2, 8, 0, 0.3);
-	
-
+		arrowedLine(Ground.img, Point(finalPath, Ground.img.rows), Point(finalPath, height), Scalar(255), 2, 8, 0, 0.3);
+		
+		myfile << " " << finalPath << " " << std::endl;
 	//imshow("Ground.img", Ground.img);
 	//waitKey();
 
-		return 1;
+		if (finalPath > 0 && finalPath <= Ground.img.cols / 3)
+			return "right";
+		if (finalPath > Ground.img.cols / 3 && finalPath <= Ground.img.cols * 2 / 3)
+			return "center";
+		if (finalPath > Ground.img.cols * 2 / 3 && finalPath < Ground.img.cols)
+			return "left";
+
+		return "no path";
 }
 
 void ObstacleDetection::Enhance1DMax(Mat *pImg)

@@ -59,7 +59,7 @@ bool TextToSpeech::speak(void)
 		if (strQueue.size() > 0) {
 			hr = pVoice->Speak(strQueue.front().c_str(), 0, NULL);
 			strQueue.pop();
-
+			std::cout << "                            " << strQueue.size()<<std::endl;
 			if (FAILED(hr))
 				std::cerr << "Text to speech HR error!\n";
 		}

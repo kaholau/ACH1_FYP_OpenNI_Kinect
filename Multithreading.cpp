@@ -13,8 +13,8 @@ Multithreading::~Multithreading()
 	KinectThread_Future.get();
 	TextToSpeechThread_Future.get();
 	ObstacleDetectionThread_Future.get();
-	FaceDetectionThread_Future.get();
-	SignDetectionThread_Future.get();
+	//FaceDetectionThread_Future.get();
+	//SignDetectionThread_Future.get();
 }
 
 bool Multithreading::InitializeKinect()
@@ -40,8 +40,8 @@ void Multithreading::CreateAsyncThreads()
 	KinectThread_Future = std::async(std::launch::async, &Multithreading::KinectThread_Process, this);
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
-	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
+	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
 }
 
 void Multithreading::Hold()
@@ -83,6 +83,7 @@ void Multithreading::TextToSpeechThread_Process()
 			return;
 
 		m_tts.speak();
+
 	}
 }
 
@@ -94,7 +95,8 @@ void Multithreading::ObstacleDetectionThread_Process()
 	while (waitKey(1) != 27) {
 		if (finished)
 			return;
-
+		double t = (double)getTickCount();
+		
 		m_Kinect.getMatrix(m_Kinect.All, colorImg, depthRaw, depth8bit, newTimeStamp);
 		if (newTimeStamp <= oldTimeStamp)
 			continue;
@@ -107,8 +109,13 @@ void Multithreading::ObstacleDetectionThread_Process()
 		m_obstacle.getOutputDepthImg(&depth8bit);
 		m_obstacle.getOutputColorImg(&colorImg);
 
+		t = 1/(((double)getTickCount() - t) / getTickFrequency());
+		String fps = std::to_string(t) + "fps";
+		putText(depth8bit, fps, Point(20,20), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
+		//std::cout << " Total used : " << t << " seconds" << std::endl;
 		cv::imshow("DEPTH", depth8bit);
-		cv::imshow("COLOR", colorImg);
+		//waitKey();
+		//cv::imshow("COLOR", colorImg);
 	}
 }
 

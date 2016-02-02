@@ -18,6 +18,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp> //imread
 
+#include "TextToSpeech.h"
+
 using namespace cv;
 //#define TEST_SEGMENTATION
 //#define DISPLAY_HEIGHT	
@@ -30,14 +32,14 @@ using namespace cv;
 #define  undefine_pixel Scalar(255)
 #define  Ground_pixel Scalar(0,0,0)
 #define  Valid_Distance 61		//grayscale pixel value
-#define  Ground_height 250		//4cm
+#define  Ground_height 350		//4cm
 #define  TooLessGroundPercentage 0.1 
 //calHistogram
 #define HistSize 256 // bin size = 2^pixelDepth / histSize
 
 //remove plane
 //#define planeEdgeForPlaneRemove 4 //e.g 20X20 square for 320x240
-#define planeEdgeForPlaneRemove 12 //e.g 20X20 square for 640x480
+#define planeEdgeForPlaneRemove 24 //e.g 20X20 square for 640x480
 #define planeAreaForPlaneRemove (planeEdgeForPlaneRemove * planeEdgeForPlaneRemove) *4
 #define maxThreashold_horizontalPlane 0.33
 #define minThreashold_horizontalPlane -0.33
@@ -75,9 +77,9 @@ class ObstacleDetection
 	Object Ground;
 	vector<Object> GroundList;
 	vector<Object> ObstacleList;
-	static Point pos;
 	int mUserHeight;
 	int CameraAngle;
+	string currentPath;
 	
 private:
 	//Height
@@ -103,7 +105,7 @@ private:
 	void obstacleDetect(Mat& img, Mat& output);
 
 	//find path
-	int findPath();
+	string findPath();
 	void Enhance1DMax(Mat *pImg);
 
 public:
