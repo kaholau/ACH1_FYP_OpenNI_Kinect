@@ -1,7 +1,7 @@
 #include "Multithreading.h"
 
 Multithreading::Multithreading()
-	: m_obstacle(800)
+	: m_obstacle(1100)
 {
 
 }
@@ -40,8 +40,8 @@ void Multithreading::CreateAsyncThreads()
 	KinectThread_Future = std::async(std::launch::async, &Multithreading::KinectThread_Process, this);
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
-	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
+	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
 }
 
 void Multithreading::Hold()
@@ -185,3 +185,4 @@ void Multithreading::SignDetectionThread_Process()
 		cv::imshow("SIGN DETECTION", colorImg);
 	}
 }
+

@@ -18,17 +18,21 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, cv::I
 	CannyThreshold(colorImg, detected_edges);
 	ApplyFilter(detected_edges, depthImg, 254, 255, CV_THRESH_BINARY);
 	detected_edges_inv = detected_edges.clone();
-
 	RunInternal(detected_edges, groundImg, CV_THRESH_BINARY, stairsConvexHull_normal);
+	if (stairsConvexHull_normal.empty()) {
+		return;
+	}
 	RunInternal(detected_edges_inv, groundImg, CV_THRESH_BINARY_INV, stairsConvexHull_inverse);
-
+	if (stairsConvexHull_inverse.empty()) {
+		return;
+	}
 	GetIntersectHull(stairsConvexHull_normal, stairsConvexHull_inverse, stairsConvexHull);
 }
 
 void StairDetection::RunInternal(cv::Mat detected_edges, cv::InputArray groundImg, int groundInverseType, std::vector<cv::Point> &stairsConvexHull)
 {
 	std::vector<cv::Vec4i> allLines;
-	int stairsAngle;
+	int stairsAngle = -999;
 	cv::Point stairMidPoint;
 	std::vector<std::vector<int>> angles = std::vector<std::vector<int>>(180, std::vector<int>());
 	std::vector<cv::Point> stairPoints, stairsHull;
@@ -38,7 +42,11 @@ void StairDetection::RunInternal(cv::Mat detected_edges, cv::InputArray groundIm
 	Probabilistic_Hough(detected_edges, allLines);
 	SortLinesByAngle(allLines, angles);
 	DetermineStairAngle(angles, stairsAngle);
+	if (stairsAngle == -999) {
+		return;
+	}
 	GetStairMidLine(allLines, angles[stairsAngle], stairMidLine);
+
 	GetStairPoints(allLines, stairMidLine, stairsAngle, stairPoints);
 	ExtractStairsHull(stairPoints, stairsConvexHull);
 }

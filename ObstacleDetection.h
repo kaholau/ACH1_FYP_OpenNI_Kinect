@@ -19,8 +19,10 @@
 #include <opencv2/highgui/highgui.hpp> //imread
 
 #include "TextToSpeech.h"
+#include "StairDetection.h"
 
 using namespace cv;
+//#define FOR_REPORT
 //#define TEST_SEGMENTATION
 //#define DISPLAY_HEIGHT	
 //#define DISPLAY_HULL
@@ -29,9 +31,7 @@ using namespace cv;
 #define SAMPLE_PATH "C:/Users/HOHO/Pictures/sample/depth9.bmp"
 //#define SAMPLE_PATH "C:/Users/HOHO/Pictures/sample/Pictures/atrium/depth7.bmp"
 
-#define  undefine_pixel Scalar(255)
-#define  Ground_pixel Scalar(0,0,0)
-#define  Valid_Distance 61		//grayscale pixel value
+#define  Valid_Distance 1		//grayscale pixel value
 #define  Ground_height 350		//4cm
 #define  TooLessGroundPercentage 0.1 
 //calHistogram
@@ -95,6 +95,7 @@ private:
 	void GroundMaskUnitFill(Mat& fill, Point& pt);
 	void createPlaneObject(Mat& src, Mat& img, ObjectType type);
 	void GroundMaskCreate(Mat &img);
+	void GroundDefault(Mat& img);
 
 	//Histogram Segmentation
 	Mat HistogramCal(Mat& img);

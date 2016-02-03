@@ -41,7 +41,7 @@ ObstacleDetection::~ObstacleDetection()
 void ObstacleDetection::run(Mat* pImg)
 {
 	//double t = (double)getTickCount();
-	GaussianBlur(*pImg, *pImg, Size(1, 13), 0, 0);
+	GaussianBlur(*pImg, *pImg, Size(1, 5), 0, 0);
 	currentDepth =pImg->clone();
 	//ObstacleList.clear();
 	
@@ -187,30 +187,49 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		}
 	}
 
+
+
 	Mat obstacleMask (src.size(), CV_8UC1, Scalar(255));
 	//draw conuter to eliminate small segement, the 0th Image is alaways black with no segment and the last one will always the ignore segment
 	for (int i = 1; i < numOfThreashold - 1; i++)
 	{
 		obstacleDetect(pThreasholdImageList[i], obstacleMask);
-		/*imshow("threashold", pThreasholdImageList[i]);
-		waitKey();*/
+
 	}
+
+#ifdef FOR_REPORT
+	imshow("obstacleMask_final", obstacleMask);
+	waitKey();
+#endif
+
 	//imshow("obstacleMask", obstacleMask);
 	//waitKey();
 	//bitwise_not(obstacleMask, obstacleMask);
 	bitwise_not(Ground.img, Ground.img);
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	//imshow("o", obstacleMask);
 	if (!Ground.img.empty())
 	{
-		Ground.img &= obstacleMask;
-		//createPlaneObject(currentDepth, Ground.img, GROUND);
 
+		Ground.img &= obstacleMask;
+		createPlaneObject(currentDepth, Ground.img, GROUND);
+		findContours(Ground.img, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+		for (size_t i = 0; i < contours.size(); i++)
+			drawContours(Ground.img, contours, i, Scalar(255), -1, 8, hierarchy, 0, Point());
 		bitwise_not(Ground.img, Ground.img);
+		
+
+#ifdef FOR_REPORT
+		imshow("finalGround", Ground.img);
+		waitKey();
+#endif
 		std::string path = findPath();
 
 		if (currentPath.compare(path) != 0)
 		{
 			currentPath = path;
-			TextToSpeech::pushBack(path);
+			//TextToSpeech::pushBack(path);
 		}
 		if (path.compare("no path") != 0)
 			currentDepth &= Ground.img;
@@ -278,17 +297,17 @@ void ObstacleDetection::obstacleDetect(Mat& img, Mat& output)
 		
 	//cal the hull after reduce the contour's number to save time for hull
 	vector<vector<Point> >hull(contours.size());
-	vector<Moments> mu(contours.size());
-	vector<Point2f> mc(contours.size());
+	//vector<Moments> mu(contours.size());
+	//vector<Point2f> mc(contours.size());
 	for (size_t i = 0; i < contours.size(); i++)
 	{
 		convexHull(Mat(contours[i]), hull[i], false);
 		//Scalar color = Scalar(theRNG().uniform(1, 254), theRNG().uniform(1, 254), theRNG().uniform(1, 254));
 		drawContours(output, hull, i, Scalar(0), -1, 8, hierarchy, 0, Point());
-		mu[i] = moments(contours[i], false);
+		//mu[i] = moments(contours[i], false);
 
 		//m00 is the zero moment which is the area of the contour
-		if (mu[i].m00 == 0) continue;
+		//if (mu[i].m00 == 0) continue;
 		if (contourArea(contours[i]) / arcLength(contours[i], true) < 3) continue;
 
 
@@ -311,6 +330,11 @@ void ObstacleDetection::GroundMaskCreate(Mat &img)
 	//myfile << "img.rows: " << img.rows << std::endl;
 	Point startPoint = Point(0, edge-1);
 	Ground.img = Mat(img.size(), CV_8UC1,Scalar(255));
+
+#ifdef FOR_REPORT
+	Mat temp = Mat(img.size(), CV_8UC1, Scalar(255));
+#endif
+
 	for (int center_r = startPoint.y + edge / 2, pt1_r = startPoint.y, pt2_r = startPoint.y + edge;
 		center_r < img.rows&&pt1_r < img.rows&&pt2_r < img.rows;
 		center_r += edge, pt1_r += edge, pt2_r += edge)
@@ -336,12 +360,48 @@ void ObstacleDetection::GroundMaskCreate(Mat &img)
 		}
 		//myfile<< std::endl;
 	}
-	
+	GroundDefault(Ground.img);
+	//imshow("g", Ground.img);
+	StairDetection stairs;
+	std::vector<cv::Point> stairConvexHull;
+	std::vector<std::vector<cv::Point> > hull(1);
+	stairs.Run(currentColor, currentDepth, Ground.img, stairConvexHull);
+	if (!stairConvexHull.empty()) {
+		cv::Mat temp = currentColor.clone();
+		cv::Scalar color = Scalar(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
+		hull.push_back(stairConvexHull);
+		for (int i = 0; i<hull.size(); ++i) {
+			drawContours(temp, hull, i, color, 3, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
+		}
+		//imshow(std::to_string(cv::getTickCount()), temp);
+		//imshow("s", temp);
+	}
+
+#ifdef FOR_REPORT
+	Ground.img.copyTo(temp);
+#endif
+#ifdef FOR_REPORT
+	imshow("original_depth", img);
+	waitKey();
+#endif
 
 	bitwise_and(img, Ground.img, img);
+#ifdef FOR_REPORT
+	imshow("ground", temp);
+	imshow("brief ground in srcDepth", img);
+	waitKey();
+#endif
+
+
 	//imshow("for ground", Ground.img);
 	//imshow("depth", img);
 	//waitKey();
+}
+
+void ObstacleDetection::GroundDefault(Mat& img)
+{
+	Point pt1(0, img.rows), pt2(img.cols, img.rows - planeEdgeForPlaneRemove);
+	rectangle(img, pt1, pt2, Scalar(0), CV_FILLED);
 }
 
 
@@ -378,7 +438,7 @@ void ObstacleDetection::GroundMaskFill(Mat& img, Point& location, Vec3f& vector)
 		{
 			int h =(int) GetHeight(location.y, currentRawDepth.at<ushort>(location));
 			//myfile << "[" << h << "]";
-			if (h < Ground_height && h != -1)
+			//if (h < Ground_height && h != -1)
 			{
 				
 				GroundMaskUnitFill(img, location);
@@ -514,20 +574,39 @@ void ObstacleDetection::SetCurrentRawDepth(Mat* rawDepth)
 
 string ObstacleDetection::findPath()
 {
-
+	//invalid width [0:45], [img.col-5,img.col]
 	//histogram with bin width=cols/10, then guassin blur, then find global max, another rect with size row/100 x col/100 repeat the same method
-	int width = Ground.img.cols / FirstNumOfBin; // e.g 40 mean total 40bin in the histogram
+	int realDepthColsWidth ;
+	int realColStart ;
+	int realColEnd ;
+
+	if (Ground.img.cols == 320)
+	{
+		realDepthColsWidth = Ground.img.cols - 20 - 2;
+		realColStart = 20;
+		realColEnd = Ground.img.cols - 2;
+	}
+	
+	if (Ground.img.cols == 640)
+	{
+		 realDepthColsWidth = Ground.img.cols - 45 - 5;
+		 realColStart = 45;
+		 realColEnd = Ground.img.cols - 5;
+	}
+
+	int width = realDepthColsWidth / FirstNumOfBin; // e.g 40 mean total 40bin in the histogram
 	int height = Ground.img.rows / 2;
 	int area = width*height;
 	Mat binImg;
 	Mat count = Mat(FirstNumOfBin, 1, CV_32F);
 	float sum=0;
-	for (int i = 0, j = 0; i < Ground.img.cols; i += width, j++)
+	for (int i = realColStart, j = 0; i < realDepthColsWidth; i += width, j++)
 	{
-		//Point pt1(i, Ground.img.rows), pt2(i + width, height);
-		//rectangle(Ground.img, pt1, pt2, Scalar(200), 1);
 		binImg = Ground.img(Rect(Point(i, Ground.img.rows), Point(i + width, height)));
 		count.at<float>(j) = (float)area - countNonZero(binImg);
+		//Point pt1(i, Ground.img.rows), pt2(i + width, height);
+		//rectangle(Ground.img, pt1, pt2, Scalar(200), 1);
+		
 		//putText(binImg, std::to_string(count.at<int >(j)), Point(0, 50), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
 		//imshow("binImg", binImg);
 		//waitKey();
@@ -563,12 +642,12 @@ string ObstacleDetection::findPath()
 	//smaller rect
 
 
-	 int start = FirstPath*width - Ground.img.cols / SecondHistogramRangeColDivisor;
-	 if (start < 0)	 start = 0;		 
-	 int end = FirstPath*width + Ground.img.cols / SecondHistogramRangeColDivisor;
-	 if (end > Ground.img.cols) end = Ground.img.cols;
+	 int start = FirstPath*width - realDepthColsWidth / SecondHistogramRangeColDivisor;
+	 if (start < realColStart)	 start = realColStart;
+	 int end = FirstPath*width + realDepthColsWidth / SecondHistogramRangeColDivisor;
+	 if (end > realColEnd) end = realColEnd;
 
-	 width = (int)((Ground.img.cols / SecondHistogramRangeColDivisor)*2 / SecondNumOfBin); //20bins
+	 width = (int)((realDepthColsWidth / SecondHistogramRangeColDivisor)*2 / SecondNumOfBin); //20bins
 	 height = (int)(Ground.img.rows - Ground.img.rows / SecondBinHeightDivisor); //half of the image
 	 area = width*height;
 	 //OutputDebugStringA(std::to_string(area).c_str());
@@ -581,7 +660,7 @@ string ObstacleDetection::findPath()
 		binImg = Ground.img(Rect(Point(i, Ground.img.rows), Point(i + width, height)));
 		count.at<float >(j) = (float)area - countNonZero(binImg);
 		//Point pt1(i, Ground.img.rows), pt2(i + width, height);
-		//rectangle(Ground.img, pt1, pt2, Scalar(128), 1);
+		//rectangle(Ground.img, pt1, pt2, Scalar(200), 1);
 		//putText(Ground.img, std::to_string(j), Point(i + width, height), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
 		//imshow("binImg", Ground.img);
 		//waitKey();
@@ -637,15 +716,15 @@ string ObstacleDetection::findPath()
 		//circle(Ground.img, Point(SecondPath*width + start, height), 1, Scalar(128), 3);
 		arrowedLine(Ground.img, Point(finalPath, Ground.img.rows), Point(finalPath, height), Scalar(255), 2, 8, 0, 0.3);
 		
-		myfile << " " << finalPath << " " << std::endl;
+		//myfile << " " << finalPath << " " << std::endl;
 	//imshow("Ground.img", Ground.img);
 	//waitKey();
 
-		if (finalPath > 0 && finalPath <= Ground.img.cols / 3)
+		if (finalPath > 0 && finalPath <= realDepthColsWidth / 3)
 			return "right";
-		if (finalPath > Ground.img.cols / 3 && finalPath <= Ground.img.cols * 2 / 3)
+		if (finalPath > realDepthColsWidth / 3 && finalPath <= realDepthColsWidth * 2 / 3)
 			return "center";
-		if (finalPath > Ground.img.cols * 2 / 3 && finalPath < Ground.img.cols)
+		if (finalPath > realDepthColsWidth * 2 / 3 && finalPath < realDepthColsWidth)
 			return "left";
 
 		return "no path";

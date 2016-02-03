@@ -32,6 +32,9 @@ bool OpenCVKinect::init()
 
 	// create a depth object
 	m_status = m_depth.create(m_device, openni::SENSOR_DEPTH);
+	//const openni::SensorInfo* sinfo = m_device.getSensorInfo(openni::SENSOR_DEPTH);
+	//const openni::Array<openni::VideoMode> &videoModes = sinfo->getSupportedVideoModes();
+	//m_depth.setVideoMode(videoModes[1]);
 	if(m_status == openni::STATUS_OK)
 	{
 		m_status = m_depth.start();
@@ -52,6 +55,7 @@ bool OpenCVKinect::init()
 
 	// create a color object
 	m_status = m_color.create(m_device, openni::SENSOR_COLOR);
+
 	if(m_status == openni::STATUS_OK)
 	{
 		m_status = m_color.start();
