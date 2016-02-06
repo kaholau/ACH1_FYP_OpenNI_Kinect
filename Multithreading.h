@@ -41,5 +41,7 @@ public:
 	bool InitializeKinect();
 	void CreateAsyncThreads();
 	void Hold();
+
+	//void on_trackbar(int, void*);
 };
 

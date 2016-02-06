@@ -31,7 +31,8 @@ class OpenCVKinect
 	cv::Mat m_depthImage, m_colorImage;
 	bool m_alignedStreamStatus, m_colorStreamStatus, m_depthStreamStatus;
 
-	std::string timestamp = "224989671362";
+	std::string timestamp = "232062183209";
+	std::string path = "D:/Image processing OpenCV+kinect/Kinect Sample/New folder/";
 	std::vector<int> angles;
 public:
 	static enum MatFlag
@@ -51,7 +52,7 @@ public:
 	INuiSensor *pNuiSensor;
 	openni::Recorder m_recorder;
 	std::ofstream file;
-	bool recording = true;
+	bool recording = false;
 
 	bool init();
 	

@@ -24,10 +24,10 @@ bool OpenCVKinect::init()
 	if (recording)
 		m_status = m_device.open(deviceURI);
 	else {
-		m_status = m_device.open((timestamp + ".oni").c_str());
+		m_status = m_device.open((path + timestamp + ".oni").c_str());
 
 		std::string line;
-		std::ifstream file((timestamp + ".txt").c_str());
+		std::ifstream file((path+ timestamp + ".txt").c_str());
 		while (std::getline(file, line)) {
 			int angle = stoi(line);
 			angles.push_back(angle);
@@ -106,8 +106,8 @@ bool OpenCVKinect::init()
 
 	if (recording) {
 		timestamp = std::to_string(cv::getTickCount());
-		file.open((timestamp + ".txt").c_str());
-		m_recorder.create((timestamp + ".oni").c_str());
+		file.open((path+timestamp + ".txt").c_str());
+		m_recorder.create((path+timestamp + ".oni").c_str());
 		m_recorder.attach(*m_streams[C_COLOR_STREAM]);
 		m_recorder.attach(*m_streams[C_DEPTH_STREAM]);
 	}

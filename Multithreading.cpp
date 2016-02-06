@@ -32,10 +32,12 @@ bool Multithreading::InitializeKinect()
 		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat(), t);
 	} while (t == 0);
 
-	if (m_Kinect.recording)
+	if (m_Kinect.recording) {
 		m_Kinect.m_recorder.start();
 
-	m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(0);
+		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(0);
+	}
+
 
 	return true;
 }
@@ -97,12 +99,37 @@ void Multithreading::TextToSpeechThread_Process()
 	}
 }
 
+void on_trackbar(int i, void* userData)
+{
+	INuiSensor *pNuiSensor = ((INuiSensor*)userData);
+
+	i = i - 27;
+	if (userData!=NULL)
+		pNuiSensor->NuiCameraElevationSetAngle((long)i);
+	else
+		std::cout << "NULL userdata" << std::endl;
+}
+
+
+
 void Multithreading::ObstacleDetectionThread_Process()
 {
+
 	cv::Mat colorImg, depth8bit, depthRaw;
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
+	LONG angle = 0;
+
+
+
+	//m_Kinect.pNuiSensor->NuiCameraElevationGetAngle(&angle);
+	//m_obstacle.setCameraAngle(angle);
+	//namedWindow("DEPTH", 1);
+	//int track_angle = (int)angle;
+	////std::cout << "angle: " << track_angle << std::endl;
+	//createTrackbar("CameraAngle", "DEPTH", &track_angle, 54, on_trackbar, m_Kinect.pNuiSensor);
 	
-	while (waitKey(1) != 27) {
+	while (waitKey(1) != 27) 
+	{
 		if (finished)
 			return;
 		double t = (double)getTickCount();
@@ -162,7 +189,7 @@ void Multithreading::SignDetectionThread_Process()
 		if (newTimeStamp <= oldTimeStamp)
 			continue;
 		oldTimeStamp = newTimeStamp;
-
+		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
 		m_sign.runRecognizer(colorImg);
 		cv::imshow("SIGN DETECTION", colorImg);
 	}

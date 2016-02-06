@@ -78,7 +78,7 @@ class ObstacleDetection
 	vector<Object> GroundList;
 	vector<Object> ObstacleList;
 	int mUserHeight;
-	int CameraAngle;
+	std::queue<float> diplay;
 	string currentPath;
 	
 private:
@@ -110,11 +110,13 @@ private:
 	void Enhance1DMax(Mat *pImg);
 
 public:
+	int CameraAngle;
 	ObstacleDetection(int userHeight);
 	~ObstacleDetection();
 	void run(Mat* src);
 	void getOutputDepthImg(Mat* depth);
 	void getOutputColorImg(Mat *color);
+	int getCameraAngle();
 	void setCurrentColor(Mat* src);
 	void setCameraAngle(int degree);
 	void SetCurrentRawDepth(Mat* rawDepth);
