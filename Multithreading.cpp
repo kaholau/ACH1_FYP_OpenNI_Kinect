@@ -13,8 +13,8 @@ Multithreading::~Multithreading()
 	KinectThread_Future.get();
 	TextToSpeechThread_Future.get();
 	ObstacleDetectionThread_Future.get();
-	//FaceDetectionThread_Future.get();
-	//SignDetectionThread_Future.get();
+	FaceDetectionThread_Future.get();
+	SignDetectionThread_Future.get();
 }
 
 bool Multithreading::InitializeKinect()
@@ -32,16 +32,24 @@ bool Multithreading::InitializeKinect()
 		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat(), t);
 	} while (t == 0);
 
+	if (m_Kinect.recording)
+		m_Kinect.m_recorder.start();
+
+	m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(0);
+
 	return true;
 }
 
 void Multithreading::CreateAsyncThreads()
 {
 	KinectThread_Future = std::async(std::launch::async, &Multithreading::KinectThread_Process, this);
+	if (m_Kinect.recording)
+		return;
+
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
-	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
+	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
 }
 
 void Multithreading::Hold()
@@ -61,16 +69,18 @@ void Multithreading::Hold()
 void Multithreading::KinectThread_Process()
 {
 	cv::Mat colorImg, depth8bit;
-	uint64_t t = 0;
+	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
+
 	while (1) {
 		if (finished)
 			return;
 
 		m_Kinect.updateData();
-		//m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit, t);
+		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit, newTimeStamp);
 
-		//cv::imshow("ORIGINAL COLOR", colorImg);
-		//cv::imshow("ORIGINAL DEPTH", depth8bit);
+		cv::imshow("ORIGINAL COLOR", colorImg);
+		cv::imshow("ORIGINAL DEPTH", depth8bit);
+		cv::waitKey(1);
 	}
 }
 
@@ -91,32 +101,7 @@ void Multithreading::ObstacleDetectionThread_Process()
 {
 	cv::Mat colorImg, depth8bit, depthRaw;
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
-	LONG angle = 0;
-
-	INuiSensor *pNuiSensor = NULL;
-	int iSensorCount = 0;
-	HRESULT hr = S_OK;
-	hr = NuiGetSensorCount(&iSensorCount);
-
-	// Look at each Kinect sensor
-	for (int i = 0; i < iSensorCount; ++i)
-	{
-		// Create the sensor so we can check status, if we can't create it, move on to the next
-		hr = NuiCreateSensorByIndex(i, &pNuiSensor);
-		if (FAILED(hr))
-		{
-			continue;
-		}
-
-		// Get the status of the sensor, and if connected, then we can initialize it
-		hr = pNuiSensor->NuiStatus();
-		if (S_OK == hr)
-		{
-			break;
-		}
-	}
-
-
+	
 	while (waitKey(1) != 27) {
 		if (finished)
 			return;
@@ -127,11 +112,8 @@ void Multithreading::ObstacleDetectionThread_Process()
 			continue;
 		oldTimeStamp = newTimeStamp;
 
-		std::cout << "ANGLE: " << angle << std::endl;
-		pNuiSensor->NuiCameraElevationGetAngle(&angle);
-
 		m_obstacle.setCurrentColor(&colorImg);
-		m_obstacle.setCameraAngle(angle);
+		m_obstacle.setCameraAngle(m_Kinect.getAngle());
 		m_obstacle.SetCurrentRawDepth(&depthRaw);
 		m_obstacle.run(&depth8bit);
 		m_obstacle.getOutputDepthImg(&depth8bit);

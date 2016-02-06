@@ -21,7 +21,19 @@ bool OpenCVKinect::init()
 	std::cout << openni::OpenNI::getExtendedError() << std::endl;
 
 	// open the device
-	m_status = m_device.open(deviceURI);
+	if (recording)
+		m_status = m_device.open(deviceURI);
+	else {
+		m_status = m_device.open((timestamp + ".oni").c_str());
+
+		std::string line;
+		std::ifstream file((timestamp + ".txt").c_str());
+		while (std::getline(file, line)) {
+			int angle = stoi(line);
+			angles.push_back(angle);
+		}
+	}
+
 	if(m_status != openni::STATUS_OK)
 	{
 		std::cout << "OpenCVKinect: Device open failseed: " << std::endl;
@@ -32,9 +44,9 @@ bool OpenCVKinect::init()
 
 	// create a depth object
 	m_status = m_depth.create(m_device, openni::SENSOR_DEPTH);
-	//const openni::SensorInfo* sinfo = m_device.getSensorInfo(openni::SENSOR_DEPTH);
-	//const openni::Array<openni::VideoMode> &videoModes = sinfo->getSupportedVideoModes();
-	//m_depth.setVideoMode(videoModes[1]);
+	const openni::SensorInfo* sinfo = m_device.getSensorInfo(openni::SENSOR_DEPTH);
+	const openni::Array<openni::VideoMode> &videoModes = sinfo->getSupportedVideoModes();
+	m_depth.setVideoMode(videoModes[1]);
 	if(m_status == openni::STATUS_OK)
 	{
 		m_status = m_depth.start();
@@ -55,7 +67,9 @@ bool OpenCVKinect::init()
 
 	// create a color object
 	m_status = m_color.create(m_device, openni::SENSOR_COLOR);
-
+	const openni::SensorInfo* sinfoColor = m_device.getSensorInfo(openni::SENSOR_COLOR);
+	const openni::Array<openni::VideoMode> &videoModesColor = sinfoColor->getSupportedVideoModes();
+	m_color.setVideoMode(videoModesColor[1]);
 	if(m_status == openni::STATUS_OK)
 	{
 		m_status = m_color.start();
@@ -90,6 +104,36 @@ bool OpenCVKinect::init()
 	m_streams[C_DEPTH_STREAM] = &m_depth;
 	m_streams[C_COLOR_STREAM] = &m_color;
 
+	if (recording) {
+		timestamp = std::to_string(cv::getTickCount());
+		file.open((timestamp + ".txt").c_str());
+		m_recorder.create((timestamp + ".oni").c_str());
+		m_recorder.attach(*m_streams[C_COLOR_STREAM]);
+		m_recorder.attach(*m_streams[C_DEPTH_STREAM]);
+	}
+
+
+	int iSensorCount = 0;
+	HRESULT hr = S_OK;
+	hr = NuiGetSensorCount(&iSensorCount);
+
+	// Look at each Kinect sensor
+	for (int i = 0; i < iSensorCount; ++i)
+	{
+		// Create the sensor so we can check status, if we can't create it, move on to the next
+		hr = NuiCreateSensorByIndex(i, &pNuiSensor);
+		if (FAILED(hr))
+		{
+			continue;
+		}
+
+		// Get the status of the sensor, and if connected, then we can initialize it
+		hr = pNuiSensor->NuiStatus();
+		if (S_OK == hr)
+		{
+			break;
+		}
+	}
 	return true;
 }
 
@@ -122,6 +166,7 @@ void OpenCVKinect::updateData()
 			m_depthImage.data = (uchar*)m_depthFrame.getData();
 
 			std::cout << "Depth Timestamp: " << this->m_depthTimeStamp << std::endl;
+
 			depthCaptured = true;
 			depth_mutex.unlock();
 
@@ -138,8 +183,6 @@ void OpenCVKinect::updateData()
 			m_colorImage.create(m_colorFrame.getHeight(), m_colorFrame.getWidth(), CV_8UC3);
 			m_colorImage.data = (uchar*)m_colorFrame.getData();
 
-			cv::cvtColor(m_colorImage, m_colorImage, CV_BGR2RGB);
-
 			std::cout << "Color Timestamp: " << m_colorTimeStamp << std::endl;
 			colorCaptured = true;
 			color_mutex.unlock();
@@ -148,6 +191,12 @@ void OpenCVKinect::updateData()
 		default:
 			break;
 		}
+	}
+
+	if (recording) {
+		LONG angle = 0;
+		pNuiSensor->NuiCameraElevationGetAngle(&angle);
+		file << angle << std::endl;
 	}
 }
 
@@ -187,8 +236,9 @@ void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawM
 	if (depthRaw || depth8bit)
 		depth_mutex.lock();
 
-	if (color)
-		colorMat = m_colorImage.clone();
+	if (color){
+		cv::cvtColor(m_colorImage, colorMat, CV_BGR2RGB);
+	}
 	if (depthRaw)
 		depthRawMat = m_depthImage.clone();
 	if (depth8bit) {
@@ -208,9 +258,21 @@ void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawM
 		depth_mutex.unlock();
 }
 
+LONG OpenCVKinect::getAngle()
+{
+	LONG angle = 0;
+	if (recording)
+		pNuiSensor->NuiCameraElevationGetAngle(&angle);
+	else
+
+	return angle;
+}
 
 OpenCVKinect::~OpenCVKinect(void)
 {
+	file.close();
+	this->m_recorder.stop();
+	this->m_recorder.destroy();
 	this->m_depthFrame.release();
 	this->m_colorFrame.release();
 	this->m_depth.stop();
