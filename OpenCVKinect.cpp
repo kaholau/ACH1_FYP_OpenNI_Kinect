@@ -30,7 +30,7 @@ bool OpenCVKinect::init()
 		std::ifstream file((timestamp + ".txt").c_str());
 		while (std::getline(file, line)) {
 			int angle = stoi(line);
-			angles.push_back(angle);
+			angles.push(angle);
 		}
 	}
 
@@ -263,7 +263,10 @@ LONG OpenCVKinect::getAngle()
 	LONG angle = 0;
 	if (recording)
 		pNuiSensor->NuiCameraElevationGetAngle(&angle);
-	else
+	else {
+		angle = angles.front();
+		angles.pop();
+	}
 
 	return angle;
 }

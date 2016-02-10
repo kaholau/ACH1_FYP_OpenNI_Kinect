@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <queue>
 
 #define C_DEPTH_STREAM 0
 #define C_COLOR_STREAM 1
@@ -32,7 +33,7 @@ class OpenCVKinect
 	bool m_alignedStreamStatus, m_colorStreamStatus, m_depthStreamStatus;
 
 	std::string timestamp = "224989671362";
-	std::vector<int> angles;
+	std::queue<int> angles;
 public:
 	static enum MatFlag
 	{
@@ -51,7 +52,7 @@ public:
 	INuiSensor *pNuiSensor;
 	openni::Recorder m_recorder;
 	std::ofstream file;
-	bool recording = true;
+	bool recording = false;
 
 	bool init();
 	

@@ -32,10 +32,10 @@ bool Multithreading::InitializeKinect()
 		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat(), t);
 	} while (t == 0);
 
-	if (m_Kinect.recording)
+	if (m_Kinect.recording) {
 		m_Kinect.m_recorder.start();
-
-	m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(0);
+		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(-8);
+	}
 
 	return true;
 }
@@ -162,7 +162,7 @@ void Multithreading::SignDetectionThread_Process()
 		if (newTimeStamp <= oldTimeStamp)
 			continue;
 		oldTimeStamp = newTimeStamp;
-
+		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
 		m_sign.runRecognizer(colorImg);
 		cv::imshow("SIGN DETECTION", colorImg);
 	}
