@@ -323,30 +323,30 @@ void ObstacleDetection::obstacleDetect(Mat& img, Mat& output)
 void ObstacleDetection::GroundMaskCreate(Mat &img)
 {
 	
-	int edge = planeEdgeForPlaneRemove;
+	int m_edge = planeEdgeForPlaneRemove;
 
 	//(col,row)=(x,y)
-	//Point startPoint = Point(0, img.rows / 2 - 1);
+	Point startPoint = Point(0, img.rows / 2 - 1);
 	//myfile << "img.rows: " << img.rows << std::endl;
-	Point startPoint = Point(0, edge-1);
+	//Point startPoint = Point(0, m_edge-1);
 	Ground.img = Mat(img.size(), CV_8UC1,Scalar(255));
 
 #ifdef FOR_REPORT
 	Mat temp = Mat(img.size(), CV_8UC1, Scalar(255));
 #endif
 
-	for (int center_r = startPoint.y + edge / 2, pt1_r = startPoint.y, pt2_r = startPoint.y + edge;
+	for (int center_r = startPoint.y + m_edge / 2, pt1_r = startPoint.y, pt2_r = startPoint.y + m_edge;
 		center_r < img.rows&&pt1_r < img.rows&&pt2_r < img.rows;
-		center_r += edge, pt1_r += edge, pt2_r += edge)
+		center_r += m_edge, pt1_r += m_edge, pt2_r += m_edge)
 	{
 		float vec1_y = (float)(pt1_r - center_r);
 		float vec2_y = (float)(pt2_r - center_r);
 
 		//myfile << "{" << center_r << "}" << std::endl;
 
-		for (int center_c = startPoint.x + edge / 2, pt1_c = startPoint.x + edge, pt2_c = startPoint.x + edge;
+		for (int center_c = startPoint.x + m_edge / 2, pt1_c = startPoint.x + m_edge, pt2_c = startPoint.x + m_edge;
 			center_c < img.cols&&pt1_c < img.cols&&pt2_c < img.cols;
-			center_c += edge, pt1_c += edge, pt2_c += edge)
+			center_c += m_edge, pt1_c += m_edge, pt2_c += m_edge)
 		{
 			Vec3f vec1 = { (float)(pt1_c - center_c), vec1_y, (float)(img.at<uchar>(pt1_r, pt1_c) - img.at<uchar>(center_r, center_c)) };
 			Vec3f vec2 = { (float)(pt2_c - center_c), vec2_y, (float)(img.at<uchar>(pt2_r, pt2_c) - img.at<uchar>(center_r, center_c)) };
@@ -361,21 +361,21 @@ void ObstacleDetection::GroundMaskCreate(Mat &img)
 		//myfile<< std::endl;
 	}
 	GroundDefault(Ground.img);
-	//imshow("g", Ground.img);
-	StairDetection stairs;
-	std::vector<cv::Point> stairConvexHull;
-	std::vector<std::vector<cv::Point> > hull(1);
-	stairs.Run(currentColor, currentDepth, Ground.img, stairConvexHull);
-	if (!stairConvexHull.empty()) {
-		cv::Mat temp = currentColor.clone();
-		cv::Scalar color = Scalar(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
-		hull.push_back(stairConvexHull);
-		for (int i = 0; i<hull.size(); ++i) {
-			drawContours(temp, hull, i, color, 3, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
-		}
-		//imshow(std::to_string(cv::getTickCount()), temp);
-		//imshow("s", temp);
-	}
+
+	//StairDetection stairs;
+	//std::vector<cv::Point> stairConvexHull;
+	//std::vector<std::vector<cv::Point> > hull(1);
+	//stairs.Run(currentColor, currentDepth, Ground.img, stairConvexHull);
+	//if (!stairConvexHull.empty()) {
+	//	cv::Mat temp = currentColor.clone();
+	//	cv::Scalar color = Scalar(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
+	//	hull.push_back(stairConvexHull);
+	//	for (int i = 0; i<hull.size(); ++i) {
+	//		drawContours(temp, hull, i, color, 3, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
+	//	}
+	//	//imshow(std::to_string(cv::getTickCount()), temp);
+	//	//imshow("s", temp);
+	//}
 
 #ifdef FOR_REPORT
 	Ground.img.copyTo(temp);
@@ -386,6 +386,7 @@ void ObstacleDetection::GroundMaskCreate(Mat &img)
 #endif
 
 	bitwise_and(img, Ground.img, img);
+
 #ifdef FOR_REPORT
 	imshow("ground", temp);
 	imshow("brief ground in srcDepth", img);
@@ -412,8 +413,8 @@ void ObstacleDetection::GroundMaskFill(Mat& img, Point& location, Vec3f& vector)
 {
 	//from experiment, ground's vector has -ve y coordinate
 
-	/*if (vector.val[0]>0 || vector.val[1]>0 || vector.val[2]>0)
-		GroundArrowDraw(img, vector, location);*/
+	//if (vector.val[0]>0 || vector.val[1]>0 || vector.val[2]>0)
+	//	GroundArrowDraw(img, vector, location);
 
 
 	if ((vector.val[0]>0 || vector.val[2]>0) && vector.val[1]>0)
@@ -438,7 +439,7 @@ void ObstacleDetection::GroundMaskFill(Mat& img, Point& location, Vec3f& vector)
 		{
 			int h =(int) GetHeight(location.y, currentRawDepth.at<ushort>(location));
 			//myfile << "[" << h << "]";
-			//if (h < Ground_height && h != -1)
+			if (h < Ground_height && h != -1)
 			{
 				
 				GroundMaskUnitFill(img, location);
@@ -467,15 +468,14 @@ void ObstacleDetection::GroundArrowDraw(Mat& img, Vec3f& vector, Point& start)
 	vector *= 15;
 	//cal point of arrow	//(col,row)=point(x,y)
 	Point end = Point((int)(start.x + vector.val[0]), (int)(start.y + vector.val[1]));
-	arrowedLine(img, start, end, Scalar(0), 1, 8, 0, 0.5);
+	arrowedLine(img, start, end, Scalar(255), 1, 8, 0, 0.5);
 
 }
 
 void ObstacleDetection::GroundMaskUnitFill(Mat& fill, Point& pt)
 {
-#define edge planeEdgeForPlaneRemove
 	// Draw the ground in white
-	Point pt1(pt.x - edge / 2, pt.y - edge / 2), pt2(pt.x + edge / 2, pt.y + edge / 2);
+	Point pt1(pt.x - planeEdgeForPlaneRemove / 2, pt.y - planeEdgeForPlaneRemove / 2), pt2(pt.x + planeEdgeForPlaneRemove / 2, pt.y + planeEdgeForPlaneRemove / 2);
 	rectangle(fill, pt1, pt2, Scalar(0), CV_FILLED);
 }
 
@@ -535,6 +535,11 @@ void ObstacleDetection::createObstacle(vector<Point> contour, ObjectType type, d
 	obj.type = type;
 	obj.area = area;
 	ObstacleList.push_back(obj);
+}
+
+int ObstacleDetection::getCameraAngle()
+{
+	return CameraAngle;
 }
 
 
