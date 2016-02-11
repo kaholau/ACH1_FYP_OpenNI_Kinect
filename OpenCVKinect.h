@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <queue>
 
 #define C_DEPTH_STREAM 0
 #define C_COLOR_STREAM 1
@@ -31,9 +32,10 @@ class OpenCVKinect
 	cv::Mat m_depthImage, m_colorImage;
 	bool m_alignedStreamStatus, m_colorStreamStatus, m_depthStreamStatus;
 
-	std::string timestamp = "234783726917";
-	std::string path = "D:/Image processing OpenCV+kinect/Kinect Sample/New folder/";
-	std::vector<int> angles;
+	std::string timestamp = "232062183209";
+	std::string path = "";
+	//std::string path = "D:/Image processing OpenCV+kinect/Kinect Sample/New folder/";
+	std::queue<int> angles;
 public:
 	static enum MatFlag
 	{

@@ -31,7 +31,7 @@ bool OpenCVKinect::init()
 		std::ifstream file((path+ timestamp + ".txt").c_str());
 		while (std::getline(file, line)) {
 			int angle = stoi(line);
-			angles.push_back(angle);
+			angles.push(angle);
 		}
 	}
 
@@ -166,7 +166,7 @@ void OpenCVKinect::updateData()
 			m_depthImage.create(m_depthFrame.getHeight(), m_depthFrame.getWidth(), CV_16UC1);
 			m_depthImage.data = (uchar*)m_depthFrame.getData();
 
-			//std::cout << "Depth Timestamp: " << this->m_depthTimeStamp << std::endl;
+			std::cout << "Depth Timestamp: " << this->m_depthTimeStamp << std::endl;
 
 			depthCaptured = true;
 			depth_mutex.unlock();
@@ -184,7 +184,7 @@ void OpenCVKinect::updateData()
 			m_colorImage.create(m_colorFrame.getHeight(), m_colorFrame.getWidth(), CV_8UC3);
 			m_colorImage.data = (uchar*)m_colorFrame.getData();
 
-			//std::cout << "Color Timestamp: " << m_colorTimeStamp << std::endl;
+			std::cout << "Color Timestamp: " << m_colorTimeStamp << std::endl;
 			colorCaptured = true;
 			color_mutex.unlock();
 
@@ -264,7 +264,10 @@ LONG OpenCVKinect::getAngle()
 	LONG angle = 0;
 	if (recording||!replay)
 		pNuiSensor->NuiCameraElevationGetAngle(&angle);
-	
+	else {
+		angle = angles.front();
+		angles.pop();
+	}
 
 	return angle;
 }
