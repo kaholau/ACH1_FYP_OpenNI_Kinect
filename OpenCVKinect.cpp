@@ -17,25 +17,24 @@ bool OpenCVKinect::init()
 
 	m_status = openni::OpenNI::initialize();
 
-	std::cout << "After initialization: " << std::endl; 
+	std::cout << "After initialization: " << std::endl;
 	std::cout << openni::OpenNI::getExtendedError() << std::endl;
-	
+
 	// open the device
-	//if (recording)
+	if (recording)
 		m_status = m_device.open(deviceURI);
-	 if (replay) 
-	 {
+	else {
 		m_status = m_device.open((path + timestamp + ".oni").c_str());
 
 		std::string line;
-		std::ifstream file((path+ timestamp + ".txt").c_str());
+		std::ifstream file((path + timestamp + ".txt").c_str());
 		while (std::getline(file, line)) {
 			int angle = stoi(line);
-			angles.push(angle);
+			angles.push_back(angle);
 		}
 	}
 
-	if(m_status != openni::STATUS_OK)
+	if (m_status != openni::STATUS_OK)
 	{
 		std::cout << "OpenCVKinect: Device open failseed: " << std::endl;
 		std::cout << openni::OpenNI::getExtendedError() << std::endl;
@@ -48,10 +47,10 @@ bool OpenCVKinect::init()
 	const openni::SensorInfo* sinfo = m_device.getSensorInfo(openni::SENSOR_DEPTH);
 	const openni::Array<openni::VideoMode> &videoModes = sinfo->getSupportedVideoModes();
 	m_depth.setVideoMode(videoModes[1]);
-	if(m_status == openni::STATUS_OK)
+	if (m_status == openni::STATUS_OK)
 	{
 		m_status = m_depth.start();
-		if(m_status != openni::STATUS_OK)
+		if (m_status != openni::STATUS_OK)
 		{
 			std::cout << "OpenCVKinect: Couldn't start depth stream: " << std::endl;
 			std::cout << openni::OpenNI::getExtendedError() << std::endl;
@@ -70,11 +69,11 @@ bool OpenCVKinect::init()
 	m_status = m_color.create(m_device, openni::SENSOR_COLOR);
 	const openni::SensorInfo* sinfoColor = m_device.getSensorInfo(openni::SENSOR_COLOR);
 	const openni::Array<openni::VideoMode> &videoModesColor = sinfoColor->getSupportedVideoModes();
-	m_color.setVideoMode(videoModesColor[1]);
-	if(m_status == openni::STATUS_OK)
+	m_color.setVideoMode(videoModesColor[0]);
+	if (m_status == openni::STATUS_OK)
 	{
 		m_status = m_color.start();
-		if(m_status != openni::STATUS_OK)
+		if (m_status != openni::STATUS_OK)
 		{
 
 			std::cout << "OpenCVKinect: Couldn't start color stream: " << std::endl;
@@ -94,7 +93,7 @@ bool OpenCVKinect::init()
 	m_device.setImageRegistrationMode(openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR);
 
 
-	if(!m_depth.isValid() && !m_color.isValid())
+	if (!m_depth.isValid() && !m_color.isValid())
 	{
 		std::cout << "OpenCVKinect: No valid streams. Exiting" << std::endl;
 		openni::OpenNI::shutdown();
@@ -107,8 +106,8 @@ bool OpenCVKinect::init()
 
 	if (recording) {
 		timestamp = std::to_string(cv::getTickCount());
-		file.open((path+timestamp + ".txt").c_str());
-		m_recorder.create((path+timestamp + ".oni").c_str());
+		file.open((path + timestamp + ".txt").c_str());
+		m_recorder.create((path + timestamp + ".oni").c_str());
 		m_recorder.attach(*m_streams[C_COLOR_STREAM]);
 		m_recorder.attach(*m_streams[C_DEPTH_STREAM]);
 	}
@@ -143,16 +142,16 @@ void OpenCVKinect::updateData()
 	bool depthCaptured = false, colorCaptured = false;
 	uint64_t newtime;
 
-	while( !depthCaptured || !colorCaptured || m_depthTimeStamp != m_colorTimeStamp)
+	while (!depthCaptured || !colorCaptured || m_depthTimeStamp != m_colorTimeStamp)
 	{
 		m_status = openni::OpenNI::waitForAnyStream(m_streams, C_NUM_STREAMS, &m_currentStream, C_STREAM_TIMEOUT);
-		if(m_status != openni::STATUS_OK)
+		if (m_status != openni::STATUS_OK)
 		{
 			std::cout << "OpenCVKinect: Unable to wait for streams. Exiting" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
-		switch(m_currentStream)
+		switch (m_currentStream)
 		{
 		case C_DEPTH_STREAM:
 			m_depth.readFrame(&m_depthFrame);
@@ -183,6 +182,8 @@ void OpenCVKinect::updateData()
 			this->m_colorTimeStamp = newtime;
 			m_colorImage.create(m_colorFrame.getHeight(), m_colorFrame.getWidth(), CV_8UC3);
 			m_colorImage.data = (uchar*)m_colorFrame.getData();
+
+			cv::cvtColor(m_colorImage, m_colorImage, CV_BGR2RGB);
 
 			std::cout << "Color Timestamp: " << m_colorTimeStamp << std::endl;
 			colorCaptured = true;
@@ -238,7 +239,9 @@ void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawM
 		depth_mutex.lock();
 
 	if (color){
-		cv::cvtColor(m_colorImage, colorMat, CV_BGR2RGB);
+		//cv::cvtColor(m_colorImage, colorMat, CV_BGR2RGB);
+		//m_colorImage.copyTo(colorMat);
+		colorMat = m_colorImage.clone();
 	}
 	if (depthRaw)
 		depthRawMat = m_depthImage.clone();
@@ -262,14 +265,11 @@ void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawM
 LONG OpenCVKinect::getAngle()
 {
 	LONG angle = 0;
-	if (recording||!replay)
+	if (recording)
 		pNuiSensor->NuiCameraElevationGetAngle(&angle);
-	else {
-		angle = angles.front();
-		angles.pop();
-	}
+	else
 
-	return angle;
+		return angle;
 }
 
 OpenCVKinect::~OpenCVKinect(void)
