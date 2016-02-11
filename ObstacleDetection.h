@@ -8,6 +8,7 @@
 #include <Windows.h>
 #include <ctime>
 #include <stdio.h>
+#include <stdlib.h>
 #include <algorithm>
 #include <tchar.h>
 #include <iostream>
@@ -24,23 +25,31 @@
 using namespace cv;
 //#define FOR_REPORT
 //#define TEST_SEGMENTATION
+//#define DISPLAY_HIST
+//#define record_hist
 //#define DISPLAY_HEIGHT	
+//#define DISPLAY_DISTANCE
 //#define DISPLAY_HULL
+//#define record_noGround
+//#define DISPLAY_ARROW
+//#define COLLECT_TAN_LIST
 
+#define SAMPLE_IMG_PATH "C:/Users/HOHO/Pictures/sample/result/"
 #define MYFILE_PATH  "C:/Users/HOHO/Pictures/sample/output.txt"
 #define SAMPLE_PATH "C:/Users/HOHO/Pictures/sample/depth9.bmp"
 //#define SAMPLE_PATH "C:/Users/HOHO/Pictures/sample/Pictures/atrium/depth7.bmp"
 
 #define  Valid_Distance 1		//grayscale pixel value
-#define  Ground_height 350		//4cm
-#define  TooLessGroundPercentage 0.1 
+#define TooFarDistance 60
+#define  Ground_height 175		//4cm
+#define  TooLessGroundPercentage 0.03 
 //calHistogram
 #define HistSize 256 // bin size = 2^pixelDepth / histSize
 
 //remove plane
 //#define planeEdgeForPlaneRemove 4 //e.g 20X20 square for 320x240
-#define planeEdgeForPlaneRemove 24 //e.g 20X20 square for 640x480
-#define planeAreaForPlaneRemove (planeEdgeForPlaneRemove * planeEdgeForPlaneRemove) *4
+#define planeEdgeForPlaneRemove 8 //e.g 20X20 square for 640x480
+#define planeAreaForPlaneRemove (planeEdgeForPlaneRemove * planeEdgeForPlaneRemove)
 #define maxThreashold_horizontalPlane 0.33
 #define minThreashold_horizontalPlane -0.33
 #define maxThreashold_VerticalPlane   1.6
@@ -75,6 +84,7 @@ class ObstacleDetection
 	Mat currentDepth;
 	Mat currentColor;
 	Object Ground;
+	Mat GroundBoolMat;
 	vector<Object> GroundList;
 	vector<Object> ObstacleList;
 	int mUserHeight;
@@ -90,12 +100,21 @@ private:
 	void createObstacle(vector<Point> contour, ObjectType type, double area);
 	
 	//Plane filter
-	void GroundMaskFill(Mat& img, Point& location, Vec3f& vector);
+	int Rand();
+	Point RandPoint(Point start);
+	Vec3f RandVector(Vec3f &vec1, Vec3f &vec2);
+	void GroundMaskFill(Mat& img, Mat& boolMat, Point& location, Vec3f& vector);
+	void GroundMaskBool();
+	void GroundBoolMatUnitFill(Mat& fill, Point& pt);
 	void GroundArrowDraw(Mat& img, Vec3f& vector, Point& start);
+	void GroundArrowDrawOnWhitePaper(Mat& img, Vec3f& vector, Point& start);
 	void GroundMaskUnitFill(Mat& fill, Point& pt);
 	void createPlaneObject(Mat& src, Mat& img, ObjectType type);
-	void GroundMaskCreate(Mat &img);
+	void GroundMaskCreateRegular(Mat &img);
+	void GroundMaskCreateRandom(Mat &img);
 	void GroundDefault(Mat& img);
+	void GroundEroAndDilate();
+	void GroundRefine(Mat& boolMat, Mat& img);
 
 	//Histogram Segmentation
 	Mat HistogramCal(Mat& img);
@@ -110,6 +129,12 @@ private:
 	void Enhance1DMax(Mat *pImg);
 
 public:
+
+	int erosion_elem = 0;
+	int erosion_size = 0;
+	int dilation_elem = 0;
+	int dilation_size = 0;
+
 	int CameraAngle;
 	ObstacleDetection(int userHeight);
 	~ObstacleDetection();

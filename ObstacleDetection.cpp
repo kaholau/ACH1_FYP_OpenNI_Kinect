@@ -40,21 +40,13 @@ ObstacleDetection::~ObstacleDetection()
 
 void ObstacleDetection::run(Mat* pImg)
 {
-	//double t = (double)getTickCount();
-	GaussianBlur(*pImg, *pImg, Size(1, 5), 0, 0);
 	currentDepth =pImg->clone();
-	//ObstacleList.clear();
-	
-	
+	ObstacleList.clear();	
 	//std::cout << " Total used : " << t << " seconds" << std::endl;
-	GroundMaskCreate(*pImg);
-
-	
+	GroundMaskCreateRegular(*pImg);	
 	Segmentation(*pImg);
-	/*t = ((double)getTickCount() - t) / getTickFrequency();
-	OutputDebugString(L"time: ");
-	OutputDebugStringA(std::to_string(t).c_str());
-	OutputDebugString(L"\n");*/
+	//t = ((double)getTickCount() - t) / getTickFrequency();
+
 }
 
 
@@ -111,24 +103,6 @@ Mat ObstacleDetection::HistogramCal(Mat& img)
 	calcHist(&img, 1, 0, Mat(), hist, 1, &numOfbin, &histRange, uniform, accumulate);
 	GaussianBlur(hist, hist, Size(1, 17), 0, 0);
 
-	/*int histSize = hist.rows;
-	int hist_w = 512; int hist_h = 400;
-	int bin_w = 512 / histSize;
-	Mat histImg(hist_h, hist_w, CV_8UC3, Scalar(255, 255, 255));
-	normalize(hist, hist, 0, histImg.rows, NORM_MINMAX, -1, Mat());
-
-	for (int i = 1; i < histSize; i++)
-	{
-		line(histImg, Point(bin_w*(i - 1), hist_h - cvRound(hist.at<float>(i - 1))),
-			Point(bin_w*(i), hist_h - cvRound(hist.at<float>(i))),
-			Scalar(0, 0, 0), 2, 8, 0);
-		if (i % 10 == 0)
-			putText(histImg, std::to_string(i), Point(bin_w*i - 5, hist_h - 10), FONT_HERSHEY_PLAIN, 0.5, Scalar(128, 128, 128), 1);
-	}
-
-	imshow("histImg", histImg);
-	waitKey();*/
-
 	return hist;
 }
 
@@ -146,7 +120,7 @@ vector<int> ObstacleDetection::HistogramLocalMinima(Mat& hist)
 	struct buffer* current = &node1;
 	vector<int> localMinIndex;
 	localMinIndex.push_back(Valid_Distance);
-	for (int i = Valid_Distance; i < HistSize - 1; i++)
+	for (int i = Valid_Distance; i < HistSize - TooFarDistance; i++)
 	{
 		current->data = hist.at<float>(i) -hist.at<float>(i - 1);
 		if ((current->next->data < 0) && (current->data >= 0) && (current->prev->data < 0))
@@ -154,9 +128,45 @@ vector<int> ObstacleDetection::HistogramLocalMinima(Mat& hist)
 		current = current->next;
 
 	}
+	localMinIndex.push_back(HistSize - TooFarDistance);
+
+#ifdef DISPLAY_HIST
+	int histSize = hist.rows;
+	int hist_w = 512; int hist_h = 400;
+	int bin_w = 512 / histSize;
+	Mat histImg(hist_h, hist_w, CV_8UC3, Scalar(255, 255, 255));
+	normalize(hist, hist, 0, histImg.rows, NORM_MINMAX, -1, Mat());
+
+	for (int i = 1; i < histSize; i++)
+	{
+		line(histImg, Point(bin_w*(i - 1), hist_h - cvRound(hist.at<float>(i - 1))),
+			Point(bin_w*(i), hist_h - cvRound(hist.at<float>(i))),
+			Scalar(0, 0, 0), 2, 8, 0);
+		if (i % 10 == 0)
+			putText(histImg, std::to_string(i), Point(bin_w*i - 5, hist_h - 10), FONT_HERSHEY_PLAIN, 0.5, Scalar(128, 128, 128), 1);
+
+		
+	}
+
+	for (int j = 0; j < localMinIndex.size(); j++)
+	{
+		
+		line(histImg, Point(bin_w*(localMinIndex[j]), hist_h - cvRound(hist.at<float>(localMinIndex[j]) - 10)),
+			Point(bin_w*(localMinIndex[j]), hist_h - cvRound(hist.at<float>(localMinIndex[j]) + 10)),
+				Scalar(0, 0, 0), 2, 8, 0);
+
+	}
+#ifdef record_hist
+	time_t timer;
+	imwrite("C:/Users/HOHO/Pictures/sample/result/histogram/" + std::to_string(time(&timer)) + ".bmp", histImg);
+#endif
+	imshow("histImg", histImg);
+#endif
 
 	return localMinIndex;
 }
+
+
 
 
 void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
@@ -169,9 +179,8 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 
 	//seperate the segemeted region to different Mat according to the intervals among local minima
 	//the 0th Image is alaways black with no segment and the last one will always be the ignore segment
-	int numOfThreashold = localMin.size()-1;
-	Mat* pThreasholdImageList = new Mat[localMin.size()+1];
-	for (int i = 0; i < numOfThreashold; i++)
+	Mat* pThreasholdImageList = new Mat[numOfSegement-1];
+	for (int i = 0; i < numOfSegement-1; i++)
 		pThreasholdImageList[i] = Mat::zeros(src.size(), CV_8UC1); //Scalar(0) means whole img is black
 
 
@@ -180,10 +189,14 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		for (int c = 0; c < src.cols; c++)
 		{
 			Scalar intensity = src.at<uchar>(r, c);
-			int index = getColorIndex((int)intensity.val[0], localMinArray, numOfSegement);
-			//the 0th Image is alaways black with no segment and the last one will always the ignore segment
-			if (index > 0 && index <= numOfThreashold)
-				pThreasholdImageList[index-1].at<uchar>(r, c) = 255;//255 is white
+			if (intensity.val[0] != 0)
+			{
+				int index = getColorIndex((int)intensity.val[0], localMinArray, numOfSegement);
+				//the 0th Image is alaways black with no segment and the last one will always the ignore segment
+				if (index > 0 && index < numOfSegement)
+					pThreasholdImageList[index - 1].at<uchar>(r, c) = 255;//255 is white
+			}
+			
 		}
 	}
 
@@ -191,32 +204,32 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 
 	Mat obstacleMask (src.size(), CV_8UC1, Scalar(255));
 	//draw conuter to eliminate small segement, the 0th Image is alaways black with no segment and the last one will always the ignore segment
-	for (int i = 1; i < numOfThreashold - 1; i++)
+	for (int i = 1; i < numOfSegement - 1; i++)
 	{
 		obstacleDetect(pThreasholdImageList[i], obstacleMask);
 
 	}
-
+	//myfile << "#ofObstacles: " << ObstacleList.size() << "#ofInterval: " << numOfSegement-1 << std::endl;
 #ifdef FOR_REPORT
 	imshow("obstacleMask_final", obstacleMask);
 	waitKey();
 #endif
 
 	//imshow("obstacleMask", obstacleMask);
-	//waitKey();
-	//bitwise_not(obstacleMask, obstacleMask);
+	GroundEroAndDilate();
 	bitwise_not(Ground.img, Ground.img);
 	vector<vector<Point> > contours;
 	vector<Vec4i> hierarchy;
-	//imshow("o", obstacleMask);
+//	imshow("o", obstacleMask);
 	if (!Ground.img.empty())
 	{
-
+		
+//		imshow("ground", Ground.img);
+//		imshow("GroundBoolMatAfterE&D", GroundBoolMat);
 		Ground.img &= obstacleMask;
-		createPlaneObject(currentDepth, Ground.img, GROUND);
-		findContours(Ground.img, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-		for (size_t i = 0; i < contours.size(); i++)
-			drawContours(Ground.img, contours, i, Scalar(255), -1, 8, hierarchy, 0, Point());
+		//findContours(Ground.img, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+		//for (size_t i = 0; i < contours.size(); i++)
+		//	drawContours(Ground.img, contours, i, Scalar(255), -1, 8, hierarchy, 0, Point());
 		bitwise_not(Ground.img, Ground.img);
 		
 
@@ -236,23 +249,27 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 	}
 	delete[] pThreasholdImageList;
 	
-	//cvtColor(currentDepth, currentDepth, CV_GRAY2RGBA);	
-
-	//find path just using ground img
+	cvtColor(currentDepth, currentDepth, CV_GRAY2RGB);	
+	//imwrite(SAMPLE_IMG_PATH + std::to_string(time(NULL)) + ".jpg", currentDepth);
+//find path just using ground img
 	//imshow("Ground.img",Ground.img);
 	//waitKey();
 
-
+#ifdef DISPLAY_HULL
+	vector<Vec4i> hierarchy_HULL;
+	for (int i = 0; i < ObstacleList.size(); i++)
+		drawContours(currentDepth, ObstacleList[i].contour, 0,
+		Scalar(theRNG().uniform(1, 254), theRNG().uniform(1, 254), theRNG().uniform(1, 254)), -1, 8, hierarchy_HULL, 0, Point());
+	//imshow("currentDepth", currentDepth);
+	//waitKey();
+#endif
 
 #ifdef DISPLAY_HEIGHT
 
-	for (size_t i = 0; i < ObstacleList.size(); i++)
-		int y = (int)GetHeight(ObstacleList[i].pos.y, currentRawDepth.at<ushort>(ObstacleList[i].pos));
-
 	vector<Point> test;
-	for (int y = 10; y < currentDepth.rows; y += 50)
+	for (int y = 10; y < currentDepth.rows; y += 24)
 	{
-		for (int x = 10; x < currentDepth.cols; x += 50)
+		for (int x = 10; x < currentDepth.cols; x += 32)
 		{
 			test.push_back(Point(x, y));
 		}
@@ -260,8 +277,8 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 
 	for (Point p : test)
 	{
-		int y = (int)GetHeight(p.y, currentRawDepth.at<ushort>(p) >> 3);
-		putText(currentDepth, std::to_string(y), p, FONT_HERSHEY_PLAIN, 1.1, Scalar(0, 0, 255), 1);
+		int y = (int)GetHeight(p.y, currentRawDepth.at<ushort>(p));
+		putText(currentDepth, std::to_string(y), p, FONT_HERSHEY_PLAIN, 0.7, Scalar(0, 0, 255), 1);
 		circle(currentDepth, p, 1, Scalar(0, 0, 255), 3);
 	//	putText(currentColor, std::to_string(y), p, FONT_HERSHEY_PLAIN, 1.1, Scalar(0, 0, 255), 1);
 	//	circle(currentColor, p, 1, Scalar(0, 0, 255), 3);
@@ -269,15 +286,23 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 	}
 #endif
 
-#ifdef DISPLAY_HULL
-	vector<Vec4i> hierarchy;
-	for (int i = 0; i < ObstacleList.size();i++)
-		drawContours(currentDepth, ObstacleList[i].contour, 0, 
-			Scalar(theRNG().uniform(1, 254), theRNG().uniform(1, 254), theRNG().uniform(1, 254)), -1, 8, hierarchy, 0, Point());
-	//imshow("currentDepth", currentDepth);
-	//waitKey();
-#endif
-	
+
+#ifdef DISPLAY_DISTANCE
+	vector<Point> test;
+	for (int y = 10; y < currentDepth.rows; y += 24)
+	{
+		for (int x = 10; x < currentDepth.cols; x += 32)
+		{
+			test.push_back(Point(x, y));
+		}
+	}
+
+	for (Point p : test)
+	{
+		putText(currentDepth, std::to_string(currentRawDepth.at<ushort>(p)), p, FONT_HERSHEY_PLAIN, 0.7, Scalar(0, 0, 255), 1);
+		circle(currentDepth, p, 1, Scalar(0, 0, 255), 3);
+	}
+#endif	
 }
 
 void ObstacleDetection::obstacleDetect(Mat& img, Mat& output)
@@ -297,30 +322,174 @@ void ObstacleDetection::obstacleDetect(Mat& img, Mat& output)
 		
 	//cal the hull after reduce the contour's number to save time for hull
 	vector<vector<Point> >hull(contours.size());
-	//vector<Moments> mu(contours.size());
-	//vector<Point2f> mc(contours.size());
+	vector<Moments> mu(contours.size());
+	vector<Point2f> mc(contours.size());
 	for (size_t i = 0; i < contours.size(); i++)
 	{
 		convexHull(Mat(contours[i]), hull[i], false);
 		//Scalar color = Scalar(theRNG().uniform(1, 254), theRNG().uniform(1, 254), theRNG().uniform(1, 254));
 		drawContours(output, hull, i, Scalar(0), -1, 8, hierarchy, 0, Point());
-		//mu[i] = moments(contours[i], false);
+		mu[i] = moments(contours[i], false);
 
 		//m00 is the zero moment which is the area of the contour
-		//if (mu[i].m00 == 0) continue;
+		if (mu[i].m00 == 0) continue;
 		if (contourArea(contours[i]) / arcLength(contours[i], true) < 3) continue;
 
 
-		//mc[i] = Point2f((float)(mu[i].m10 / mu[i].m00), (float)(mu[i].m01 / mu[i].m00));
-		//createObstacle(hull[i], OBSTACLE, Point((int)mc[i].x, (int)mc[i].y));	
+		mc[i] = Point2f((float)(mu[i].m10 / mu[i].m00), (float)(mu[i].m01 / mu[i].m00));
+		createObstacle(hull[i], OBSTACLE, Point((int)mc[i].x, (int)mc[i].y));	
 
 	}
 		
 }
 
+template<typename T>
+void insertAndSort(vector<T> &vec, T newValue)
+{
+	if (vec.size() == 0)
+	{
+		vec.push_back(newValue);
+		return;
+	}
+	
+	if (vec[0] == newValue)
+		return;
+
+	if (vec[0] > newValue)
+	{
+		vec.insert(vec.begin(), 1, newValue);
+		return;
+	}
+
+	for (int i = 1; i < vec.size(); i++)
+	{
+		if (vec[i] == newValue)
+			return;
+		if (vec[i - 1]<newValue&&vec[i]>newValue)
+		{
+			vec.insert(vec.begin() + i, 1, newValue);
+			return;
+		}
+			
+	}
+
+	vec.push_back(newValue);
 
 
-void ObstacleDetection::GroundMaskCreate(Mat &img)
+}
+
+int ObstacleDetection::Rand()
+{
+	srand(time(NULL));
+	return std::rand() % planeAreaForPlaneRemove + 1;
+}
+
+Point ObstacleDetection::RandPoint(Point start)
+{
+	
+	return start;
+}
+
+
+Vec3f ObstacleDetection::RandVector(Vec3f &vec1, Vec3f &vec2)
+{
+	Point P1, P2, P3, P4;
+
+
+	return vec1;
+}
+void ObstacleDetection::GroundMaskCreateRandom(Mat &img)
+{
+	int m_edge = planeEdgeForPlaneRemove;
+
+	//(col,row)=(x,y)
+	Point startPoint = Point(0, img.rows / 2 - 1);
+	//myfile << "img.rows: " << img.rows << std::endl;
+	//Point startPoint = Point(0, m_edge-1);
+	Ground.img = Mat(img.size(), CV_8UC1, Scalar(255));
+	Mat whitePaper = Mat(img.rows * 4, img.cols * 4, CV_8UC1, Scalar(255));
+	putText(whitePaper, std::to_string(CameraAngle), Point(50, 50), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
+	vector<float> tanList;
+#ifdef FOR_REPORT
+	Mat temp = Mat(img.size(), CV_8UC1, Scalar(255));
+#endif
+
+	for (int center_r = startPoint.y + m_edge / 2, pt1_r = startPoint.y, pt2_r = startPoint.y + m_edge, interval_r = 0;
+		center_r < img.rows&&pt1_r < img.rows&&pt2_r < img.rows;
+		center_r += m_edge, pt1_r += m_edge, pt2_r += m_edge, interval_r += m_edge)
+	{
+		float vec1_y = (float)(pt1_r - center_r);
+		float vec2_y = (float)(pt2_r - center_r); 
+
+		//myfile << "{" << center_r << "}" << std::endl;
+
+		for (int center_c = startPoint.x + m_edge / 2, pt1_c = startPoint.x + m_edge, pt2_c = startPoint.x + m_edge, interval_c = 0;
+			center_c < img.cols&&pt1_c < img.cols&&pt2_c < img.cols;
+			center_c += m_edge, pt1_c += m_edge, pt2_c += m_edge, interval_c += m_edge)
+		{
+			Vec3f vec1 = { (float)(pt1_c - center_c), vec1_y, (float)(img.at<uchar>(pt1_r, pt1_c) - img.at<uchar>(center_r, center_c)) };
+			Vec3f vec2 = { (float)(pt2_c - center_c), vec2_y, (float)(img.at<uchar>(pt2_r, pt2_c) - img.at<uchar>(center_r, center_c)) };
+			Vec3f	crossProduct = vec1.cross(vec2);
+			//myfile <<"["<< crossProduct.val[1]<<"]";
+			//myfile << crossProduct;
+			//myfile << "[" << atan(crossProduct.val[0] / crossProduct.val[1]) << "]";
+
+			//GroundMaskFill(Ground.img, Point(center_c, center_r), crossProduct);
+			GroundArrowDrawOnWhitePaper(whitePaper, crossProduct, Point(center_c + interval_c * 2, center_r + interval_r * 2));
+
+			if (crossProduct[0] > 0 || crossProduct[1]>0)
+			{
+				float tan = atan(crossProduct.val[0] / crossProduct.val[1]);
+				insertAndSort<float>(tanList, tan);
+			}
+		}
+		//myfile<< std::endl;
+	}
+	//GroundDefault(Ground.img);
+	for (int i = 0; i < tanList.size(); i++)
+	{
+		myfile << tanList[i] << " ";
+	}
+	myfile << std::endl;
+	//StairDetection stairs;
+	//std::vector<cv::Point> stairConvexHull;
+	//std::vector<std::vector<cv::Point> > hull(1);
+	//stairs.Run(currentColor, currentDepth, Ground.img, stairConvexHull);
+	//if (!stairConvexHull.empty()) {
+	//	cv::Mat temp = currentColor.clone();
+	//	cv::Scalar color = Scalar(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
+	//	hull.push_back(stairConvexHull);
+	//	for (int i = 0; i<hull.size(); ++i) {
+	//		drawContours(temp, hull, i, color, 3, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
+	//	}
+	//	//imshow(std::to_string(cv::getTickCount()), temp);
+	//	//imshow("s", temp);
+	//}
+
+#ifdef FOR_REPORT
+	Ground.img.copyTo(temp);
+#endif
+#ifdef FOR_REPORT
+	imshow("original_depth", img);
+	waitKey();
+#endif
+
+	//bitwise_and(img, Ground.img, img);
+
+#ifdef FOR_REPORT
+	imshow("ground", temp);
+	imshow("brief ground in srcDepth", img);
+	waitKey();
+#endif
+
+
+	//imshow("for ground", Ground.img);
+	imshow("whitePaper", whitePaper);
+	//imshow("depth", img);
+	waitKey(1);
+}
+
+void ObstacleDetection::GroundMaskCreateRegular(Mat &img)
 {
 	
 	int m_edge = planeEdgeForPlaneRemove;
@@ -330,38 +499,60 @@ void ObstacleDetection::GroundMaskCreate(Mat &img)
 	//myfile << "img.rows: " << img.rows << std::endl;
 	//Point startPoint = Point(0, m_edge-1);
 	Ground.img = Mat(img.size(), CV_8UC1,Scalar(255));
-
+	GroundBoolMat = Mat(img.rows / m_edge, img.cols / m_edge, CV_8UC1, Scalar(0));
+	Mat whitePaper = Mat(img.rows * 4, img.cols * 4, CV_8UC1, Scalar(255));
+	putText(whitePaper, std::to_string(CameraAngle), Point(50, 50), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
+	vector<float> tanList;
 #ifdef FOR_REPORT
 	Mat temp = Mat(img.size(), CV_8UC1, Scalar(255));
 #endif
 
-	for (int center_r = startPoint.y + m_edge / 2, pt1_r = startPoint.y, pt2_r = startPoint.y + m_edge;
+	for (int center_r = startPoint.y + m_edge / 2, pt1_r = startPoint.y, pt2_r = startPoint.y + m_edge, interval_r=0;
 		center_r < img.rows&&pt1_r < img.rows&&pt2_r < img.rows;
-		center_r += m_edge, pt1_r += m_edge, pt2_r += m_edge)
+		center_r += m_edge, pt1_r += m_edge, pt2_r += m_edge, interval_r += m_edge)
 	{
 		float vec1_y = (float)(pt1_r - center_r);
 		float vec2_y = (float)(pt2_r - center_r);
 
 		//myfile << "{" << center_r << "}" << std::endl;
 
-		for (int center_c = startPoint.x + m_edge / 2, pt1_c = startPoint.x + m_edge, pt2_c = startPoint.x + m_edge;
+		for (int center_c = startPoint.x + m_edge / 2, pt1_c = startPoint.x + m_edge, pt2_c = startPoint.x + m_edge,interval_c=0;
 			center_c < img.cols&&pt1_c < img.cols&&pt2_c < img.cols;
-			center_c += m_edge, pt1_c += m_edge, pt2_c += m_edge)
+			center_c += m_edge, pt1_c += m_edge, pt2_c += m_edge, interval_c += m_edge)
 		{
-			Vec3f vec1 = { (float)(pt1_c - center_c), vec1_y, (float)(img.at<uchar>(pt1_r, pt1_c) - img.at<uchar>(center_r, center_c)) };
-			Vec3f vec2 = { (float)(pt2_c - center_c), vec2_y, (float)(img.at<uchar>(pt2_r, pt2_c) - img.at<uchar>(center_r, center_c)) };
+			Vec3f vec1 = { (float)(pt1_c - center_c), vec1_y, (float)(currentRawDepth.at<ushort>(pt1_r, pt1_c) - currentRawDepth.at<ushort>(center_r, center_c)) };
+			Vec3f vec2 = { (float)(pt2_c - center_c), vec2_y, (float)(currentRawDepth.at<ushort>(pt2_r, pt2_c) - currentRawDepth.at<ushort>(center_r, center_c)) };
+			//Vec3f vec1 = { (float)(pt1_c - center_c), vec1_y, (float)(img.at<uchar>(pt1_r, pt1_c) - img.at<uchar>(center_r, center_c)) };
+			//Vec3f vec2 = { (float)(pt2_c - center_c), vec2_y, (float)(img.at<uchar>(pt2_r, pt2_c) - img.at<uchar>(center_r, center_c)) };
 			Vec3f	crossProduct = vec1.cross(vec2);
 			//myfile <<"["<< crossProduct.val[1]<<"]";
 			//myfile << crossProduct;
 			//myfile << "[" << atan(crossProduct.val[0] / crossProduct.val[1]) << "]";
 			
-			GroundMaskFill(Ground.img, Point(center_c, center_r), crossProduct);
-
+			GroundMaskFill(Ground.img, GroundBoolMat, Point(center_c, center_r), crossProduct);
+#ifdef DISPLAY_ARROW
+			GroundArrowDrawOnWhitePaper(whitePaper, crossProduct, Point(center_c + interval_c * 2, center_r + interval_r*2));
+#endif
+#ifdef COLLECT_TAN_LIST
+			if (crossProduct[0] > 0 || crossProduct[1]>0 )
+			{
+				float tan = atan(crossProduct.val[0] / crossProduct.val[1]);
+				insertAndSort<float>(tanList, tan);
+			}
+#endif
 		}
+
 		//myfile<< std::endl;
 	}
-	GroundDefault(Ground.img);
+	//GroundDefault(Ground.img);
 
+#ifdef COLLECT_TAN_LIST
+	for (int i = 0; i < tanList.size(); i++)
+	{
+		myfile << tanList[i] << " ";
+	}
+	myfile << std::endl;
+#endif
 	//StairDetection stairs;
 	//std::vector<cv::Point> stairConvexHull;
 	//std::vector<std::vector<cv::Point> > hull(1);
@@ -393,10 +584,14 @@ void ObstacleDetection::GroundMaskCreate(Mat &img)
 	waitKey();
 #endif
 
+	
+
 
 	//imshow("for ground", Ground.img);
+	//imshow("whitePaper", whitePaper);
+	//imshow("GroundBoolMat", GroundBoolMat);
 	//imshow("depth", img);
-	//waitKey();
+	//waitKey(1);
 }
 
 void ObstacleDetection::GroundDefault(Mat& img)
@@ -405,16 +600,56 @@ void ObstacleDetection::GroundDefault(Mat& img)
 	rectangle(img, pt1, pt2, Scalar(0), CV_FILLED);
 }
 
+void ObstacleDetection::GroundEroAndDilate()
+{
+	int erosion_type;
+	if (erosion_elem == 0){ erosion_type = MORPH_RECT; }
+	else if (erosion_elem == 1){ erosion_type = MORPH_CROSS; }
+	else if (erosion_elem == 2) { erosion_type = MORPH_ELLIPSE; }
+
+	Mat elementE = getStructuringElement(erosion_type,
+		Size(2 * erosion_size + 1, 2 * erosion_size + 1),
+		Point(erosion_size, erosion_size));
+
+	/// Apply the erosion operation
+	erode(GroundBoolMat, GroundBoolMat, elementE);
+
+
+	int dilation_type;
+	if (dilation_elem == 0){ dilation_type = MORPH_RECT; }
+	else if (dilation_elem == 1){ dilation_type = MORPH_CROSS; }
+	else if (dilation_elem == 2) { dilation_type = MORPH_ELLIPSE; }
+
+	Mat elementD = getStructuringElement(dilation_type,
+		Size(2 * dilation_size + 1, 2 * dilation_size + 1),
+		Point(dilation_size, dilation_size));
+	/// Apply the dilation operation
+	dilate(GroundBoolMat, GroundBoolMat, elementD);
+
+	GroundRefine(GroundBoolMat, Ground.img);
+}
+
+void ObstacleDetection::GroundRefine(Mat& boolMat, Mat& img)
+{
+	for (int i = 0; i < boolMat.rows; i++)
+		for (int j = 0; j < boolMat.cols;j++)
+			if (boolMat.at<uchar>(i, j) == 255)
+			{
+				Point location(j*planeEdgeForPlaneRemove + planeAreaForPlaneRemove / 2,i * planeEdgeForPlaneRemove + planeAreaForPlaneRemove / 2);
+				GroundMaskUnitFill(img, location);
+			}
+
+}
 
 /*parameter:
 img : image contains result of cross product
 */
-void ObstacleDetection::GroundMaskFill(Mat& img, Point& location, Vec3f& vector)
+void ObstacleDetection::GroundMaskFill(Mat& img,Mat& boolMat, Point& location, Vec3f& vector)
 {
 	//from experiment, ground's vector has -ve y coordinate
 
 	//if (vector.val[0]>0 || vector.val[1]>0 || vector.val[2]>0)
-	//	GroundArrowDraw(img, vector, location);
+		//GroundArrowDraw(img, vector, location);
 
 
 	if ((vector.val[0]>0 || vector.val[2]>0) && vector.val[1]>0)
@@ -443,8 +678,12 @@ void ObstacleDetection::GroundMaskFill(Mat& img, Point& location, Vec3f& vector)
 			{
 				
 				GroundMaskUnitFill(img, location);
+				
+				//std::cout << location;
+				//imshow("boolMat", boolMat);
 				//imshow("img", img);
 				//waitKey();
+				GroundBoolMatUnitFill(boolMat, location);
 			}
 		}
 #endif
@@ -469,7 +708,34 @@ void ObstacleDetection::GroundArrowDraw(Mat& img, Vec3f& vector, Point& start)
 	//cal point of arrow	//(col,row)=point(x,y)
 	Point end = Point((int)(start.x + vector.val[0]), (int)(start.y + vector.val[1]));
 	arrowedLine(img, start, end, Scalar(255), 1, 8, 0, 0.5);
+}
 
+void ObstacleDetection::GroundArrowDrawOnWhitePaper(Mat& img, Vec3f& vector, Point& start)
+{
+	//cal unit vector<x,y,z>=<col,row,depth>
+	float lenght = sqrt(vector.val[0] * vector.val[0] + vector.val[1] * vector.val[1] + vector.val[2] * vector.val[2]);
+	vector.val[0] = vector.val[0] / lenght;
+	vector.val[1] = vector.val[1] / lenght;
+	vector.val[2] = vector.val[2] / lenght;
+	vector *= 45;
+	//cal point of arrow	//(col,row)=point(x,y)
+	Point end = Point((int)(start.x + vector.val[0]), (int)(start.y + vector.val[1]));
+	arrowedLine(img, start, end, Scalar(0), 2, 8, 0, 0.5);
+
+
+	std::stringstream stream;
+	stream << std::fixed << std::setprecision(2) << atan(vector.val[0] / vector.val[1]);
+	string s = stream.str();
+	putText(img, s, start, FONT_HERSHEY_PLAIN, 0.8, Scalar(150), 1);
+}
+
+
+void ObstacleDetection::GroundBoolMatUnitFill(Mat& fill, Point& pt)
+{
+	Point pt1(pt.x - planeEdgeForPlaneRemove / 2, pt.y - planeEdgeForPlaneRemove / 2);
+	
+	fill.at<uchar>(pt1.y / planeEdgeForPlaneRemove,pt1.x / planeEdgeForPlaneRemove ) = 255;
+	//std::cout << "to" << pt1 << " ";
 }
 
 void ObstacleDetection::GroundMaskUnitFill(Mat& fill, Point& pt)
@@ -622,7 +888,13 @@ string ObstacleDetection::findPath()
 //	OutputDebugStringA(std::to_string(sum).c_str());
 
 	if (sum < (area*FirstNumOfBin*TooLessGroundPercentage))
+	{
+#ifdef record_noGround
+		time_t timer;
+		imwrite("C:/Users/HOHO/Pictures/sample/result/noGround/" + std::to_string(time(&timer)) + ".bmp",currentDepth);
+#endif
 		return "no path";
+	}
 
 	double max;
 	Point maxLoc;
