@@ -21,16 +21,17 @@ bool OpenCVKinect::init()
 	std::cout << openni::OpenNI::getExtendedError() << std::endl;
 
 	// open the device
-	if (recording)
-		m_status = m_device.open(deviceURI);
-	else {
+	//if (recording)
+	m_status = m_device.open(deviceURI);
+	if (replay)
+	{
 		m_status = m_device.open((path + timestamp + ".oni").c_str());
 
 		std::string line;
 		std::ifstream file((path + timestamp + ".txt").c_str());
 		while (std::getline(file, line)) {
 			int angle = stoi(line);
-			angles.push_back(angle);
+			angles.push(angle);
 		}
 	}
 
@@ -69,7 +70,7 @@ bool OpenCVKinect::init()
 	m_status = m_color.create(m_device, openni::SENSOR_COLOR);
 	const openni::SensorInfo* sinfoColor = m_device.getSensorInfo(openni::SENSOR_COLOR);
 	const openni::Array<openni::VideoMode> &videoModesColor = sinfoColor->getSupportedVideoModes();
-	m_color.setVideoMode(videoModesColor[0]);
+	m_color.setVideoMode(videoModesColor[1]);
 	if (m_status == openni::STATUS_OK)
 	{
 		m_status = m_color.start();
@@ -240,7 +241,6 @@ void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawM
 
 	if (color){
 		//cv::cvtColor(m_colorImage, colorMat, CV_BGR2RGB);
-		//m_colorImage.copyTo(colorMat);
 		colorMat = m_colorImage.clone();
 	}
 	if (depthRaw)
@@ -265,11 +265,14 @@ void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawM
 LONG OpenCVKinect::getAngle()
 {
 	LONG angle = 0;
-	if (recording)
+	if (recording || !replay)
 		pNuiSensor->NuiCameraElevationGetAngle(&angle);
-	else
+	else {
+		angle = angles.front();
+		angles.pop();
+	}
 
-		return angle;
+	return angle;
 }
 
 OpenCVKinect::~OpenCVKinect(void)
