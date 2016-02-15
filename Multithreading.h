@@ -20,17 +20,20 @@ class Multithreading
 	SignRecognizer m_sign;
 	HumanFaceRecognizer m_face;
 	ObstacleDetection m_obstacle;
+	StairDetection m_stairs;
 	bool finished = false;
 
 	std::future<void> KinectThread_Future;
 	std::future<void> TextToSpeechThread_Future;
 	std::future<void> ObstacleDetectionThread_Future;
+	std::future<void> StairDetectionThread_Future;
 	std::future<void> FaceDetectionThread_Future;
 	std::future<void> SignDetectionThread_Future;
 
 	void KinectThread_Process();
 	void TextToSpeechThread_Process();
 	void ObstacleDetectionThread_Process();
+	void StairDetectionThread_Process();
 	void FaceDetectionThread_Process();
 	void SignDetectionThread_Process();
 
