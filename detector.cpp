@@ -18,7 +18,7 @@ Detector::Detector()
 	faceColour_dev[2] = 76.6897;    // R
 
     attr_face.scaleFactor = 1.1;
-    attr_face.minNeighbors = 4;
+    attr_face.minNeighbors = 3;
     attr_face.flags = 0|CV_HAAR_SCALE_IMAGE;
     attr_face.minSize.width = 50;
     attr_face.minSize.height = 50;

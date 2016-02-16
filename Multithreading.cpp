@@ -17,6 +17,7 @@ Multithreading::~Multithreading()
 	ObstacleDetectionThread_Future.get();
 	//FaceDetectionThread_Future.get();
 	//SignDetectionThread_Future.get();
+	StairDetectionThread_Future.get();
 }
 
 bool Multithreading::InitializeKinect()
@@ -52,6 +53,7 @@ void Multithreading::CreateAsyncThreads()
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
 	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
 	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
+	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
 
 void Multithreading::Hold()
@@ -217,3 +219,23 @@ void Multithreading::SignDetectionThread_Process()
 	}
 }
 
+void Multithreading::StairDetectionThread_Process()
+{
+	cv::Mat colorImg, depth8bit, depthRaw;
+	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
+	std::vector<cv::Point> stairConvexHull;
+
+	while (waitKey(1) != 27) {
+		if (finished)
+			return;
+
+		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit, newTimeStamp);
+		if (newTimeStamp <= oldTimeStamp)
+			continue;
+		oldTimeStamp = newTimeStamp;
+
+		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
+		StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+		stairConvexHull.clear();
+	}
+}
