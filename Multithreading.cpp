@@ -1,6 +1,8 @@
 #include "Multithreading.h"
 
 Multithreading::Multithreading()
+//kaho wear kinect at 1020mm
+//color lab table give 820mm
 	: m_obstacle(1020)
 {
 
@@ -32,11 +34,9 @@ bool Multithreading::InitializeKinect()
 		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat(), t);
 	} while (t == 0);
 
-	/*if (m_Kinect.recording) {
+	if (m_Kinect.recording) {
 		m_Kinect.m_recorder.start();
-
-		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(0);
-	}*/
+	}
 
 
 	return true;
@@ -44,11 +44,11 @@ bool Multithreading::InitializeKinect()
 
 void Multithreading::CreateAsyncThreads()
 {
-	KinectThread_Future = std::async(std::launch::async, &Multithreading::KinectThread_Process, this);
+	//KinectThread_Future = std::async(std::launch::async, &Multithreading::KinectThread_Process, this);
 	/*if (m_Kinect.recording)
 		return;*/
 
-	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
+	//TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
 	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
 	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
@@ -109,17 +109,23 @@ void on_trackbarCameraAngle(int i, void* userData)
 	else
 		std::cout << "NULL userdata" << std::endl;
 }
-
-void on_trackbarDilation(int i, void* userData)
-{
-	ObstacleDetection *obpt = ((ObstacleDetection*)userData);
-	obpt->dilation_size = i;
-}
-
 void on_trackbarErosion(int i, void* userData)
 {
 	ObstacleDetection *obpt = ((ObstacleDetection*)userData);
 	obpt->erosion_size = i;
+}
+
+
+void on_trackbarDilation1(int i, void* userData)
+{
+	ObstacleDetection *obpt = ((ObstacleDetection*)userData);
+	obpt->dilation_size1 = i;
+}
+
+void on_trackbarDilation2(int i, void* userData)
+{
+	ObstacleDetection *obpt = ((ObstacleDetection*)userData);
+	obpt->dilation_size2 = i;
 }
 
 void Multithreading::ObstacleDetectionThread_Process()
@@ -127,28 +133,32 @@ void Multithreading::ObstacleDetectionThread_Process()
 
 	cv::Mat colorImg, depth8bit, depthRaw;
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
+	if (!m_Kinect.replay)
+		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(-3);
 	LONG angle = m_Kinect.getAngle();
 
 	m_obstacle.setCameraAngle(angle);
-	namedWindow("DEPTH", CV_WINDOW_NORMAL);
+	//namedWindow("DEPTH", CV_WINDOW_NORMAL);
 	int track_angle = (int)angle;
-	createTrackbar("CameraAngle", "DEPTH", &track_angle, 23, on_trackbarCameraAngle, m_Kinect.pNuiSensor);
+	//createTrackbar("CameraAngle", "DEPTH", &track_angle, 23, on_trackbarCameraAngle, m_Kinect.pNuiSensor);
 	
-	int ero = 0;
-	int di= 0;
-	createTrackbar("erosion", "DEPTH", &ero, 21, on_trackbarErosion, &m_obstacle);
-	createTrackbar("dilation", "DEPTH", &di, 21, on_trackbarDilation, &m_obstacle);
+	int di1 = 0;
+	int di2= 0;
+
+	//createTrackbar("dilation1", "DEPTH", &di1, 21, on_trackbarDilation1, &m_obstacle);
+	//createTrackbar("erosion", "DEPTH", &di2, 21, on_trackbarErosion, &m_obstacle);
+	//createTrackbar("dilation2", "DEPTH", &di2, 21, on_trackbarDilation2, &m_obstacle);
 	while (waitKey(1) != 27) 
 	{
 		if (finished)
 			return;
 		double t = (double)getTickCount();
-		
+		m_Kinect.updateData();
 		m_Kinect.getMatrix(m_Kinect.All, colorImg, depthRaw, depth8bit, newTimeStamp);
 		if (newTimeStamp <= oldTimeStamp)
 			continue;
 		oldTimeStamp = newTimeStamp;
-
+		
 		m_obstacle.setCurrentColor(&colorImg);
 		m_obstacle.setCameraAngle(m_Kinect.getAngle());
 		m_obstacle.SetCurrentRawDepth(&depthRaw);
@@ -161,7 +171,9 @@ void Multithreading::ObstacleDetectionThread_Process()
 		putText(depth8bit, fps, Point(20,20), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
 		//std::cout << " Total used : " << t << " seconds" << std::endl;
 		cv::imshow("DEPTH", depth8bit);
-		//waitKey();
+		int keyInput = waitKey(0);	
+		//int keyInput = 0;
+		m_obstacle.testResult(keyInput, m_Kinect.getFrameIndexDepth());
 		//cv::imshow("COLOR", colorImg);
 	}
 }

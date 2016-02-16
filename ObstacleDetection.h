@@ -8,6 +8,7 @@
 #include <Windows.h>
 #include <ctime>
 #include <stdio.h>
+#include "stdint.h"
 #include <stdlib.h>
 #include <algorithm>
 #include <tchar.h>
@@ -33,34 +34,34 @@ using namespace cv;
 //#define record_noGround
 //#define DISPLAY_ARROW
 //#define COLLECT_TAN_LIST
+#define DISPLAY_DIR_LINE
 
 #define SAMPLE_IMG_PATH "C:/Users/HOHO/Pictures/sample/result/"
+#define MYFILE_PATH_tan  "C:/Users/HOHO/Pictures/sample/outputT.txt"
+#define MYFILE_PATH_h  "C:/Users/HOHO/Pictures/sample/outputH.txt"
 #define MYFILE_PATH  "C:/Users/HOHO/Pictures/sample/output.txt"
 #define SAMPLE_PATH "C:/Users/HOHO/Pictures/sample/depth9.bmp"
 //#define SAMPLE_PATH "C:/Users/HOHO/Pictures/sample/Pictures/atrium/depth7.bmp"
 
 #define  Valid_Distance 1		//grayscale pixel value
-#define TooFarDistance 60
-#define  Ground_height 175		//4cm
+#define  TooFarDistance 60
+#define  Ground_height 260		//30cm
 #define  TooLessGroundPercentage 0.03 
 //calHistogram
 #define HistSize 256 // bin size = 2^pixelDepth / histSize
 
 //remove plane
-//#define planeEdgeForPlaneRemove 4 //e.g 20X20 square for 320x240
-#define planeEdgeForPlaneRemove 8 //e.g 20X20 square for 640x480
+#define planeEdgeForPlaneRemove 12 
 #define planeAreaForPlaneRemove (planeEdgeForPlaneRemove * planeEdgeForPlaneRemove)
-#define maxThreashold_horizontalPlane 0.33
-#define minThreashold_horizontalPlane -0.33
-#define maxThreashold_VerticalPlane   1.6
-#define minThreashold_VerticalPlane   0.8
-
+#define maxThreashold_horizontalPlane 0.5
+#define minThreashold_horizontalPlane 0.01
+#define humanShoulderLength 70
 //obstacle detection
 //#define obstacle_size_ignore 15  //320x240
-#define obstacle_size_ignore 27  //640x480 
+#define obstacle_size_ignore planeEdgeForPlaneRemove*4  //640x480 
 
 //path advice	
-#define FirstNumOfBin	20				//affect the num of bin in the first histogram calculation
+#define FirstNumOfBin	21				//affect the num of bin in the first histogram calculation
 #define SecondHistogramRangeColDivisor 5	//affect the width of rect in the second histogram calculation
 #define SecondNumOfBin 7				//affect the num of bin in the second histogram calculation
 #define SecondBinHeightDivisor 10		//affect the heigth of the rect in the second histogram calculation
@@ -79,18 +80,26 @@ class ObstacleDetection
 		Point pos;
 	};
 
+	struct Record
+	{
+		int correct=0;
+		int fail=0;
+	};
+
 	std::ofstream myfile;
+	std::ofstream myfile2;
 	Mat currentRawDepth;
 	Mat currentDepth;
 	Mat currentColor;
 	Object Ground;
+	Record record;
 	Mat GroundBoolMat;
 	vector<Object> GroundList;
 	vector<Object> ObstacleList;
 	int mUserHeight;
-	std::queue<float> diplay;
 	string currentPath;
-	
+	int pathDirCol;
+	vector<float> tanList;
 private:
 	//Height
 	double GetPointAngle(const int pointY);
@@ -103,6 +112,7 @@ private:
 	int Rand();
 	Point RandPoint(Point start);
 	Vec3f RandVector(Vec3f &vec1, Vec3f &vec2);
+	float GroundDirection(Vec3f& vector);
 	void GroundMaskFill(Mat& img, Mat& boolMat, Point& location, Vec3f& vector);
 	void GroundMaskBool();
 	void GroundBoolMatUnitFill(Mat& fill, Point& pt);
@@ -114,6 +124,7 @@ private:
 	void GroundMaskCreateRandom(Mat &img);
 	void GroundDefault(Mat& img);
 	void GroundEroAndDilate();
+	void GroundEroAndDilate(Mat& img, Mat& boolMat, int diSize, int eroSize);
 	void GroundRefine(Mat& boolMat, Mat& img);
 
 	//Histogram Segmentation
@@ -132,8 +143,10 @@ public:
 
 	int erosion_elem = 0;
 	int erosion_size = 0;
+
 	int dilation_elem = 0;
-	int dilation_size = 0;
+	int dilation_size1 = 1;//if 1, the size is 2*dilation_size1+1
+	int dilation_size2 = 0;
 
 	int CameraAngle;
 	ObstacleDetection(int userHeight);
@@ -146,7 +159,7 @@ public:
 	void setCameraAngle(int degree);
 	void SetCurrentRawDepth(Mat* rawDepth);
 	void test();
-
+	void testResult(int keyInput, int timeStamp);
 };
 
 
