@@ -92,6 +92,7 @@
     <ClInclude Include="Multithreading.h" />
     <ClInclude Include="ObstacleDetection.h" />
     <ClInclude Include="OpenCVKinect.h" />
+    <ClInclude Include="SerialClass.h" />
     <ClInclude Include="SignRecognizer.h" />
     <ClInclude Include="StairDetection.h" />
     <ClInclude Include="TextToSpeech.h" />
@@ -103,6 +104,7 @@
     <ClCompile Include="Multithreading.cpp" />
     <ClCompile Include="ObstacleDetection.cpp" />
     <ClCompile Include="OpenCVKinect.cpp" />
+    <ClCompile Include="SerialClass.cpp" />
     <ClCompile Include="SignRecognizer.cpp" />
     <ClCompile Include="StairDetection.cpp" />
     <ClCompile Include="TextToSpeech.cpp" />
