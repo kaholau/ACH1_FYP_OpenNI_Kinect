@@ -277,12 +277,12 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		imshow("finalGround", Ground.img);
 		waitKey();
 #endif
-		std::string path = findPath();
+		std::string path = findPathByMassCenter();
 
 		if (currentPath.compare(path) != 0)
 		{
 			currentPath = path;
-			//TextToSpeech::pushBack(path);
+			TextToSpeech::pushBack(path);
 		}
 		if (path.compare("no path") != 0)
 			currentDepth &= Ground.img;
@@ -914,7 +914,7 @@ void ObstacleDetection::SetCurrentRawDepth(Mat* rawDepth)
 	//GaussianBlur(currentRawDepth, currentRawDepth, Size(1, 13), 0, 0);
 }
 
-string ObstacleDetection::findPath()
+string ObstacleDetection::findPathByPartition()
 {
 	//invalid width [0:45], [img.col-5,img.col]
 	//histogram with bin width=cols/10, then guassin blur, then find global max, another rect with size row/100 x col/100 repeat the same method
@@ -943,7 +943,7 @@ string ObstacleDetection::findPath()
 	Mat count = Mat(FirstNumOfBin, 1, CV_32F);
 	float sum=0;
 	//myfile << "lenght:" <<  realDepthColsWidth << " |";
-	for (int i = 0; i < FirstNumOfBin; i++)
+	for (int i = 0; i < FirstNumOfBin && (realColStart + width*i + width)<Ground.img.cols; i++)
 	{
 		binImg = Ground.img(Rect(Point(realColStart + width*i, Ground.img.rows), Point(realColStart + width*i + width, height)));
 		count.at<float>(i) = (float)area - countNonZero(binImg);
@@ -1091,6 +1091,112 @@ void ObstacleDetection::Enhance1DMax(Mat *pImg)
 		for (int j = i - range; j <= i + range; j++)
 			temp.at<float>(i) += pImg->at<float>(j);
 	temp.copyTo(*pImg);
+}
+
+string  ObstacleDetection::findPathByMassCenter()
+{
+	int realDepthColsWidth;
+	int realColStart;
+	int realColEnd;
+
+	if (Ground.img.cols == 320)
+	{
+		realDepthColsWidth = Ground.img.cols - 20 - 2;
+		realColStart = 20;
+		realColEnd = Ground.img.cols - 2;
+	}
+
+	if (Ground.img.cols == 640)
+	{
+		realDepthColsWidth = Ground.img.cols - 45 - 5;
+		realColStart = 45;
+		realColEnd = Ground.img.cols - 5;
+	}
+	vector<vector<Point>> contours;
+	vector<Vec4i> hierarchy;
+
+	Mat temp = Ground.img.clone();
+	bitwise_not(temp, temp);
+	imshow("temp", temp);
+	findContours(temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	if (contours.size() <= 0)
+		return "no path";
+	vector<Moments> mu(contours.size());
+	int maxAreaIndex=0;
+	
+	//mu[i].m00 is area size when using binary image
+	for (size_t i = 0; i < contours.size(); i++)
+	{
+		myfile << i << "/" << contours.size() << std::endl;
+		mu[i] = moments(contours[i], false);
+		if (mu[i].m00 > mu[maxAreaIndex].m00)
+			maxAreaIndex = i;		
+	}
+	
+	if (mu[maxAreaIndex].m00 < (planeAreaForPlaneRemove*(dilation_size1 * 2 + 1)*(dilation_size1 * 2 + 1)))
+		return "no path";
+	int firstDirCol = mu[maxAreaIndex].m10 / mu[maxAreaIndex].m00;
+	//myfile << "area" << mu[maxAreaIndex].m00 << Point2f((float)(mu[maxAreaIndex].m10 / mu[maxAreaIndex].m00), (float)(mu[maxAreaIndex].m01 / mu[maxAreaIndex].m00))<< std::endl;
+	//myfile << "col:"<<(mu[maxAreaIndex].m10 / mu[maxAreaIndex].m00) << std::endl;
+	
+	int start = firstDirCol - humanShoulderLength / 2;
+	if (start < realColStart)	 start = realColStart;
+	int end = firstDirCol + humanShoulderLength;
+	if (end > realColEnd) end = realColEnd;
+
+	int width = (int)(humanShoulderLength / SecondNumOfBin); //20bins
+	int height = (int)(humanShoulderLength / 2); //half of the image
+	int area = width*height;
+
+	Mat count = Mat(SecondNumOfBin, 1, CV_32F);
+	Mat binImg;
+	for (int i = 0; i < SecondNumOfBin && (start + i*width + width)<end; i++)
+	{
+		//myfile << "[" << i << "]" << Point(start + i*width, Ground.img.rows) << " " << Point(start + i*width + width, Ground.img.rows - height) << std::endl;
+		binImg = Ground.img(Rect(Point(start + i*width, Ground.img.rows), Point(start + i*width + width, Ground.img.rows - height)));
+		count.at<float >(i) = (float)area - countNonZero(binImg);
+		//Point pt1(start + i*width, Ground.img.rows), pt2(start + i*width + width, Ground.img.rows - height);
+		//rectangle(Ground.img, pt1, pt2, Scalar(200), 1);
+		//putText(Ground.img, std::to_string(j), Point(i + width, height), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
+		//imshow("binImg", Ground.img);
+		//waitKey();
+		myfile << "[" << i << "]" << count.at<float >(i) << std::endl;
+	}
+	double max;
+	Point maxLoc;
+	minMaxLoc(count, NULL, &max, NULL, &maxLoc);
+
+	int SecondPath = maxLoc.y;
+	int beginMax = 0;
+	int endMax = -1;
+	for (int i = 0; i < count.rows; i++)
+		if (std::abs(((float)max - count.at<float>(i))) < ((float)area*0.01))
+		{
+			beginMax = i;
+			break;
+		}
+
+	for (int i = beginMax + 1; i < count.rows; i++)
+		if (std::abs(((float)max - count.at<float>(i))) < ((float)area*0.01))
+			endMax = i;
+
+
+	if (beginMax != endMax)
+		SecondPath = std::abs(endMax - beginMax) / 2 + beginMax;
+	else
+		SecondPath = beginMax;
+	myfile << "finalPath" << SecondPath << std::endl;
+	int finalPath = ((float)SecondPath + 0.5)*(float)width + start;
+
+	pathDirCol = finalPath;
+	if ((finalPath > 0) && (finalPath <= realColStart + realDepthColsWidth / 3))
+		return "right";
+	if ((finalPath > realColStart + realDepthColsWidth / 3) && (finalPath <= realColStart + realDepthColsWidth * 2 / 3))
+		return "center";
+	if ((finalPath > realColStart + realDepthColsWidth * 2 / 3) && (finalPath < realColStart + realDepthColsWidth))
+		return "left";
+
+	return "no path";
 }
 
 void ObstacleDetection::testResult(int keyInput, int timeStamp)

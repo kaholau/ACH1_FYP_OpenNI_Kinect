@@ -49,7 +49,7 @@ void Multithreading::CreateAsyncThreads()
 	/*if (m_Kinect.recording)
 		return;*/
 
-	//TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
+	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
 	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
 	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
@@ -173,9 +173,9 @@ void Multithreading::ObstacleDetectionThread_Process()
 		putText(depth8bit, fps, Point(20,20), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
 		//std::cout << " Total used : " << t << " seconds" << std::endl;
 		cv::imshow("DEPTH", depth8bit);
-		int keyInput = waitKey(0);	
+		//int keyInput = waitKey(0);	
 		//int keyInput = 0;
-		m_obstacle.testResult(keyInput, m_Kinect.getFrameIndexDepth());
+		//m_obstacle.testResult(keyInput, m_Kinect.getFrameIndexDepth());
 		//cv::imshow("COLOR", colorImg);
 	}
 }

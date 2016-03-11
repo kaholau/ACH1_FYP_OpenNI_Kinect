@@ -136,7 +136,8 @@ private:
 	void obstacleDetect(Mat& img, Mat& output);
 
 	//find path
-	string findPath();
+	string findPathByPartition();
+	string findPathByMassCenter();
 	void Enhance1DMax(Mat *pImg);
 
 public:
