@@ -28,6 +28,7 @@ void ObstacleDetection::test()
 
 
 ObstacleDetection::ObstacleDetection(int userHeight)
+	: serial("COM5")
 {
 	mUserHeight = userHeight;
 	tanList.clear();
@@ -282,7 +283,20 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		if (currentPath.compare(path) != 0)
 		{
 			currentPath = path;
-			TextToSpeech::pushBack(path);
+			//TextToSpeech::pushBack(path);
+
+			int dir = 0;
+			if (path == "left") {
+				dir = 1;
+			}
+			else if (path == "center") {
+				dir = 2;
+			}
+			else if (path == "right") {
+				dir = 3;
+			}
+
+			serial.SendDirection(dir);
 		}
 		if (path.compare("no path") != 0)
 			currentDepth &= Ground.img;

@@ -22,6 +22,7 @@
 
 #include "TextToSpeech.h"
 #include "StairDetection.h"
+#include "SerialClass.h"
 
 using namespace cv;
 //#define FOR_REPORT
@@ -100,6 +101,8 @@ class ObstacleDetection
 	string currentPath;
 	int pathDirCol;
 	vector<float> tanList;
+	Serial serial;
+
 private:
 	//Height
 	double GetPointAngle(const int pointY);
