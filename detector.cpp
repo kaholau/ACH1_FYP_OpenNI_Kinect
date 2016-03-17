@@ -1,7 +1,7 @@
 #include "detector.h"
 
 //#define LOCAL_FACE_COLOUR
-#define FACE_MASK_COLOUR
+//#define FACE_MASK_COLOUR
 
 
 Detector::Detector()

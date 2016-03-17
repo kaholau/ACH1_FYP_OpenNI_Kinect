@@ -27,8 +27,8 @@ HumanFaceRecognizer::HumanFaceRecognizer()
 
 	total_percent = 0.0;
 	total_percent_var = 0.0;
-	min_percent = 0.3;
-	max_percent = 0.8;
+	min_percent = 0.4;
+	max_percent = 0.85;
 	num_of_face_detected = 0;
 }
 
@@ -58,7 +58,7 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	int face_counter2 = 0;
 	int predictedLabel = -1;
 	double confidence = 0.0;
-	double confidence_threshold = 250;
+	double confidence_threshold = 120;
 	bool isExistedFace = false;
 
 	original = (*frame).clone();
@@ -162,18 +162,25 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 
 #ifdef COMPARE_FACE_COLOUR
+#ifndef FACE_MASK_COLOUR
+		face_pixel_num = outputMask.rows * outputMask.cols;
+#else
 		face_pixel_num = outputMask.rows * outputMask.cols * NUM_OF_CHANNELS_COLOUR;
+#endif
 		for (j = 0; j < outputMask.rows; ++j)
 		{
 			for (k = 0; k < outputMask.cols; ++k)
 			{
-				/*if (*(outputMask.data + (j*outputMask.cols + k)) == 255)
-				similar_pixel_counter += 1;*/
+#ifndef FACE_MASK_COLOUR
+				if (*(outputMask.data + (j*outputMask.cols + k)) == 255)
+					similar_pixel_counter += 1;
+#else
 				for (int m = 0; m < NUM_OF_CHANNELS_COLOUR; ++m)
 				{
 					if (*(outputMask.data + j*outputMask.step + k + m) == 255)
 						similar_pixel_counter += 1;
 				}
+#endif
 			}
 		}
 		similar_pixel_counter /= face_pixel_num;
@@ -235,7 +242,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 							else {
 								//oss << DETECTING << " " << confidence;
 								//oss << DETECTING << ", maybe " << PERSON_NAME[facesInfo[p].label];
-								oss << DETECTING << ", maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
+								//oss << DETECTING << ", maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
+								oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
 							}
 #endif
 							break;
@@ -282,7 +290,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 						case Joel:
 						case KaHo:
 						case Yumi:
-							oss << PERSON_NAME[facesInfo[p].label] << "-" << confidence;
+							//oss << PERSON_NAME[facesInfo[p].label] << "-" << confidence;
+							oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
 							//oss << PERSON_NAME[facesInfo[p].label];
 							break;
 
@@ -310,6 +319,13 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 				para.facePos = cv::Point(it->x, it->y);
 				para.face_counter[predictedLabel] = 1;
 				facesInfo.push_back(para);
+
+#ifdef SHOW_MARKERS
+				oss.str("");
+				oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
+				putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 1,
+					cv::Scalar(255, 0, 255), 2, 12);
+#endif
 			}
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << "facesInfo size: " << facesInfo.size() << std::endl;

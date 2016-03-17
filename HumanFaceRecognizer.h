@@ -11,17 +11,17 @@
 
 
 /* Defines */
-//#define SAVE_IMAGES
-//#define SAVE_FACES
-//#define SAVE_MASKS
+#define SAVE_IMAGES
+#define SAVE_FACES
+#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
 //#define DISPLAY_IMAGES
-//#define SHOW_MARKERS
-//#define COMPARE_FACE_COLOUR
+#define SHOW_MARKERS
+#define COMPARE_FACE_COLOUR
 
 #define NUM_OF_PERSON		3
 
-#define BASE_DIR           "/detected_faces/"
+#define BASE_DIR           "detected_faces/"
 #define IMAGE_DIR          "image/"
 #define CORRECT_DIR        "correct/"
 #define WRONG_DIR          "wrong/"
@@ -36,7 +36,7 @@
 #define HELLO_MESSAGE      "Hello, "
 
 #define MAX_FACE_SIZE			600
-#define FACE_POS_OFFSET			150
+#define FACE_POS_OFFSET			100
 #define FACE_DET_THREHOLD		3
 #define UNDETECTED_THREHOLD		(FACE_DET_THREHOLD*2)
 #define NUM_OF_CHANNELS_COLOUR	3

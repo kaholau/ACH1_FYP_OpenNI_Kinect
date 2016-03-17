@@ -21,33 +21,18 @@ bool OpenCVKinect::init()
 	std::cout << openni::OpenNI::getExtendedError() << std::endl;
 
 	// open the device
-	//if (recording)
-	//	m_status = m_device.open(deviceURI);
-	if (replay) 
+	if (replay)
 	{
 		m_status = m_device.open((path + timestamp + ".oni").c_str());
 
 		std::string line;
-		std::ifstream file((path+ timestamp + ".txt").c_str());
-		//int firstFrame;
-		//bool first = true;
-		while (!file.eof()) {
-			//int frameIndex;
-			int angle;
-			//file >> frameIndex;
-			file >> angle;
-			//if (first) {
-			//	firstFrame = frameIndex - 1;
-			//	first = false;
-			//}
-
-			//frameIndex -= firstFrame;
+		std::ifstream file((path + timestamp + ".txt").c_str());
+		while (std::getline(file, line)) {
+			int angle = stoi(line);
 			angles.push(angle);
-			//frameIndexFromFile.push(frameIndex);
 		}
-		file.close();
 	}
-	else{
+	else {
 		m_status = m_device.open(deviceURI);
 	}
 
@@ -151,75 +136,7 @@ bool OpenCVKinect::init()
 			break;
 		}
 	}
-	//if (replay)
-	//	m_device.getPlaybackControl()->setSpeed(-1);
-
 	return true;
-}
-
-void OpenCVKinect::updateDataDepthOnly()
-{
-	bool depthCaptured = false;
-	uint64_t newtime;
-	int newFrameIndex;
-	while (!depthCaptured )
-	{
-		m_status = openni::OpenNI::waitForAnyStream(m_streams, 1, &m_currentStream, C_STREAM_TIMEOUT);
-		if (m_status != openni::STATUS_OK)
-		{
-			std::cout << "OpenCVKinect: Unable to wait for streams. Exiting" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-
-	switch (m_currentStream)
-		{
-		case C_DEPTH_STREAM:
-			m_depth.readFrame(&m_depthFrame);
-			newtime = m_depthFrame.getTimestamp() >> 16;
-			//newFrameIndex = m_depthFrame.getFrameIndex();
-
-			if (newtime <= this->m_depthTimeStamp)
-				continue;
-
-			//if (replay){
-			//	if (newFrameIndex > frameIndexFromFile.front()) { 
-			//		frameIndexFromFile.pop();
-			//		continue;
-			//	}
-			//	else if (newFrameIndex < frameIndexFromFile.front()) {
-
-			//		continue;
-			//	}
-			//	else if (newFrameIndex == frameIndexFromFile.front()) {
-
-			//		frameIndexFromFile.pop();
-			//	}
-			//}
-
-			depth_mutex.lock();
-			this->m_depthTimeStamp = newtime;
-			this->m_colorTimeStamp = newtime;
-			//this->frameIndex_depth = newFrameIndex;
-			m_depthImage.create(m_depthFrame.getHeight(), m_depthFrame.getWidth(), CV_16UC1);
-			m_depthImage.data = (uchar*)m_depthFrame.getData();
-
-			std::cout << "Depth Timestamp: " << this->m_depthTimeStamp << std::endl;
-
-			depthCaptured = true;
-			depth_mutex.unlock();
-
-			break;
-		
-		default:
-			break;
-		}
-	}
-	if (recording) {
-		LONG angle = 0;
-		pNuiSensor->NuiCameraElevationGetAngle(&angle);
-		file << angle << std::endl;
-		//file << frameIndex_depth << " " << angle << std::endl;
-	}
 }
 
 void OpenCVKinect::updateData()
@@ -279,23 +196,12 @@ void OpenCVKinect::updateData()
 			break;
 		}
 	}
-	frameIndex_depth = m_depthFrame.getFrameIndex();
-	frameIndex_color = m_colorFrame.getFrameIndex();
+
 	if (recording) {
 		LONG angle = 0;
 		pNuiSensor->NuiCameraElevationGetAngle(&angle);
 		file << angle << std::endl;
 	}
-}
-
-int OpenCVKinect::getFrameIndexDepth()
-{
-	return frameIndex_depth;
-}
-
-int OpenCVKinect::getFrameIndexColor()
-{
-	return frameIndex_color;
 }
 
 void OpenCVKinect::getColor(cv::Mat &colorMat, uint64_t &colorTimeStamp)
