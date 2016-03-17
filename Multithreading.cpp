@@ -112,12 +112,6 @@ void on_trackbarCameraAngle(int i, void* userData)
 		std::cout << "NULL userdata" << std::endl;
 }
 
-void on_trackbarDilation(int i, void* userData)
-{
-	ObstacleDetection *obpt = ((ObstacleDetection*)userData);
-	obpt->dilation_size = i;
-}
-
 void on_trackbarErosion(int i, void* userData)
 {
 	ObstacleDetection *obpt = ((ObstacleDetection*)userData);
@@ -152,9 +146,10 @@ void Multithreading::ObstacleDetectionThread_Process()
 	createTrackbar("CameraAngle", "DEPTH", &track_angle, 23, on_trackbarCameraAngle, m_Kinect.pNuiSensor);
 	
 	int ero = 0;
-	int di= 0;
-	createTrackbar("erosion", "DEPTH", &ero, 21, on_trackbarErosion, &m_obstacle);
-	createTrackbar("dilation", "DEPTH", &di, 21, on_trackbarDilation, &m_obstacle);
+	int di = 0;
+	//createTrackbar("dilation1", "DEPTH", &di1, 21, on_trackbarDilation1, &m_obstacle);
+	//createTrackbar("erosion", "DEPTH", &di2, 21, on_trackbarErosion, &m_obstacle);
+	//createTrackbar("dilation2", "DEPTH", &di2, 21, on_trackbarDilation2, &m_obstacle);
 	while (waitKey(1) != 27) 
 	{
 		if (finished)
@@ -219,6 +214,27 @@ void Multithreading::SignDetectionThread_Process()
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
 		m_sign.runRecognizer(colorImg);
 		cv::imshow("SIGN DETECTION", colorImg);
+	}
+}
+
+void Multithreading::StairDetectionThread_Process()
+{
+	cv::Mat colorImg, depth8bit, depthRaw;
+	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
+	std::vector<cv::Point> stairConvexHull;
+
+	while (waitKey(1) != 27) {
+		if (finished)
+			return;
+
+		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit, newTimeStamp);
+		if (newTimeStamp <= oldTimeStamp)
+			continue;
+		oldTimeStamp = newTimeStamp;
+
+		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
+		StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+		stairConvexHull.clear();
 	}
 }
 
