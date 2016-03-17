@@ -233,17 +233,15 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #ifdef SHOW_DEBUG_MESSAGES
 							std::cout << "detected: " << predictedLabel << '\n';
 #endif
-
-							str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
 							/* Text to Speech */
+							str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
 							TextToSpeech::pushBack(str);
 							//tts.speakNow(str);
 						}
 #ifdef SHOW_MARKERS
-						else {
-							//oss << DETECTING << " " << confidence;
+						else
+						{
 							//oss << DETECTING << ", maybe " << PERSON_NAME[facesInfo[matchedFacePos].label];
-							//oss << DETECTING << ", maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
 							oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
 						}
 #endif
@@ -254,21 +252,18 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 						{
 #ifdef SHOW_MARKERS
 							oss << PERSON_NAME[Guest] << " " << confidence;
-							//oss << NAME_GUEST;
 #endif
 							if (facesInfo[matchedFacePos].counter[Guest] == 10)
 							{
-								str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[Guest]);
 								/* Text to Speech */
+								str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[Guest]);
 								TextToSpeech::pushBack(str);
 								//tts.speakNow(str);
 							}
 						}
 #ifdef SHOW_MARKERS
-						else {
+						else
 							oss << DETECTING << confidence;
-							//oss << DETECTING;
-						}
 #endif
 						break;
 
