@@ -204,118 +204,110 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 				predictedLabel = Guest;
 
 			isExistedFace = false;
-			for (p = 0; p < facesInfo.size(); ++p)
+
+			if (!isExistedFace && matchedFacePos != -1)
 			{
-				//cout << facesInfo[p].facePos.x << "," << facesInfo[p].facePos.y << endl;
-				if (!isExistedFace &&
-					(facesInfo[p].centerPos.x > (center.x - FACE_POS_OFFSET)) &&
-					(facesInfo[p].centerPos.x < (center.x + FACE_POS_OFFSET)) &&
-					(facesInfo[p].centerPos.y > (center.y - FACE_POS_OFFSET)) &&
-					(facesInfo[p].centerPos.y < (center.y + FACE_POS_OFFSET)))
+				memcpy(&(facesInfo[matchedFacePos].centerPos), &center, sizeof(cv::Point));
+				//facesInfo[matchedFacePos].centerPos.x = center.x;
+				//facesInfo[matchedFacePos].centerPos.y = center.y;
+
+				++(facesInfo[matchedFacePos].counter[predictedLabel]);
+
+				if (!(facesInfo[matchedFacePos].isRecognized))
 				{
-					memcpy(&(facesInfo[p].centerPos), &center, sizeof(cv::Point));
-					//facesInfo[p].centerPos.x = center.x;
-					//facesInfo[p].centerPos.y = center.y;
-
-					++(facesInfo[p].counter[predictedLabel]);
-
-					if (!(facesInfo[p].isRecognized))
+					std::string str;
+					oss.str("");
+					switch (predictedLabel)
 					{
-						std::string str;
-						oss.str("");
-						switch (predictedLabel)
+					case Joel:
+					case KaHo:
+					case Yumi:
+						if (facesInfo[matchedFacePos].counter[predictedLabel] >= FACE_DET_THREHOLD)
 						{
-						case Joel:
-						case KaHo:
-						case Yumi:
-							if (facesInfo[p].counter[predictedLabel] >= FACE_DET_THREHOLD)
-							{
 #ifdef SHOW_MARKERS
-								//oss << PERSON_NAME[facesInfo[p].label] << " " << confidence;
-								oss << PERSON_NAME[predictedLabel] << " detected";
+							//oss << PERSON_NAME[facesInfo[matchedFacePos].label] << " " << confidence;
+							oss << PERSON_NAME[predictedLabel] << " detected";
 #endif
-								facesInfo[p].isRecognized = true;
-								facesInfo[p].label = (DETECTED_PERSON)predictedLabel;
+							facesInfo[matchedFacePos].isRecognized = true;
+							facesInfo[matchedFacePos].label = (DETECTED_PERSON)predictedLabel;
 #ifdef SHOW_DEBUG_MESSAGES
-								std::cout << "detected: " << predictedLabel << '\n';
+							std::cout << "detected: " << predictedLabel << '\n';
 #endif
 
-								str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
+							str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
+							/* Text to Speech */
+							TextToSpeech::pushBack(str);
+							//tts.speakNow(str);
+						}
+#ifdef SHOW_MARKERS
+						else {
+							//oss << DETECTING << " " << confidence;
+							//oss << DETECTING << ", maybe " << PERSON_NAME[facesInfo[matchedFacePos].label];
+							//oss << DETECTING << ", maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
+							oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
+						}
+#endif
+						break;
+
+					case Guest:
+						if (facesInfo[matchedFacePos].counter[Guest] >= FACE_DET_THREHOLD * 2)
+						{
+#ifdef SHOW_MARKERS
+							oss << PERSON_NAME[Guest] << " " << confidence;
+							//oss << NAME_GUEST;
+#endif
+							if (facesInfo[matchedFacePos].counter[Guest] == 10)
+							{
+								str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[Guest]);
 								/* Text to Speech */
 								TextToSpeech::pushBack(str);
 								//tts.speakNow(str);
 							}
-#ifdef SHOW_MARKERS
-							else {
-								//oss << DETECTING << " " << confidence;
-								//oss << DETECTING << ", maybe " << PERSON_NAME[facesInfo[p].label];
-								//oss << DETECTING << ", maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
-								oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
-							}
-#endif
-							break;
-
-						case Guest:
-							if (facesInfo[p].counter[Guest] >= FACE_DET_THREHOLD * 2)
-							{
-#ifdef SHOW_MARKERS
-								oss << PERSON_NAME[Guest] << " " << confidence;
-								//oss << NAME_GUEST;
-#endif
-								if (facesInfo[p].counter[Guest] == 10)
-								{
-									str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[Guest]);
-									/* Text to Speech */
-									TextToSpeech::pushBack(str);
-									//tts.speakNow(str);
-								}
-							}
-#ifdef SHOW_MARKERS
-							else {
-								oss << DETECTING << confidence;
-								//oss << DETECTING;
-							}
-#endif
-							break;
-
-						case -1:
-						default:
-#ifdef SHOW_MARKERS
-							oss << "unrecognised";
-#endif
-							break;
 						}
-
-					}
 #ifdef SHOW_MARKERS
-					else
-					{
-						oss.str("");
-						switch (facesInfo[p].label)
-						{
-						case Guest:
-						case Joel:
-						case KaHo:
-						case Yumi:
-							//oss << PERSON_NAME[facesInfo[p].label] << "-" << confidence;
-							oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
-							//oss << PERSON_NAME[facesInfo[p].label];
-							break;
-
-						default:
-							oss << "Special!! " << confidence;
-							//oss << NAME_GUEST;
-							break;
+						else {
+							oss << DETECTING << confidence;
+							//oss << DETECTING;
 						}
-					}
 #endif
+						break;
+
+					case -1:
+					default:
 #ifdef SHOW_MARKERS
-					putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 1,
-						cv::Scalar(0, 0, 255), 2, 12);
+						oss << "unrecognised";
 #endif
-					isExistedFace = true;
+						break;
+					}
+
 				}
-				//cout << "face[" << i << "][" << p << "]: und=" << facesInfo[p].undetected_counter << endl;
+#ifdef SHOW_MARKERS
+				else
+				{
+					oss.str("");
+					switch (facesInfo[matchedFacePos].label)
+					{
+					case Guest:
+					case Joel:
+					case KaHo:
+					case Yumi:
+						//oss << PERSON_NAME[facesInfo[matchedFacePos].label] << "-" << confidence;
+						oss << "D:" << PERSON_NAME[facesInfo[matchedFacePos].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
+						//oss << PERSON_NAME[facesInfo[matchedFacePos].label];
+						break;
+
+					default:
+						oss << "Special!! " << confidence;
+						//oss << NAME_GUEST;
+						break;
+					}
+				}
+#endif
+#ifdef SHOW_MARKERS
+				putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 1,
+					cv::Scalar(0, 0, 255), 2, 12);
+#endif
+				isExistedFace = true;
 			}
 
 			if (facesInfo.size() == 0 || !isExistedFace)
