@@ -11,9 +11,9 @@
 
 
 /* Defines */
-#define SAVE_IMAGES
-#define SAVE_FACES
-#define SAVE_MASKS
+//#define SAVE_IMAGES
+//#define SAVE_FACES
+//#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
 //#define DISPLAY_IMAGES
 #define SHOW_MARKERS
@@ -55,8 +55,9 @@ typedef struct DetectionInfo
 {
 	bool isRecognized;
 	DETECTED_PERSON label;
-	cv::Point facePos;
-	short face_counter[NUM_OF_PERSON + 1];
+	cv::Point centerPos;
+	cv::Size size;
+	short counter[NUM_OF_PERSON + 1];
 	short undetected_counter;
 } DetectionInfo;
 

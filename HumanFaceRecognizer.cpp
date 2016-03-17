@@ -14,9 +14,7 @@ const std::string PERSON_NAME[NUM_OF_PERSON + 1] =
 	"Yumi"
 };
 
-#ifdef SAVE_IMAGES
-	int image_num = 0;
-#endif
+int image_num = 0;
 
 
 /* Functions */
@@ -73,15 +71,15 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	{
 		for (q = 0; (p != q) && (q < p) && p < (int)(facesInfo.size()); ++q)
 		{
-			if (abs(facesInfo[p].facePos.x - facesInfo[q].facePos.x) < FACE_POS_OFFSET &&
-				abs(facesInfo[p].facePos.y - facesInfo[q].facePos.y) < FACE_POS_OFFSET)
+			if (abs(facesInfo[p].centerPos.x - facesInfo[q].centerPos.x) < FACE_POS_OFFSET &&
+				abs(facesInfo[p].centerPos.y - facesInfo[q].centerPos.y) < FACE_POS_OFFSET)
 			{
 				face_counter1 = 0;
 				face_counter2 = 0;
 				for (r = 0; r <= NUM_OF_PERSON; ++r)
 				{
-					face_counter1 += facesInfo[p].face_counter[r];
-					face_counter2 += facesInfo[q].face_counter[r];
+					face_counter1 += facesInfo[p].counter[r];
+					face_counter2 += facesInfo[q].counter[r];
 				}
 #ifdef SHOW_DEBUG_MESSAGES
 				std::cout << std::endl << face_counter1 << "\t" << face_counter2 << "\t";
@@ -90,21 +88,21 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 
 				if (face_counter1 > face_counter2)
 				{
-					if (facesInfo[q].face_counter[facesInfo[p].label] > 0)
+					if (facesInfo[q].counter[facesInfo[p].label] > 0)
 					{
-						facesInfo[p].face_counter[facesInfo[p].label] += facesInfo[q].face_counter[facesInfo[p].label];
-						facesInfo[p].facePos.x = facesInfo[q].facePos.x;
-						facesInfo[p].facePos.y = facesInfo[q].facePos.y;
+						facesInfo[p].counter[facesInfo[p].label] += facesInfo[q].counter[facesInfo[p].label];
+						facesInfo[p].centerPos.x = facesInfo[q].centerPos.x;
+						facesInfo[p].centerPos.y = facesInfo[q].centerPos.y;
 					}
 					facesInfo.erase(facesInfo.begin() + q);
 				}
 				else if (face_counter1 < face_counter2)
 				{
-					if (facesInfo[p].face_counter[facesInfo[q].label] > 0)
+					if (facesInfo[p].counter[facesInfo[q].label] > 0)
 					{
-						facesInfo[q].face_counter[facesInfo[q].label] += facesInfo[p].face_counter[facesInfo[q].label];
-						facesInfo[q].facePos.x = facesInfo[p].facePos.x;
-						facesInfo[q].facePos.y = facesInfo[p].facePos.y;
+						facesInfo[q].counter[facesInfo[q].label] += facesInfo[p].counter[facesInfo[q].label];
+						facesInfo[q].centerPos.x = facesInfo[p].centerPos.x;
+						facesInfo[q].centerPos.y = facesInfo[p].centerPos.y;
 					}
 					facesInfo.erase(facesInfo.begin() + p);
 				}
@@ -112,14 +110,22 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 		}
 	}
 
+	int matchedFacePos = -1;
+
 	// If a detected face at certain position is not detected for a period of time, it is discarded
 	for (p = 0; p < (int)facesInfo.size(); ++p)
 	{
 		for (it = newFacePos.begin(); it != newFacePos.end(); ++it)
 		{
-			if ((facesInfo[p].facePos.x >(it->x - FACE_POS_OFFSET)) && (facesInfo[p].facePos.x < (it->x + FACE_POS_OFFSET)) &&
-				(facesInfo[p].facePos.y >(it->y - FACE_POS_OFFSET)) && (facesInfo[p].facePos.y < (it->y + FACE_POS_OFFSET)))
+			cv::Point center(it->x + it->width / 2, it->y + it->height / 2);
+
+			if ((facesInfo[p].centerPos.x >(center.x - FACE_POS_OFFSET)) &&
+				(facesInfo[p].centerPos.x < (center.x + FACE_POS_OFFSET)) &&
+				(facesInfo[p].centerPos.y >(center.y - FACE_POS_OFFSET)) &&
+				(facesInfo[p].centerPos.y < (center.y + FACE_POS_OFFSET))) {
+				matchedFacePos = p;
 				break;
+			}
 		}
 
 		if (it == newFacePos.end())
@@ -202,15 +208,16 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 			{
 				//cout << facesInfo[p].facePos.x << "," << facesInfo[p].facePos.y << endl;
 				if (!isExistedFace &&
-					(facesInfo[p].facePos.x > (top.x - FACE_POS_OFFSET)) &&
-					(facesInfo[p].facePos.x < (top.x + FACE_POS_OFFSET)) &&
-					(facesInfo[p].facePos.y > (top.y - FACE_POS_OFFSET)) &&
-					(facesInfo[p].facePos.y < (top.y + FACE_POS_OFFSET)))
+					(facesInfo[p].centerPos.x > (center.x - FACE_POS_OFFSET)) &&
+					(facesInfo[p].centerPos.x < (center.x + FACE_POS_OFFSET)) &&
+					(facesInfo[p].centerPos.y > (center.y - FACE_POS_OFFSET)) &&
+					(facesInfo[p].centerPos.y < (center.y + FACE_POS_OFFSET)))
 				{
-					facesInfo[p].facePos.x = top.x;
-					facesInfo[p].facePos.y = top.y;
+					memcpy(&(facesInfo[p].centerPos), &center, sizeof(cv::Point));
+					//facesInfo[p].centerPos.x = center.x;
+					//facesInfo[p].centerPos.y = center.y;
 
-					++(facesInfo[p].face_counter[predictedLabel]);
+					++(facesInfo[p].counter[predictedLabel]);
 
 					if (!(facesInfo[p].isRecognized))
 					{
@@ -221,7 +228,7 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 						case Joel:
 						case KaHo:
 						case Yumi:
-							if (facesInfo[p].face_counter[predictedLabel] >= FACE_DET_THREHOLD)
+							if (facesInfo[p].counter[predictedLabel] >= FACE_DET_THREHOLD)
 							{
 #ifdef SHOW_MARKERS
 								//oss << PERSON_NAME[facesInfo[p].label] << " " << confidence;
@@ -249,13 +256,13 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 							break;
 
 						case Guest:
-							if (facesInfo[p].face_counter[Guest] >= FACE_DET_THREHOLD * 2)
+							if (facesInfo[p].counter[Guest] >= FACE_DET_THREHOLD * 2)
 							{
 #ifdef SHOW_MARKERS
 								oss << PERSON_NAME[Guest] << " " << confidence;
 								//oss << NAME_GUEST;
 #endif
-								if (facesInfo[p].face_counter[Guest] == 10)
+								if (facesInfo[p].counter[Guest] == 10)
 								{
 									str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[Guest]);
 									/* Text to Speech */
@@ -316,8 +323,10 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 				DetectionInfo para;
 				memset(&para, 0, sizeof(DetectionInfo));
 				para.isRecognized = false;
-				para.facePos = cv::Point(it->x, it->y);
-				para.face_counter[predictedLabel] = 1;
+				//para.centerPos = cv::Point(it->x + it->width/2, it->y + it->height/2);
+				memcpy(&(para.centerPos), &center, sizeof(cv::Point));
+				memcpy(&(para.size), &(it->size()), sizeof(cv::Size));
+				para.counter[predictedLabel] = 1;
 				facesInfo.push_back(para);
 
 #ifdef SHOW_MARKERS
@@ -394,18 +403,19 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 		similar_pixel_counter = 0;
 	}
 
-#ifdef SAVE_IMAGES
 	if (i > 0) {
+#ifdef SAVE_IMAGES
 		oss.str("");
 		oss << IMAGE_DIR << image_num << IMAGE_NAME_POSTFIX << IMAGE_EXTENSION;
 		imwrite(oss.str(), original);
-		oss.str("");
-		oss << IMAGE_DIR << "frame_" << image_num << IMAGE_NAME_POSTFIX << IMAGE_EXTENSION;
-		imwrite(oss.str(), *frame);
+		//oss.str("");
+		//oss << IMAGE_DIR << "frame_" << image_num << IMAGE_NAME_POSTFIX << IMAGE_EXTENSION;
+		//imwrite(oss.str(), *frame);
+#endif
 		++image_num;
 	}
-#endif
 
+	std::cout << "Processed: " << image_num << std::endl;
 
 #ifdef DISPLAY_IMAGES
 	cv::namedWindow("Video_Stream", CV_WINDOW_AUTOSIZE);     // Create a window for display.
