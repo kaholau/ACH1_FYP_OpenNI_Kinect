@@ -15,8 +15,8 @@ Multithreading::~Multithreading()
 	KinectThread_Future.get();
 	TextToSpeechThread_Future.get();
 	ObstacleDetectionThread_Future.get();
-	//FaceDetectionThread_Future.get();
-	//SignDetectionThread_Future.get();
+	FaceDetectionThread_Future.get();
+	SignDetectionThread_Future.get();
 	StairDetectionThread_Future.get();
 }
 
@@ -51,8 +51,8 @@ void Multithreading::CreateAsyncThreads()
 
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
-	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
+	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
 	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
 
@@ -83,8 +83,8 @@ void Multithreading::KinectThread_Process()
 		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit, newTimeStamp);
 		
 		//cv::imshow("ORIGINAL COLOR", colorImg);
-		cv::imshow("ORIGINAL DEPTH", depth8bit);
-		cv::waitKey(1);
+		//cv::imshow("ORIGINAL DEPTH", depth8bit);
+		//cv::waitKey(1);
 	}
 }
 

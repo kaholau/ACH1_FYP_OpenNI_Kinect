@@ -9,39 +9,53 @@ void vibrateGroup(int group) {
   switch (group) {
     case 1:
     case 49: // left group
-    {
-      digitalWrite(leftPin1, LOW);
-      digitalWrite(middlePin1, HIGH);
-      digitalWrite(rightPin1, HIGH);
-      break;
-    }
-    
-    case 2:
-    case 50: // middle group
-    {
-      digitalWrite(leftPin1, HIGH);
-      digitalWrite(middlePin1, LOW);
-      digitalWrite(rightPin1, HIGH);   
-      break;
-    }
+      {
+        digitalWrite(leftPin1, LOW);
+        digitalWrite(middlePin1, HIGH);
+        digitalWrite(rightPin1, HIGH);
+        break;
+      }
 
-    
+    case 2:
+    case 50: // middle_left group
+      {
+        digitalWrite(leftPin1, LOW);
+        digitalWrite(middlePin1, LOW);
+        digitalWrite(rightPin1, HIGH);
+        break;
+      }
     case 3:
-    case 51: // right group
-    {
-      digitalWrite(leftPin1, HIGH);
-      digitalWrite(middlePin1, HIGH);
-      digitalWrite(rightPin1, LOW);
-      break;
-    }
+    case 51: // middle_middle group
+      {
+        digitalWrite(leftPin1, HIGH);
+        digitalWrite(middlePin1, LOW);
+        digitalWrite(rightPin1, HIGH);
+        break;
+      }
+    case 4:
+    case 52: // middle_right group
+      {
+        digitalWrite(leftPin1, HIGH);
+        digitalWrite(middlePin1, LOW);
+        digitalWrite(rightPin1, LOW);
+        break;
+      }
+    case 5:
+    case 53: // right group
+      {
+        digitalWrite(leftPin1, HIGH);
+        digitalWrite(middlePin1, HIGH);
+        digitalWrite(rightPin1, LOW);
+        break;
+      }
 
     default:
-    {
-      digitalWrite(leftPin1, HIGH);
-      digitalWrite(middlePin1, HIGH);
-      digitalWrite(rightPin1, HIGH);
-      break;
-    }
+      {
+        digitalWrite(leftPin1, HIGH);
+        digitalWrite(middlePin1, HIGH);
+        digitalWrite(rightPin1, HIGH);
+        break;
+      }
   }
 }
 

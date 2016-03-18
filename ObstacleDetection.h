@@ -68,7 +68,12 @@ using namespace cv;
 #define SecondBinHeightDivisor 10		//affect the heigth of the rect in the second histogram calculation
 
 enum ObjectType { UNDEFINED, GROUND, RIGHT_PLANE, LEFT_PLANE, ALL_OBSTACLE, OBSTACLE };
-enum Position {left,center,right};
+#define TURN_LEFT			1
+#define MIDDLE_LEFT			2
+#define MIDDLE_MIDDLE		3
+#define MIDDLE_RIGHT		4
+#define TURN_RIGHT			5
+#define NO_PATH				0
 
 class ObstacleDetection
 {
@@ -98,7 +103,7 @@ class ObstacleDetection
 	vector<Object> GroundList;
 	vector<Object> ObstacleList;
 	int mUserHeight;
-	string currentPath;
+	int currentPath;
 	int pathDirCol;
 	vector<float> tanList;
 	Serial serial;
@@ -140,7 +145,7 @@ private:
 
 	//find path
 	string findPathByPartition();
-	string findPathByMassCenter();
+	int findPathByMassCenter();
 	void Enhance1DMax(Mat *pImg);
 
 public:

@@ -139,7 +139,12 @@ bool Serial::SendDirection(int direction)
 	case 3:
 		return WriteData("3", 1);
 		break;
-
+	case 4:
+		return WriteData("4", 1);
+		break;
+	case 5:
+		return WriteData("5", 1);
+		break;
 	default:
 		return WriteData("0", 1);
 		break;

@@ -278,27 +278,15 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		imshow("finalGround", Ground.img);
 		waitKey();
 #endif
-		std::string path = findPathByMassCenter();
-
-		if (currentPath.compare(path) != 0)
+		int path = findPathByMassCenter();
+		std::cout << "path :" << path << std::endl;
+		if (currentPath != path)
 		{
 			currentPath = path;
 			//TextToSpeech::pushBack(path);
-
-			int dir = 0;
-			if (path == "left") {
-				dir = 1;
-			}
-			else if (path == "center") {
-				dir = 2;
-			}
-			else if (path == "right") {
-				dir = 3;
-			}
-
-			serial.SendDirection(dir);
+			serial.SendDirection(path);
 		}
-		if (path.compare("no path") != 0)
+		if (path!= NO_PATH)
 			currentDepth &= Ground.img;
 	}
 	delete[] pThreasholdImageList;
@@ -372,11 +360,15 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		Point(realColStart + realDepthColsWidth * 2 / 3, 0),
 		Scalar(255), 2, 8, 0);
 	Scalar dir = Scalar(0, 0, 0);
-	if (currentPath == "left")
+	if (currentPath ==TURN_LEFT)
 		dir = Scalar(0, 0, 255);
-	if (currentPath == "center")
-		dir = Scalar(0, 255,0);
-	if (currentPath == "right")
+	if (currentPath == MIDDLE_LEFT)
+		dir = Scalar(0, 255,255);
+	if (currentPath == MIDDLE_MIDDLE)
+		dir = Scalar(0, 255, 0);
+	if (currentPath == MIDDLE_RIGHT)
+		dir = Scalar(255, 255, 0);
+	if (currentPath == TURN_RIGHT)
 		dir = Scalar(255, 0, 0);
 	arrowedLine(currentDepth, Point(pathDirCol, currentDepth.rows), Point(pathDirCol, currentDepth.rows-20), dir, 3, 8, 0, 0.6);
 #endif
@@ -1107,7 +1099,7 @@ void ObstacleDetection::Enhance1DMax(Mat *pImg)
 	temp.copyTo(*pImg);
 }
 
-string  ObstacleDetection::findPathByMassCenter()
+int  ObstacleDetection::findPathByMassCenter()
 {
 	int realDepthColsWidth;
 	int realColStart;
@@ -1131,10 +1123,10 @@ string  ObstacleDetection::findPathByMassCenter()
 
 	Mat temp = Ground.img.clone();
 	bitwise_not(temp, temp);
-	imshow("temp", temp);
+	//imshow("temp", temp);
 	findContours(temp, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 	if (contours.size() <= 0)
-		return "no path";
+		return NO_PATH;
 	vector<Moments> mu(contours.size());
 	int maxAreaIndex=0;
 	
@@ -1148,7 +1140,7 @@ string  ObstacleDetection::findPathByMassCenter()
 	}
 	
 	if (mu[maxAreaIndex].m00 < (planeAreaForPlaneRemove*(dilation_size1 * 2 + 1)*(dilation_size1 * 2 + 1)))
-		return "no path";
+		return NO_PATH;
 	int firstDirCol = mu[maxAreaIndex].m10 / mu[maxAreaIndex].m00;
 	//myfile << "area" << mu[maxAreaIndex].m00 << Point2f((float)(mu[maxAreaIndex].m10 / mu[maxAreaIndex].m00), (float)(mu[maxAreaIndex].m01 / mu[maxAreaIndex].m00))<< std::endl;
 	//myfile << "col:"<<(mu[maxAreaIndex].m10 / mu[maxAreaIndex].m00) << std::endl;
@@ -1200,17 +1192,23 @@ string  ObstacleDetection::findPathByMassCenter()
 	else
 		SecondPath = beginMax;
 	myfile << "finalPath" << SecondPath << std::endl;
-	int finalPath = ((float)SecondPath + 0.5)*(float)width + start;
+	int finalPositionOfArrow = ((float)SecondPath + 0.5)*(float)width + start;
+	
+	pathDirCol = finalPositionOfArrow;
+	if ((finalPositionOfArrow > 0) && (finalPositionOfArrow <= realColStart + realDepthColsWidth / 3))
+		return TURN_RIGHT;
 
-	pathDirCol = finalPath;
-	if ((finalPath > 0) && (finalPath <= realColStart + realDepthColsWidth / 3))
-		return "right";
-	if ((finalPath > realColStart + realDepthColsWidth / 3) && (finalPath <= realColStart + realDepthColsWidth * 2 / 3))
-		return "center";
-	if ((finalPath > realColStart + realDepthColsWidth * 2 / 3) && (finalPath < realColStart + realDepthColsWidth))
-		return "left";
+	if ((finalPositionOfArrow > realColStart + realDepthColsWidth* 3/ 9) && (finalPositionOfArrow <= realColStart + realDepthColsWidth * 4 / 9))
+		return MIDDLE_RIGHT;
+	if ((finalPositionOfArrow > realColStart + realDepthColsWidth* 4/ 9) && (finalPositionOfArrow <= realColStart + realDepthColsWidth * 5 / 9))
+		return MIDDLE_MIDDLE;
+	if ((finalPositionOfArrow > realColStart + realDepthColsWidth* 5/ 9) && (finalPositionOfArrow <= realColStart + realDepthColsWidth * 6 / 9))
+		return MIDDLE_LEFT;
 
-	return "no path";
+	if ((finalPositionOfArrow > realColStart + realDepthColsWidth * 2 / 3) && (finalPositionOfArrow < realColStart + realDepthColsWidth))
+		return TURN_LEFT;
+
+	return NO_PATH;
 }
 
 void ObstacleDetection::testResult(int keyInput, int timeStamp)

@@ -59,7 +59,7 @@ public:
 	openni::Recorder m_recorder;
 	std::ofstream file;
 	bool recording = false;
-	bool replay = true;
+	bool replay = false;
 
 	bool init();
 	
