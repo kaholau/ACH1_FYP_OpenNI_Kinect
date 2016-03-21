@@ -213,7 +213,7 @@ void Multithreading::SignDetectionThread_Process()
 		oldTimeStamp = newTimeStamp;
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
 		m_sign.runRecognizer(colorImg);
-		cv::imshow("SIGN DETECTION", colorImg);
+		//cv::imshow("SIGN DETECTION", colorImg);
 	}
 }
 

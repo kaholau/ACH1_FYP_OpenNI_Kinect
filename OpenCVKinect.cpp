@@ -167,7 +167,7 @@ void OpenCVKinect::updateData()
 			m_depthImage.create(m_depthFrame.getHeight(), m_depthFrame.getWidth(), CV_16UC1);
 			m_depthImage.data = (uchar*)m_depthFrame.getData();
 
-			std::cout << "Depth Timestamp: " << this->m_depthTimeStamp << std::endl;
+			//std::cout << "Depth Timestamp: " << this->m_depthTimeStamp << std::endl;
 
 			depthCaptured = true;
 			depth_mutex.unlock();
@@ -187,7 +187,7 @@ void OpenCVKinect::updateData()
 
 			cv::cvtColor(m_colorImage, m_colorImage, CV_BGR2RGB);
 
-			std::cout << "Color Timestamp: " << m_colorTimeStamp << std::endl;
+			//std::cout << "Color Timestamp: " << m_colorTimeStamp << std::endl;
 			colorCaptured = true;
 			color_mutex.unlock();
 

@@ -20,11 +20,10 @@ Detector::Detector()
     attr_face.scaleFactor = 1.1;
     attr_face.minNeighbors = 3;
     attr_face.flags = 0|CV_HAAR_SCALE_IMAGE;
-    attr_face.minSize.width = 50;
-    attr_face.minSize.height = 50;
+	attr_face.minSize.width = attr_face.minSize.height = 45;
 
     attr_eye.scaleFactor = 1.05;
-    attr_eye.minNeighbors = 2;
+    attr_eye.minNeighbors = 3;
     attr_eye.flags = 0|CV_HAAR_SCALE_IMAGE;
     attr_eye.minSize.width = 6;
     attr_eye.minSize.height = 3;
@@ -34,13 +33,10 @@ Detector::Detector()
     face_cascade_name = "db/haarcascade_frontalface_alt.xml";
     eyes_cascade_name = "db/haarcascade_eye_tree_eyeglasses.xml";
     if( !face_cascade.load(face_cascade_name) )
-	{
 		std::cout << "Face Features loading error!\n";
-	}
+
     if( !eyes_cascade.load( eyes_cascade_name ) )
-	{
 		std::cout << "Eye Features loading error!\n";
-	}
 }
 
 void Detector::getFaces(const cv::Mat &image, cv::vector<cv::Rect> &faces_pos)
