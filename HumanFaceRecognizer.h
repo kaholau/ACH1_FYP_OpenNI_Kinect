@@ -11,7 +11,7 @@
 
 
 /* Defines */
-//#define SAVE_IMAGES
+#define SAVE_IMAGES
 //#define SAVE_FACES
 //#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
@@ -28,7 +28,7 @@
 #define IMAGE_NAME_POSTFIX "_image"
 #define FACE_NAME_POSTFIX  "_face"
 #define MASK_NAME_POSTFIX  "_face_mask"
-#define IMAGE_EXTENSION    ".jpg"
+#define IMAGE_EXTENSION    ".bmp"
 
 #define DB_FILE_PATH       "db/lbp_face.xml"
 
@@ -36,9 +36,9 @@
 #define HELLO_MESSAGE      "Hello, "
 
 #define MAX_FACE_SIZE			600
-#define FACE_POS_OFFSET			100
-#define FACE_DET_THREHOLD		3
-#define UNDETECTED_THREHOLD		(FACE_DET_THREHOLD*2)
+#define FACE_POS_OFFSET			55
+#define FACE_DET_THREHOLD		5
+#define UNDETECTED_THREHOLD		(FACE_DET_THREHOLD*1.5)
 #define NUM_OF_CHANNELS_COLOUR	3
 
 
@@ -82,6 +82,8 @@ public:
 	void testExample(void);
 
 private:
+	void resizeTo640x480(cv::Mat *);
+
 	Detector detector;
 	double min_percent;
 	double max_percent;
