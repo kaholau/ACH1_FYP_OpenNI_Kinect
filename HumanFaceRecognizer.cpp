@@ -37,7 +37,11 @@ HumanFaceRecognizer::~HumanFaceRecognizer()
 
 int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 {
-	resizeTo640x480(frame);
+#ifdef RESIZE_TO_SMALLER
+	cv::Mat original = detector.resizeToSmaller(frame);
+#else
+	cv::Mat original = (*frame).clone();
+#endif
 
 #ifdef COMPARE_FACE_COLOUR
 	cv::Mat outputMask;
@@ -48,7 +52,6 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	int i, j, k, p, q, r;
 	int face_num = 0; // variable used when saving faces or masks
 	std::vector<cv::Rect> newFacePos;
-	cv::Mat original;
 	std::ostringstream oss;
 
 
@@ -58,8 +61,6 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	double confidence = 0.0;
 	double confidence_threshold = 125;
 	bool isExistedFace = false;
-
-	original = (*frame).clone();
 
 	// Apply the classifier to the frame
 	detector.getFaces(*frame, newFacePos);
@@ -158,7 +159,12 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	for (i = 0, it = newFacePos.begin(); it != newFacePos.end(); ++it, ++i)
 	{
 		++face_num;
+
+#ifdef RESIZE_TO_SMALLER
+		cv::Mat face = original(cv::Rect((*it).x * RESIZE_SCALE, (*it).y * RESIZE_SCALE, (*it).width * RESIZE_SCALE, (*it).height * RESIZE_SCALE)).clone();
+#else
 		cv::Mat face = original(*it).clone();
+#endif
 		cv::Mat face_grey;
 		cv::Point center(it->x + it->width*0.5, it->y + it->height*0.5);
 		cv::Point top(it->x, it->y);
@@ -303,8 +309,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 					}
 #endif
 #ifdef SHOW_MARKERS
-					putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.6,
-						cv::Scalar(0, 0, 255), 2);
+					putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
+						cv::Scalar(0, 0, 255), 1);
 #endif
 					isExistedFace = true;
 				}
@@ -324,8 +330,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #ifdef SHOW_MARKERS
 				oss.str("");
 				oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
-				putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.6,
-					cv::Scalar(255, 0, 255, 2));
+				putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
+					cv::Scalar(255, 0, 255, 1));
 #endif
 			}
 #ifdef SHOW_DEBUG_MESSAGES
@@ -419,16 +425,6 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 
 	return 0;
-}
-
-
-void HumanFaceRecognizer::resizeTo640x480(cv::Mat *frame)
-{
-	if (frame->size().width == 640 && frame->size().height == 480)
-		return;
-
-	const cv::Size size(640, 480);
-	cv::resize(*frame, *frame, size);
 }
 
 void HumanFaceRecognizer::testExample(void)

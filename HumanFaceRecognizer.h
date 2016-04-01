@@ -12,7 +12,7 @@
 
 /* Defines */
 #define SAVE_IMAGES
-//#define SAVE_FACES
+#define SAVE_FACES
 //#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
 //#define DISPLAY_IMAGES
@@ -35,9 +35,8 @@
 #define DETECTING          "detecting..."
 #define HELLO_MESSAGE      "Hello, "
 
-#define MAX_FACE_SIZE			600
-#define FACE_POS_OFFSET			60
-#define FACE_DET_THREHOLD		5
+#define FACE_POS_OFFSET			30
+#define FACE_DET_THREHOLD		4
 #define UNDETECTED_THREHOLD		(FACE_DET_THREHOLD*1.5)
 #define NUM_OF_CHANNELS_COLOUR	3
 
@@ -82,7 +81,7 @@ public:
 	void testExample(void);
 
 private:
-	void resizeTo640x480(cv::Mat *);
+	//cv::Mat resizeToSmaller(cv::Mat *);
 
 	Detector detector;
 	double min_percent;

@@ -13,6 +13,22 @@
 #define MIN_ITEM           0
 #define MAX_ITEM           1
 
+#define ORIGINAL_WIDTH     1280
+#define ORIGINAL_HEIGHT    960
+
+#define RESIZE_TO_SMALLER
+#ifdef RESIZE_TO_SMALLER
+	#define RESIZE_SCALE       (8/3)
+	#define RESIZE_WIDTH       (ORIGINAL_WIDTH / RESIZE_SCALE)
+	#define RESIZE_HEIGHT      (ORIGINAL_HEIGHT / RESIZE_SCALE)
+
+	#define MIN_FACE_SIZE      (RESIZE_WIDTH / 14)
+	#define MAX_FACE_SIZE      (RESIZE_HEIGHT / 3)
+#else
+	#define MIN_FACE_SIZE      80
+	#define MAX_FACE_SIZE      600
+#endif
+
 class Detector
 {
 public:
@@ -35,10 +51,11 @@ public:
 	void getFaces(const cv::Mat &image, cv::vector<cv::Rect>& faces_pos);
 	bool hasEyes(cv::Mat &image);
 	void compareFaceColour(cv::Mat &image, cv::Mat &outputMask);
-    double* getFaceColourAvg( void );
-    double* getFaceColourDev( void );
-    double* getFaceColourDevConst( void );
-    void setFaceColourDevConst( double value );
+    double* getFaceColourAvg(void);
+    double* getFaceColourDev(void);
+    double* getFaceColourDevConst(void);
+    void setFaceColourDevConst(double value);
+	cv::Mat resizeToSmaller(cv::Mat *);
 
 private:
 	cv::String face_cascade_name;
