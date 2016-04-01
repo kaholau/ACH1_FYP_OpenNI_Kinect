@@ -18,7 +18,7 @@
 
 #define RESIZE_TO_SMALLER
 #ifdef RESIZE_TO_SMALLER
-	#define RESIZE_SCALE       (8/3)
+	#define RESIZE_SCALE       (2)
 	#define RESIZE_WIDTH       (ORIGINAL_WIDTH / RESIZE_SCALE)
 	#define RESIZE_HEIGHT      (ORIGINAL_HEIGHT / RESIZE_SCALE)
 
