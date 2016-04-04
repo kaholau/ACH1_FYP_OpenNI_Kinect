@@ -161,11 +161,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 		++face_num;
 
 #ifdef RESIZE_TO_SMALLER
-		cv::Mat face;
-		if ((*it).x != 0 && (*it).y != 0)
-			face = original(cv::Rect((*it).x * RESIZE_SCALE - 1, (*it).y * RESIZE_SCALE - 1, (*it).width * RESIZE_SCALE - 1, (*it).height * RESIZE_SCALE - 1)).clone();
-		else
-			face = original(cv::Rect((*it).x * RESIZE_SCALE, (*it).y * RESIZE_SCALE , (*it).width * RESIZE_SCALE - 2, (*it).height * RESIZE_SCALE - 2)).clone();
+		cv::Mat face = original(cv::Rect((*it).x * RESIZE_SCALE, (*it).y * RESIZE_SCALE, 
+			(*it).width * RESIZE_SCALE, (*it).height * RESIZE_SCALE)).clone();
 #else
 		cv::Mat face = original(*it).clone();
 #endif
