@@ -71,7 +71,7 @@ bool OpenCVKinect::init()
 	m_status = m_color.create(m_device, openni::SENSOR_COLOR);
 	const openni::SensorInfo* sinfoColor = m_device.getSensorInfo(openni::SENSOR_COLOR);
 	const openni::Array<openni::VideoMode> &videoModesColor = sinfoColor->getSupportedVideoModes();
-	m_color.setVideoMode(videoModesColor[1]);
+	m_color.setVideoMode(videoModesColor[0]);
 	if (m_status == openni::STATUS_OK)
 	{
 		m_status = m_color.start();

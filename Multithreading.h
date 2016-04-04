@@ -3,15 +3,16 @@
 #include <NuiApi.h>
 #include <stdlib.h>
 
+#include "include.h"
 #include "OpenCVKinect.h"
-#include "TextToSpeech.h"
-#include "SignRecognizer.h"
-#include "HumanFaceRecognizer.h"
-#include "ObstacleDetection.h"
+//#include "TextToSpeech.h"
+//#include "SignRecognizer.h"
+//#include "HumanFaceRecognizer.h"
+//#include "ObstacleDetection.h"
 
 #include <thread>
 #include <future>
-#include <iostream>
+//#include <iostream>
 
 class Multithreading
 {

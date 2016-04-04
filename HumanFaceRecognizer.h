@@ -5,8 +5,9 @@
 #include <sstream>
 #include <string.h>
 
-#include "detector.h"
-#include "TextToSpeech.h"
+#include "include.h"
+//#include "detector.h"
+//#include "TextToSpeech.h"
 
 
 /* Defines */
@@ -48,17 +49,6 @@ typedef enum DETECTED_PERSON {
 	Yumi = 3
 } DETECTED_PERSON;
 
-/* Struct */
-typedef struct DetectionInfo
-{
-	bool isRecognized;
-	DETECTED_PERSON label;
-	cv::Point centerPos;
-	cv::Size size;
-	short counter[NUM_OF_PERSON + 1];
-	short undetected_counter;
-} DetectionInfo;
-
 
 /* Global Variables */
 extern const std::string PERSON_NAME[NUM_OF_PERSON + 1];
@@ -82,9 +72,12 @@ public:
 private:
 	//cv::Mat resizeToSmaller(cv::Mat *);
 
+	static int num_of_person_in_db;
+
 	Detector detector;
 	double min_percent;
 	double max_percent;
 	cv::Ptr<cv::FaceRecognizer> model;
-	std::vector<DetectionInfo> facesInfo;
+
+	std::vector<struct DetectionInfo> facesInfo;
 } HumanFaceRecognizer;

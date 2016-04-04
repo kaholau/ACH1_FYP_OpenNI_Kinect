@@ -17,6 +17,10 @@ const std::string PERSON_NAME[NUM_OF_PERSON + 1] =
 int image_num = 0;
 
 
+/* Static Member Variables */
+int HumanFaceRecognizer::num_of_person_in_db = NUM_OF_PERSON + 1;
+
+
 /* Functions */
 HumanFaceRecognizer::HumanFaceRecognizer()
 {
@@ -322,9 +326,9 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 				DetectionInfo para;
 				memset(&para, 0, sizeof(DetectionInfo));
 				para.isRecognized = false;
-				//para.centerPos = cv::Point(it->x + it->width/2, it->y + it->height/2);
 				memcpy(&(para.centerPos), &center, sizeof(cv::Point));
 				memcpy(&(para.size), &(it->size()), sizeof(cv::Size));
+				para.counter.resize(num_of_person_in_db, 0);
 				para.counter[predictedLabel] = 1;
 				facesInfo.push_back(para);
 

@@ -133,13 +133,7 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 		area = contourArea(contours_all[k]);
 		//std::cout << "Area = " << area << ",\t";
 		if ((area < CONTOUR_AREA_THRESHOLD) || (area > CONTOUR_AREA_MAX_THRESHOLD))
-		{
-#ifdef SHOW_DEBUG_MESSAGES
-			std::cout << "small / big contour detected..";
-			std::cout << std::endl;
-#endif
 			continue;
-		}
 
 		// Calculate the similarity (confidence? distance?) between the current
 		// contour and the previous contour saved
@@ -210,7 +204,7 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 #endif
 
 #ifdef SHOW_MARKERS
-			ellipse(frame, rrect, Scalar(0, MAX_VALUE_8BITS/2, MAX_VALUE_8BITS), 2); // Draw the ellipse on the image
+			ellipse(frame, rrect, Scalar(0, MAX_VALUE_8BITS / 2, MAX_VALUE_8BITS), 2); // Draw the ellipse on the image
 #endif
 
 			// Binarize the sign
@@ -250,6 +244,10 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 			string text = tess.GetUTF8Text();
 			text.erase(remove(text.begin(), text.end(), '\n'), text.end());
 			text.erase(remove(text.begin(), text.end(), ' '), text.end());
+
+			if ((strcmp(text.c_str(), "") == 0) || (strcmp(lastDet.c_str(), text.c_str()) == 0))
+				continue;
+
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << "SavedContour[" << k << "] text: " << text << "_Floor";
 			OutputDebugStringA("SavedContour[");
@@ -264,15 +262,13 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 				std::cerr << std::endl << "Error on getResultString()" << std::endl;
 				continue;
 			}
-
-			cv::putText(frame, text, contours_all[k][1], cv::FONT_HERSHEY_SIMPLEX, 1,
-				cv::Scalar(0, 128, 255));
-
 			TextToSpeech::pushBack(out);
 			//tts.pushBack(out);
 #ifdef SPEAK_OUT_RESULT
 			tts.speak();
 #endif
+			cv::putText(frame, text, contours_all[k][1], cv::FONT_HERSHEY_SIMPLEX, 1,
+				cv::Scalar(0, 128, 255), 2);
 
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << std::endl;
@@ -286,7 +282,7 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 			savedSigns.push_back(*sign);
 
 			sout.str("");
-			sout << "_sign_" << k << ".jpg";
+			sout << "_sign_" << k << ".bmp";
 			namedWindow(sout.str(), CV_WINDOW_AUTOSIZE);
 			cv::imshow(sout.str(), *sign);
 
@@ -295,13 +291,14 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 #endif
 #endif
 
-#ifdef SHOW_IMAGE_AND_RESULT
-			sout.str("");
-			sout << "Contours " << k;
-			namedWindow(sout.str(), CV_WINDOW_AUTOSIZE);
-			cv::imshow(sout.str(), contourImg);
-#endif
+//#ifdef SHOW_IMAGE_AND_RESULT
+//			sout.str("");
+//			sout << "Contours " << k;
+//			namedWindow(sout.str(), CV_WINDOW_AUTOSIZE);
+//			cv::imshow(sout.str(), contourImg);
+//#endif
 
+			lastDet = text;
 			sign = NULL;
 		}
 
