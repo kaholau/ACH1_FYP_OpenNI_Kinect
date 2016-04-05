@@ -58,7 +58,7 @@ public:
 	INuiSensor *pNuiSensor;
 	openni::Recorder m_recorder;
 	std::ofstream file;
-	bool recording = false;
+	bool recording = true ;
 	bool replay = false;
 
 	bool init();
@@ -70,7 +70,7 @@ public:
 	void getColor(cv::Mat &colorMat, uint64_t &colorTimeStamp);
 	void getMatrix(MatFlag type, cv::Mat &color, cv::Mat &depthRaw, cv::Mat &depth8bit, uint64_t &timestamp);
 	LONG getAngle();
-
+	
 	int getFrameIndexColor();
 	int getFrameIndexDepth();
 };

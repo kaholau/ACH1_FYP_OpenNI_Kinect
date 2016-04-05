@@ -185,8 +185,6 @@ void OpenCVKinect::updateData()
 			m_colorImage.create(m_colorFrame.getHeight(), m_colorFrame.getWidth(), CV_8UC3);
 			m_colorImage.data = (uchar*)m_colorFrame.getData();
 
-			cv::cvtColor(m_colorImage, m_colorImage, CV_BGR2RGB);
-
 			//std::cout << "Color Timestamp: " << m_colorTimeStamp << std::endl;
 			colorCaptured = true;
 			color_mutex.unlock();
@@ -207,7 +205,7 @@ void OpenCVKinect::updateData()
 void OpenCVKinect::getColor(cv::Mat &colorMat, uint64_t &colorTimeStamp)
 {
 	color_mutex.lock();
-	colorMat = m_colorImage.clone();
+	cv::cvtColor(m_colorImage, colorMat, CV_BGR2RGB);
 	colorTimeStamp = m_colorTimeStamp;
 	color_mutex.unlock();
 }
@@ -241,8 +239,7 @@ void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawM
 		depth_mutex.lock();
 
 	if (color){
-		//cv::cvtColor(m_colorImage, colorMat, CV_BGR2RGB);
-		colorMat = m_colorImage.clone();
+		cv::cvtColor(m_colorImage, colorMat, CV_BGR2RGB);
 	}
 	if (depthRaw)
 		depthRawMat = m_depthImage.clone();

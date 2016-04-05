@@ -38,6 +38,8 @@ bool Multithreading::InitializeKinect()
 	if (m_Kinect.recording) {
 		m_Kinect.m_recorder.start();
 		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(0);
+		startRecordingTime = cv::getTickCount() / cv::getTickFrequency();
+		std::cout << "start recording" << std::endl;
 	}
 
 	return true;
@@ -61,11 +63,19 @@ void Multithreading::Hold()
 	/// Idle Main thread to prevent from closing.
 	/// Use getMatrix's time return to prevent over spam.
 	uint64_t time = 0, oldtime = 0;
+	uint64_t curTime = 0;
 	while (waitKey(1) != 27) {
+		curTime = cv::getTickCount() / cv::getTickFrequency();
+		if (m_Kinect.recording && ((curTime - startRecordingTime) > recordingDuration))
+		{
+			m_Kinect.m_recorder.stop();
+			std::cout << "stop recording" << std::endl;
+			return;
+		}
 		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat(), time);
 		if (time <= oldtime)
 			continue;
-
+		
 		//imshow("Main Idle Window", Mat(100, 100, CV_8U));
 	}
 }

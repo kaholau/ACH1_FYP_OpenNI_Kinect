@@ -56,7 +56,7 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	int face_counter2 = 0;
 	int predictedLabel = -1;
 	double confidence = 0.0;
-	double confidence_threshold = 125;
+	double confidence_threshold = 150;
 	bool isExistedFace = false;
 
 	original = (*frame).clone();

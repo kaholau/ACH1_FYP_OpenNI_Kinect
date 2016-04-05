@@ -28,7 +28,7 @@ void ObstacleDetection::test()
 
 
 ObstacleDetection::ObstacleDetection(int userHeight)
-	: serial("COM5")
+	: serial("COM7")
 {
 	mUserHeight = userHeight;
 	tanList.clear();
@@ -1166,7 +1166,7 @@ int  ObstacleDetection::findPathByMassCenter()
 		//putText(Ground.img, std::to_string(j), Point(i + width, height), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
 		//imshow("binImg", Ground.img);
 		//waitKey();
-		myfile << "[" << i << "]" << count.at<float >(i) << std::endl;
+		//myfile << "[" << i << "]" << count.at<float >(i) << std::endl;
 	}
 	double max;
 	Point maxLoc;

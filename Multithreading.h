@@ -22,6 +22,8 @@ class Multithreading
 	ObstacleDetection m_obstacle;
 	StairDetection m_stairs;
 	bool finished = false;
+	uint64_t startRecordingTime = 0;
+	const uint64_t recordingDuration = 10 ; //second
 
 	std::future<void> KinectThread_Future;
 	std::future<void> TextToSpeechThread_Future;
