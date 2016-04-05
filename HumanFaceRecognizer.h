@@ -1,18 +1,18 @@
 #pragma once
 
-#include <iostream>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <sstream>
 #include <string.h>
 
-#include "detector.h"
-#include "TextToSpeech.h"
+#include "include.h"
+//#include "detector.h"
+//#include "TextToSpeech.h"
 
 
 /* Defines */
 #define SAVE_IMAGES
-//#define SAVE_FACES
+#define SAVE_FACES
 //#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
 //#define DISPLAY_IMAGES
@@ -35,9 +35,8 @@
 #define DETECTING          "detecting..."
 #define HELLO_MESSAGE      "Hello, "
 
-#define MAX_FACE_SIZE			600
-#define FACE_POS_OFFSET			60
-#define FACE_DET_THREHOLD		5
+#define FACE_POS_OFFSET			30
+#define FACE_DET_THREHOLD		4
 #define UNDETECTED_THREHOLD		(FACE_DET_THREHOLD*1.5)
 #define NUM_OF_CHANNELS_COLOUR	3
 
@@ -49,17 +48,6 @@ typedef enum DETECTED_PERSON {
 	KaHo = 2,
 	Yumi = 3
 } DETECTED_PERSON;
-
-/* Struct */
-typedef struct DetectionInfo
-{
-	bool isRecognized;
-	DETECTED_PERSON label;
-	cv::Point centerPos;
-	cv::Size size;
-	short counter[NUM_OF_PERSON + 1];
-	short undetected_counter;
-} DetectionInfo;
 
 
 /* Global Variables */
@@ -82,11 +70,14 @@ public:
 	void testExample(void);
 
 private:
-	void resizeTo640x480(cv::Mat *);
+	//cv::Mat resizeToSmaller(cv::Mat *);
+
+	static int num_of_person_in_db;
 
 	Detector detector;
 	double min_percent;
 	double max_percent;
 	cv::Ptr<cv::FaceRecognizer> model;
-	std::vector<DetectionInfo> facesInfo;
+
+	std::vector<struct DetectionInfo> facesInfo;
 } HumanFaceRecognizer;

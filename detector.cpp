@@ -17,10 +17,11 @@ Detector::Detector()
 	faceColour_dev[1] = 72.5205;    // G
 	faceColour_dev[2] = 76.6897;    // R
 
-    attr_face.scaleFactor = 1.1;
-    attr_face.minNeighbors = 3;
+    attr_face.scaleFactor = 1.08;
+    attr_face.minNeighbors = 6;
     attr_face.flags = 0|CV_HAAR_SCALE_IMAGE;
-	attr_face.minSize.width = attr_face.minSize.height = 45;
+	attr_face.minSize.width = attr_face.minSize.height = MIN_FACE_SIZE;
+	attr_face.maxSize.width = attr_face.maxSize.height = MAX_FACE_SIZE;
 
     attr_eye.scaleFactor = 1.05;
     attr_eye.minNeighbors = 3;
@@ -62,7 +63,7 @@ bool Detector::hasEyes(cv::Mat &image)
     equalizeHist( face_gray, face_gray );
 
     //-- In each face, detect eyes
-    eyes_cascade.detectMultiScale( face_gray, eyes, attr_eye.scaleFactor, attr_eye.minNeighbors, attr_eye.flags, attr_eye.minSize );
+	eyes_cascade.detectMultiScale(face_gray, eyes, attr_eye.scaleFactor, attr_eye.minNeighbors, attr_eye.flags, attr_eye.minSize, attr_eye.maxSize);
 
     // Draw circles on the eyes
 //    for( size_t j = 0; j < eyes.size(); j++ )
@@ -182,3 +183,18 @@ void Detector::setFaceColourDevConst( double value )
     faceColour_dev_const = value;
     return ;
 }
+
+#ifdef RESIZE_TO_SMALLER
+cv::Mat Detector::resizeToSmaller(cv::Mat *frame)
+{
+	if (frame->size().width == 640 && frame->size().height == 480)
+		return (*frame).clone();
+
+	cv::Mat in = (*frame).clone();
+	const cv::Size size(RESIZE_WIDTH, RESIZE_HEIGHT);
+	cv::resize(*frame, *frame, size);
+
+	return in;
+}
+#endif
+

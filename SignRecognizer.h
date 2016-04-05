@@ -62,7 +62,7 @@
 //#define SAME_CONTOUR_THRESHOLD		0.85
 #define SAME_CONTOUR_THRESHOLD		0.5
 #define SAME_ELLIPSE_THRESHOLD		0.95
-#define CONTOUR_AREA_THRESHOLD		3000
+#define CONTOUR_AREA_THRESHOLD		4000
 #define CONTOUR_AREA_MAX_THRESHOLD	300000
 
 typedef class SignRecognizer
@@ -96,6 +96,8 @@ private:
 	double scale;
 	int lowThreshold;
 	int dilateSize;
+	//std::vector<struct DetectionInfo> signsInfo;
+	std::string lastDet;
 
 	cv::Mat map_x, map_y;
 	cv::Size frameSize;
