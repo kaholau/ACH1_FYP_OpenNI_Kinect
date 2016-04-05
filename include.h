@@ -27,6 +27,10 @@
 
 
 
+#define ESCAPE_KEY    27
+
+
+
 
 /* Struct */
 typedef struct DetectionInfo

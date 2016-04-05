@@ -14,10 +14,10 @@ Multithreading::~Multithreading()
 	finished = true;
 	KinectThread_Future.get();
 	TextToSpeechThread_Future.get();
-	ObstacleDetectionThread_Future.get();
+	//ObstacleDetectionThread_Future.get();
 	FaceDetectionThread_Future.get();
 	SignDetectionThread_Future.get();
-	StairDetectionThread_Future.get();
+	//StairDetectionThread_Future.get();
 }
 
 bool Multithreading::InitializeKinect()
@@ -52,19 +52,19 @@ void Multithreading::CreateAsyncThreads()
 		return;
 
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
-	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
+	//ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
 	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
 	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
-	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
+	//StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
 
 void Multithreading::Hold()
 {
-	/// Idle Main thread to prevent from closing.
-	/// Use getMatrix's time return to prevent over spam.
+	// Idle Main thread to prevent from closing.
+	// Use getMatrix's time return to prevent over spam.
 	uint64_t time = 0, oldtime = 0;
 	uint64_t curTime = 0;
-	while (waitKey(1) != 27) {
+	while (waitKey(1) != ESCAPE_KEY) {
 		curTime = cv::getTickCount() / cv::getTickFrequency();
 		if (m_Kinect.recording && ((curTime - startRecordingTime) > recordingDuration))
 		{
@@ -76,8 +76,32 @@ void Multithreading::Hold()
 		if (time <= oldtime)
 			continue;
 		
-		//imshow("Main Idle Window", Mat(100, 100, CV_8U));
+		imshow("Main Idle Window", Mat(100, 100, CV_8U));
 	}
+
+	std::cout << "Exit Program!" << std::endl;
+	finished = true;
+	if (m_face.isUpdated)
+	{
+		m_face.model->save(DB_FACE_FILE_PATH);
+		std::ofstream fout;
+		fout.open(DB_NAME_FILE_PATH, std::ios::out);
+		for (int i = 0; i < m_face.PERSON_NAME.size(); i++)
+		{
+			fout << i << ',' << m_face.PERSON_NAME[i] << std::endl;
+		}
+
+		std::cout << "Face Database Saved." << std::endl;
+	}
+
+	waitKey(5000);
+
+	KinectThread_Future.get();
+	TextToSpeechThread_Future.get();
+	//ObstacleDetectionThread_Future.get();
+	FaceDetectionThread_Future.get();
+	SignDetectionThread_Future.get();
+	//StairDetectionThread_Future.get();
 }
 
 void Multithreading::KinectThread_Process()
@@ -160,7 +184,7 @@ void Multithreading::ObstacleDetectionThread_Process()
 	//createTrackbar("dilation1", "DEPTH", &di1, 21, on_trackbarDilation1, &m_obstacle);
 	//createTrackbar("erosion", "DEPTH", &di2, 21, on_trackbarErosion, &m_obstacle);
 	//createTrackbar("dilation2", "DEPTH", &di2, 21, on_trackbarDilation2, &m_obstacle);
-	while (waitKey(1) != 27) 
+	while (waitKey(1) != ESCAPE_KEY)
 	{
 		if (finished)
 			return;
@@ -193,7 +217,9 @@ void Multithreading::FaceDetectionThread_Process()
 	cv::Mat colorImg;
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 
-	while (waitKey(1) != 27) {
+	std::string faceName;
+
+	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
 
@@ -202,7 +228,33 @@ void Multithreading::FaceDetectionThread_Process()
 			continue;
 		oldTimeStamp = newTimeStamp;
 
-		m_face.runFaceRecognizer(&colorImg);
+
+		HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
+		DWORD events;
+		INPUT_RECORD buffer;
+		PeekConsoleInput(handle, &buffer, 1, &events);
+		if (events > 0)
+		{
+			ReadConsoleInput(handle, &buffer, 1, &events);
+			switch (buffer.Event.KeyEvent.wVirtualKeyCode)
+			{
+			case 0x30:
+				std::cout << "Please enter person's name to be added:";
+				std::getline(std::cin, faceName);
+				m_face.isAddNewFace = true;
+				m_face.isUpdated = true;
+				break;
+
+			case 0x31:
+				m_face.isAddNewFace = false;
+				break;
+			}
+		}
+
+		if (m_face.isAddNewFace)
+			m_face.addNewFace(colorImg, faceName);
+		else
+			m_face.runFaceRecognizer(&colorImg);
 
 		cv::imshow("FACE DETECTION", colorImg);
 	}
@@ -213,7 +265,7 @@ void Multithreading::SignDetectionThread_Process()
 	cv::Mat colorImg;
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 
-	while (waitKey(1) != 27) {
+	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
 
@@ -223,7 +275,7 @@ void Multithreading::SignDetectionThread_Process()
 		oldTimeStamp = newTimeStamp;
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
 		m_sign.runRecognizer(colorImg);
-		//cv::imshow("SIGN DETECTION", colorImg);
+		cv::imshow("SIGN DETECTION", colorImg);
 	}
 }
 
@@ -233,7 +285,7 @@ void Multithreading::StairDetectionThread_Process()
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 	std::vector<cv::Point> stairConvexHull;
 
-	while (waitKey(1) != 27) {
+	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
 

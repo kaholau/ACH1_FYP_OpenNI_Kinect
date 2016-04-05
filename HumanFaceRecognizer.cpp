@@ -6,32 +6,60 @@
 
 
 /* Global Variables */
-const std::string PERSON_NAME[NUM_OF_PERSON + 1] =
-{
-	"Guest",
-	"Joel",
-	"Ka Ho",
-	"Yumi"
-};
+//const std::string PERSON_NAME[NUM_OF_PERSON + 1] =
+//{
+//	"Guest",
+//	"Joel",
+//	"Ka Ho",
+//	"Yumi"
+//};
 
 int image_num = 0;
-
-
-/* Static Member Variables */
-int HumanFaceRecognizer::num_of_person_in_db = NUM_OF_PERSON + 1;
 
 
 /* Functions */
 HumanFaceRecognizer::HumanFaceRecognizer()
 {
 	model = cv::createLBPHFaceRecognizer();
-	model->load(DB_FILE_PATH);
+	model->load(DB_FACE_FILE_PATH);
 
 	total_percent = 0.0;
 	total_percent_var = 0.0;
-	min_percent = 0.4;
-	max_percent = 0.85;
+	min_percent = 0.35;
+	max_percent = 0.65;
 	num_of_face_detected = 0;
+
+	num_of_person_in_db = 0;
+
+	std::ifstream fin;
+	fin.open(DB_NAME_FILE_PATH);
+	if (!fin.is_open())
+	{
+		std::cerr << "Cannot open " << DB_NAME_FILE_PATH << "for people names" << std::endl;
+		exit(0);
+	}
+
+	std::string buf;
+	while (!fin.eof())
+	{
+		std::getline(fin, buf, ',');
+		std::getline(fin, buf);
+		std::cout << buf << std::endl;
+		
+		if (!buf.empty())
+			PERSON_NAME.push_back(buf);
+	}
+	num_of_person_in_db = PERSON_NAME.size();
+	std::cout << "num_of_person_in_db: " << num_of_person_in_db << std::endl;
+	//PERSON_NAME.push_back("Guest");
+	//PERSON_NAME.push_back("Joel");
+	//PERSON_NAME.push_back("Ka Ho");
+	//PERSON_NAME.push_back("Yumi");
+	fin.close();
+
+
+	isUpdated = false;
+	isAddNewFace = false;
 }
 
 HumanFaceRecognizer::~HumanFaceRecognizer()
@@ -63,12 +91,13 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	int face_counter2 = 0;
 	int predictedLabel = -1;
 	double confidence = 0.0;
-	double confidence_threshold = 150;
+	double confidence_threshold = 100;
 	bool isExistedFace = false;
 
 	// Apply the classifier to the frame
 	detector.getFaces(*frame, newFacePos);
 	cv::vector<cv::Rect>::iterator it = newFacePos.begin();
+
 
 	// Reject one of the detected faces if the positions of two faces are too closed
 	// Reject the one with fewer number of detected faces over the time at its position
@@ -240,9 +269,32 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 						oss.str("");
 						switch (predictedLabel)
 						{
+						case -1:
+#ifdef SHOW_MARKERS
+							oss << "unrecognised";
+#endif
+							break;
+
+						case Guest:
+							if (facesInfo[p].counter[Guest] >= FACE_DET_THREHOLD * 2) {
+#ifdef SHOW_MARKERS
+								oss << PERSON_NAME[Guest] << " " << confidence;
+#endif
+								if (facesInfo[p].counter[Guest] == 10) {
+									str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[Guest]);
+									TextToSpeech::pushBack(str);
+								}
+							}
+#ifdef SHOW_MARKERS
+							else
+								oss << DETECTING << confidence;
+#endif
+							break;
+
 						case Joel:
 						case KaHo:
 						case Yumi:
+						default:
 							if (facesInfo[p].counter[predictedLabel] >= FACE_DET_THREHOLD) {
 #ifdef SHOW_MARKERS
 								//oss << PERSON_NAME[facesInfo[p].label] << " " << confidence;
@@ -265,29 +317,6 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 							}
 #endif
 							break;
-
-						case Guest:
-							if (facesInfo[p].counter[Guest] >= FACE_DET_THREHOLD * 2) {
-#ifdef SHOW_MARKERS
-								oss << PERSON_NAME[Guest] << " " << confidence;
-#endif
-								if (facesInfo[p].counter[Guest] == 10) {
-									str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[Guest]);
-									TextToSpeech::pushBack(str);
-								}
-							}
-#ifdef SHOW_MARKERS
-							else
-								oss << DETECTING << confidence;
-#endif
-							break;
-
-						case -1:
-						default:
-#ifdef SHOW_MARKERS
-							oss << "unrecognised";
-#endif
-							break;
 						}
 
 					}
@@ -295,22 +324,24 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 					else
 					{
 						oss.str("");
-						switch (facesInfo[p].label)
-						{
-						case Guest:
-						case Joel:
-						case KaHo:
-						case Yumi:
-							//oss << PERSON_NAME[facesInfo[p].label] << "-" << confidence;
-							oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
-							//oss << PERSON_NAME[facesInfo[p].label];
-							break;
+						oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
 
-						default:
-							oss << "Special!! " << confidence;
-							//oss << NAME_GUEST;
-							break;
-						}
+						//switch (facesInfo[p].label)
+						//{
+						//case Guest:
+						//case Joel:
+						//case KaHo:
+						//case Yumi:
+						//	//oss << PERSON_NAME[facesInfo[p].label] << "-" << confidence;
+						//	oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
+						//	//oss << PERSON_NAME[facesInfo[p].label];
+						//	break;
+
+						//default:
+						//	oss << "Special!! " << confidence;
+						//	//oss << NAME_GUEST;
+						//	break;
+						//}
 					}
 #endif
 #ifdef SHOW_MARKERS
@@ -430,6 +461,108 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 
 	return 0;
+}
+
+
+void HumanFaceRecognizer::addNewFace(cv::Mat &frame, std::string name)
+{
+#ifdef RESIZE_TO_SMALLER
+	cv::Mat original = detector.resizeToSmaller(&frame);
+#else
+	cv::Mat original = (*frame).clone();
+#endif
+
+	facesInfo.clear();
+
+	std::vector<cv::Mat> faceList;
+	std::vector<int> labelList;
+	
+	std::vector<cv::Rect> facePos;
+	detector.getFaces(frame, facePos); // Apply the classifier to the frame
+	if (facePos.size() == 0)
+	{
+		std::cerr << "Cannot see any face within the camera!\n";
+		return;
+	}
+
+	int realFaceIndex = 0;
+	for (int i = 0; i < facePos.size(); i++)
+	{
+		if (facePos[realFaceIndex].size().width < facePos[i].size().width)
+			realFaceIndex = i;
+	}
+
+#ifdef SHOW_MARKERS
+	ellipse(frame, cv::Point(facePos[realFaceIndex].x + facePos[realFaceIndex].size().width / 2,
+		facePos[realFaceIndex].y + facePos[realFaceIndex].size().height / 2),
+		cv::Size(facePos[realFaceIndex].size().width*0.5, facePos[realFaceIndex].size().height*0.5),
+		0, 0, 360, cv::Scalar(0, 0, 255), 4, 8, 0);
+#endif
+
+
+#ifdef RESIZE_TO_SMALLER
+	cv::Mat face_r = original(cv::Rect(facePos[realFaceIndex].x * RESIZE_SCALE,
+		facePos[realFaceIndex].y * RESIZE_SCALE,
+		facePos[realFaceIndex].width * RESIZE_SCALE,
+		facePos[realFaceIndex].height * RESIZE_SCALE)).clone();
+#else
+	cv::Mat face_r = original(facePos[realFaceIndex]).clone();
+#endif
+
+	//cv::Mat face_r = frame(facePos[realFaceIndex]).clone();
+	Mat mask(cv::Size(face_r.size()), face_r.type(), Scalar::all(0));
+
+	circle(mask, Point(face_r.size().width / 2, face_r.size().height / 2),
+		face_r.size().width / 2, Scalar::all(255), -1);
+
+	Mat face = face_r & mask; // combine roi & mask
+	imshow("NEW FACE", face);
+
+
+	// Equalization
+	vector<Mat> channels;
+	Mat face_eq;
+	cvtColor(face, face_eq, CV_BGR2YCrCb); //change the color image from BGR to YCrCb format
+	split(face_eq, channels); //split the image into channels
+	equalizeHist(channels[0], channels[0]); //equalize histogram on the 1st channel (Y)
+	merge(channels, face_eq); //merge 3 channels including the modified 1st channel into one image
+	cvtColor(face_eq, face_eq, CV_YCrCb2BGR); //change the color image from YCrCb to BGR format (to display image properly)
+	cvtColor(face_eq, face_eq, CV_RGB2GRAY);
+
+	faceList.push_back(face_eq);
+
+	// update database
+	int label = -1;
+	int i;
+	std::string tmp1 = name;
+	std::transform(tmp1.begin(), tmp1.end(), tmp1.begin(), ::tolower);
+	for (i = 0; i < PERSON_NAME.size(); i++)
+	{
+		std::string tmp2 = PERSON_NAME[i];
+		std::transform(tmp2.begin(), tmp2.end(), tmp2.begin(), ::tolower);
+
+		if (strcmp(tmp1.c_str(), tmp2.c_str()) == 0)
+		{
+			label = i;
+			break;
+		}
+	}
+
+	if (i == PERSON_NAME.size())
+	{
+		label = i;
+		PERSON_NAME.push_back(name);
+		num_of_person_in_db++;
+	}
+
+
+	if (label != -1)
+	{
+		labelList.push_back(label);
+		model->update(faceList, labelList);
+	}
+
+	return;
 }
 
 void HumanFaceRecognizer::testExample(void)

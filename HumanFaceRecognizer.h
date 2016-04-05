@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <sstream>
@@ -11,8 +12,8 @@
 
 
 /* Defines */
-#define SAVE_IMAGES
-#define SAVE_FACES
+//#define SAVE_IMAGES
+//#define SAVE_FACES
 //#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
 //#define DISPLAY_IMAGES
@@ -30,7 +31,8 @@
 #define MASK_NAME_POSTFIX  "_face_mask"
 #define IMAGE_EXTENSION    ".bmp"
 
-#define DB_FILE_PATH       "db/lbp_face.xml"
+#define DB_FACE_FILE_PATH  "db/lbp_face.xml"
+#define DB_NAME_FILE_PATH  "db/name.csv"
 
 #define DETECTING          "detecting..."
 #define HELLO_MESSAGE      "Hello, "
@@ -51,13 +53,18 @@ typedef enum DETECTED_PERSON {
 
 
 /* Global Variables */
-extern const std::string PERSON_NAME[NUM_OF_PERSON + 1];
 
 
 /* Class */
 typedef class HumanFaceRecognizer
 {
 public:
+	bool isAddNewFace;
+	bool isUpdated;
+	cv::Ptr<cv::FaceRecognizer> model;
+	std::vector<std::string> PERSON_NAME;
+
+
 	double total_percent;
 	double total_percent_var;
 	unsigned int num_of_face_detected;
@@ -67,17 +74,15 @@ public:
 
 	int runFaceRecognizer(cv::Mat *);
 
+	void addNewFace(cv::Mat &frame, std::string name);
+
 	void testExample(void);
 
 private:
-	//cv::Mat resizeToSmaller(cv::Mat *);
-
-	static int num_of_person_in_db;
-
 	Detector detector;
 	double min_percent;
 	double max_percent;
-	cv::Ptr<cv::FaceRecognizer> model;
-
+	int num_of_person_in_db;
 	std::vector<struct DetectionInfo> facesInfo;
+
 } HumanFaceRecognizer;

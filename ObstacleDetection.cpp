@@ -279,7 +279,7 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		waitKey();
 #endif
 		int path = findPathByMassCenter();
-		std::cout << "path :" << path << std::endl;
+		//std::cout << "path :" << path << std::endl;
 		if (currentPath != path)
 		{
 			currentPath = path;

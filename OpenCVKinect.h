@@ -34,9 +34,8 @@ class OpenCVKinect
 	cv::Mat m_depthImage, m_colorImage;
 	bool m_alignedStreamStatus, m_colorStreamStatus, m_depthStreamStatus;
 
-	std::string timestamp = "234783726917";
-	//std::string path = "";
-	std::string path = "D:/Image processing OpenCV+kinect/Kinect Sample/New folder/";
+	std::string timestamp = "348641465786";
+	std::string path = "F:/New folder/";
 	std::queue<int> angles;
 	std::queue<int> frameIndexFromFile;
 
@@ -58,7 +57,7 @@ public:
 	INuiSensor *pNuiSensor;
 	openni::Recorder m_recorder;
 	std::ofstream file;
-	bool recording = true ;
+	bool recording = true;
 	bool replay = false;
 
 	bool init();
