@@ -95,15 +95,6 @@ void Multithreading::Hold()
 
 		std::cout << "Face Database Saved." << std::endl;
 	}
-
-	waitKey(5000);
-
-	KinectThread_Future.get();
-	TextToSpeechThread_Future.get();
-	//ObstacleDetectionThread_Future.get();
-	FaceDetectionThread_Future.get();
-	SignDetectionThread_Future.get();
-	//StairDetectionThread_Future.get();
 }
 
 void Multithreading::KinectThread_Process()
@@ -242,8 +233,15 @@ void Multithreading::FaceDetectionThread_Process()
 			switch (buffer.Event.KeyEvent.wVirtualKeyCode)
 			{
 			case 0x30:
-				std::cout << "Please enter person's name to be added:";
-				std::getline(std::cin, faceName);
+				while (true)
+				{
+					std::cout << "Please enter person's name to be added: ";
+					std::getline(std::cin, faceName);
+					if ((strcmp(faceName.c_str(), "") != 0) &&
+						(strcmp(faceName.c_str(), "0") != 0) &&
+						(strcmp(faceName.c_str(), "1") != 0))
+						break;
+				}
 				m_face.isAddNewFace = true;
 				m_face.isUpdated = true;
 				break;
@@ -299,6 +297,9 @@ void Multithreading::StairDetectionThread_Process()
 
 		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
 		StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+		if (!stairConvexHull.empty()) {
+			TextToSpeech::pushBack(string("Stairs Found"));
+		}
 		stairConvexHull.clear();
 	}
 }
