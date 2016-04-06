@@ -93,15 +93,6 @@ void Multithreading::Hold()
 
 		std::cout << "Face Database Saved." << std::endl;
 	}
-
-	waitKey(5000);
-
-	KinectThread_Future.get();
-	TextToSpeechThread_Future.get();
-	//ObstacleDetectionThread_Future.get();
-	FaceDetectionThread_Future.get();
-	SignDetectionThread_Future.get();
-	//StairDetectionThread_Future.get();
 }
 
 void Multithreading::KinectThread_Process()
