@@ -296,6 +296,9 @@ void Multithreading::StairDetectionThread_Process()
 
 		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
 		StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+		if (!stairConvexHull.empty()) {
+			TextToSpeech::pushBack(string("Stairs Found"));
+		}
 		stairConvexHull.clear();
 	}
 }
