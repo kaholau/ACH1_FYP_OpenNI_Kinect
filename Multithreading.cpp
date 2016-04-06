@@ -230,8 +230,15 @@ void Multithreading::FaceDetectionThread_Process()
 			switch (buffer.Event.KeyEvent.wVirtualKeyCode)
 			{
 			case 0x30:
-				std::cout << "Please enter person's name to be added:";
-				std::getline(std::cin, faceName);
+				while (true)
+				{
+					std::cout << "Please enter person's name to be added: ";
+					std::getline(std::cin, faceName);
+					if ((strcmp(faceName.c_str(), "") != 0) &&
+						(strcmp(faceName.c_str(), "0") != 0) &&
+						(strcmp(faceName.c_str(), "1") != 0))
+						break;
+				}
 				m_face.isAddNewFace = true;
 				m_face.isUpdated = true;
 				break;
