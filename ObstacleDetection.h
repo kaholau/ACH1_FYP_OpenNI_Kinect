@@ -4,8 +4,10 @@
 //
 
 #pragma once
-
 #include <Windows.h>
+#include <NuiApi.h>
+#include <stdlib.h>
+
 #include <ctime>
 #include <stdio.h>
 #include "stdint.h"
@@ -29,7 +31,7 @@ using namespace cv;
 //#define TEST_SEGMENTATION
 //#define DISPLAY_HIST
 //#define record_hist
-//#define DISPLAY_HEIGHT	
+#define DISPLAY_HEIGHT	
 //#define DISPLAY_DISTANCE
 //#define DISPLAY_HULL
 //#define record_noGround
@@ -60,6 +62,14 @@ using namespace cv;
 //obstacle detection
 //#define obstacle_size_ignore 15  //320x240
 #define obstacle_size_ignore planeEdgeForPlaneRemove*4  //640x480 
+
+//find hode
+#define GROUND_MIN_HIEGHT -200
+#define HOLE_DETECED_ONE_CONFIRM_COUNT 5
+#define HOLE_DETECED_CONFIRM_COUNT 5
+#define HOLE_DETECTED_SPEECH "hole detecting"
+#define MOTOR_LOOK_DOWN	-21
+
 
 //path advice	
 #define FirstNumOfBin	21				//affect the num of bin in the first histogram calculation
@@ -105,6 +115,7 @@ class ObstacleDetection
 	int mUserHeight;
 	int currentPath;
 	int pathDirCol;
+
 	vector<float> tanList;
 	Serial serial;
 
@@ -148,6 +159,14 @@ private:
 	int findPathByMassCenter();
 	void Enhance1DMax(Mat *pImg);
 
+	//find hole
+	bool angleSetToLookDown = false;
+	bool holeDetectedInOneFrame = false;
+	bool holeDetected = false;
+	bool restoreAngle = false;
+	int holeDetectedCountInOneFrame = 0;
+	int holeDetectedCount = 0;
+
 public:
 
 	int erosion_elem = 0;
@@ -169,6 +188,8 @@ public:
 	void SetCurrentRawDepth(Mat* rawDepth);
 	void test();
 	void testResult(int keyInput, int timeStamp);
+	//find hole
+	void findHole(void* controller);
 };
 
 

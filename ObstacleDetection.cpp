@@ -722,7 +722,16 @@ void ObstacleDetection::GroundMaskFill(Mat& img,Mat& boolMat, Point& location, V
 
 	//if (vector.val[0]>0 || vector.val[1]>0 || vector.val[2]>0)
 		//GroundArrowDraw(img, vector, location);
-
+	int h = (int)GetHeight(location.y, currentRawDepth.at<ushort>(location));
+	if (h < GROUND_MIN_HIEGHT&&!holeDetectedInOneFrame)
+	{
+		holeDetectedCountInOneFrame++;
+		if (holeDetectedCountInOneFrame > HOLE_DETECED_ONE_CONFIRM_COUNT)
+		{
+			holeDetectedInOneFrame = true;
+			//std::cout << " holeDetectedInOneFrame ";
+		}
+	}
 
 	if ((vector.val[0]!=0 || vector.val[2]!=0) && vector.val[1]<0)
 	{
@@ -746,7 +755,7 @@ void ObstacleDetection::GroundMaskFill(Mat& img,Mat& boolMat, Point& location, V
 		{
 			int h =(int) GetHeight(location.y, currentRawDepth.at<ushort>(location));
 			//myfile2 << h << std::endl;
-			if (h < Ground_height && h != -1)
+			if (h < Ground_height && h != -1 && h>GROUND_MIN_HIEGHT)
 			{
 				//myfile << "<-G";
 		//		GroundMaskUnitFill(img, location);
@@ -758,11 +767,61 @@ void ObstacleDetection::GroundMaskFill(Mat& img,Mat& boolMat, Point& location, V
 			//	myfile << location << " ";
 				GroundBoolMatUnitFill(boolMat, location);
 			}
+					
 		}
 #endif
 	}
 
 	
+}
+
+void ObstacleDetection::findHole(void* controller)
+{
+	if (!holeDetectedInOneFrame)
+	{
+		holeDetectedCountInOneFrame = 0;
+		if (holeDetectedCount > 0)
+		{
+			holeDetectedCount = 0; holeDetected = false;
+			//std::cout << " reset_holeDetected " << std::endl;
+		}
+		
+	}
+
+	if (holeDetectedInOneFrame)
+	{
+		//reset holeDetectedInOneFrame,holeDetectedCountInOneFrame
+		holeDetectedInOneFrame = false;
+		holeDetectedCountInOneFrame = 0;
+		holeDetectedCount++;
+
+		if (holeDetectedCount > HOLE_DETECED_CONFIRM_COUNT)
+		{
+			holeDetected = true; holeDetectedCount = 0;
+			//std::cout << " holeDetected "<<std::endl;
+		}
+	}
+
+	if (holeDetected&&!angleSetToLookDown)
+	{
+		string speech = HOLE_DETECTED_SPEECH;
+		TextToSpeech::pushBack(speech);
+		INuiSensor *pNuiSensor = ((INuiSensor*)controller);
+		long angle = MOTOR_LOOK_DOWN;
+		pNuiSensor->NuiCameraElevationSetAngle(angle);
+		angleSetToLookDown = true;
+		//std::cout << " lookdown" << std::endl;
+	}
+
+	if (!holeDetected&&angleSetToLookDown)
+	{
+		INuiSensor *pNuiSensor = ((INuiSensor*)controller);
+		long angle = MOTOR_LOOK_DOWN;
+		pNuiSensor->NuiCameraElevationSetAngle(-3);
+		angleSetToLookDown = false;
+		//std::cout << " lookup " << std::endl;
+	}
+
 }
 /*parameter:
 img : image to be draw
@@ -1210,6 +1269,8 @@ int  ObstacleDetection::findPathByMassCenter()
 
 	return NO_PATH;
 }
+
+
 
 void ObstacleDetection::testResult(int keyInput, int timeStamp)
 {

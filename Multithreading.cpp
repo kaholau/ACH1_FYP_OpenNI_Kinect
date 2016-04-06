@@ -12,12 +12,14 @@ Multithreading::Multithreading()
 Multithreading::~Multithreading()
 {
 	finished = true;
+	if (m_Kinect.recording)
+		return;
 	KinectThread_Future.get();
 	TextToSpeechThread_Future.get();
-	//ObstacleDetectionThread_Future.get();
+	ObstacleDetectionThread_Future.get();
 	FaceDetectionThread_Future.get();
 	SignDetectionThread_Future.get();
-	//StairDetectionThread_Future.get();
+	StairDetectionThread_Future.get();
 }
 
 bool Multithreading::InitializeKinect()
@@ -52,10 +54,10 @@ void Multithreading::CreateAsyncThreads()
 		return;
 
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
-	//ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
+	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
 	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
 	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
-	//StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
+	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
 
 void Multithreading::Hold()
@@ -139,7 +141,7 @@ void on_trackbarCameraAngle(int i, void* userData)
 {
 	INuiSensor *pNuiSensor = ((INuiSensor*)userData);
 
-	i = i - 18;
+	i = i - 27;
 	if (userData!=NULL)
 		pNuiSensor->NuiCameraElevationSetAngle((long)i);
 	else
@@ -199,6 +201,7 @@ void Multithreading::ObstacleDetectionThread_Process()
 		m_obstacle.setCameraAngle(m_Kinect.getAngle());
 		m_obstacle.SetCurrentRawDepth(&depthRaw);
 		m_obstacle.run(&depth8bit);
+		m_obstacle.findHole(m_Kinect.pNuiSensor);
 		m_obstacle.getOutputDepthImg(&depth8bit);
 		m_obstacle.getOutputColorImg(&colorImg);
 

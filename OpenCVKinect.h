@@ -57,7 +57,7 @@ public:
 	INuiSensor *pNuiSensor;
 	openni::Recorder m_recorder;
 	std::ofstream file;
-	bool recording = true;
+	bool recording = false;
 	bool replay = false;
 
 	bool init();
