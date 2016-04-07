@@ -26,7 +26,8 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 
 	cv::resize(colorImg, scaledColor, cv::Size(320, 240));
 	cv::resize(depthImg, scaledDepth, cv::Size(320, 240));
-
+	//cv::imshow("Color Stairs", scaledColor);
+	//cv::imshow("DEPTH Stairs", scaledDepth);
 	CannyThreshold(scaledColor, detected_edges);
 	ApplyFilter(detected_edges, scaledDepth, 254, 255, CV_THRESH_BINARY);
 	Probabilistic_Hough(detected_edges, allLines);
@@ -58,7 +59,7 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 	int current = -1, plusFive = -1, minusFive = -1;
 	int previous = -1, zeroCount = 0;
 	const int ZeroConsequtiveLimit = 10;
-	const int PreviousDeltaAllowance = 5;
+	const int PreviousDeltaAllowance = 2;
 	const int MaxDepth = 160;
 	const int DepthStartLimit = 100;
 
@@ -183,17 +184,16 @@ int StairDetection::GroupAngles(int angle)
 {
 	/// ignore angles between this range.
 	/// because stairs shouldn't be perpendicular to the user.
-	if (angle > 59 & angle < 122)
+	if (angle > 33 & angle < 147)
 		return -1;
 
 	/// shift the angle into the middle angle.
 	int binSize = 10;
-	int mod = angle % binSize;
 
-	if (mod < binSize / 2.0)
-		angle -= mod;
-	else if (mod > binSize / 2.0)
-		angle += mod;
+	if (angle % binSize <= binSize / 2.0)
+		angle -= angle % binSize;
+	else
+		angle += (-angle % binSize);
 
 	if (angle > 180)
 		angle = 0;
