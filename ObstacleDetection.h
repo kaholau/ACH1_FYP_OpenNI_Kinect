@@ -31,7 +31,7 @@ using namespace cv;
 //#define TEST_SEGMENTATION
 //#define DISPLAY_HIST
 //#define record_hist
-#define DISPLAY_HEIGHT	
+//#define DISPLAY_HEIGHT	
 //#define DISPLAY_DISTANCE
 //#define DISPLAY_HULL
 //#define record_noGround
@@ -49,6 +49,7 @@ using namespace cv;
 #define  Valid_Distance 1		//grayscale pixel value
 #define  TooFarDistance 60
 #define  Ground_height 260		//30cm
+#define  INIT_CAMERA_ANGLE 21
 #define  TooLessGroundPercentage 0.03 
 //calHistogram
 #define HistSize 256 // bin size = 2^pixelDepth / histSize
@@ -63,7 +64,7 @@ using namespace cv;
 //#define obstacle_size_ignore 15  //320x240
 #define obstacle_size_ignore planeEdgeForPlaneRemove*4  //640x480 
 
-//find hode
+//find hole
 #define GROUND_MIN_HIEGHT -200
 #define HOLE_DETECED_ONE_CONFIRM_COUNT 5
 #define HOLE_DETECED_CONFIRM_COUNT 5
@@ -175,6 +176,7 @@ public:
 	int dilation_elem = 0;
 	int dilation_size1 = 1;//if 1, the size is 2*dilation_size1+1
 	int dilation_size2 = 0;
+	const int initCameraAngle = INIT_CAMERA_ANGLE;
 
 	int CameraAngle;
 	ObstacleDetection(int userHeight);

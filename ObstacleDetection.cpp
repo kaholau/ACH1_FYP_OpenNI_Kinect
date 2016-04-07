@@ -810,16 +810,16 @@ void ObstacleDetection::findHole(void* controller)
 		long angle = MOTOR_LOOK_DOWN;
 		pNuiSensor->NuiCameraElevationSetAngle(angle);
 		angleSetToLookDown = true;
-		//std::cout << " lookdown" << std::endl;
+		std::cout << " lookdown" << std::endl;
 	}
 
 	if (!holeDetected&&angleSetToLookDown)
 	{
 		INuiSensor *pNuiSensor = ((INuiSensor*)controller);
 		long angle = MOTOR_LOOK_DOWN;
-		pNuiSensor->NuiCameraElevationSetAngle(-3);
+		pNuiSensor->NuiCameraElevationSetAngle(21);
 		angleSetToLookDown = false;
-		//std::cout << " lookup " << std::endl;
+		std::cout << " lookup " << std::endl;
 	}
 
 }
@@ -1281,3 +1281,4 @@ void ObstacleDetection::testResult(int keyInput, int timeStamp)
 	else
 		myfile << "incorrect " << timeStamp<<std::endl;
 }
+

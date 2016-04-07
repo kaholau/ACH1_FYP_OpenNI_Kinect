@@ -164,7 +164,7 @@ void Multithreading::ObstacleDetectionThread_Process()
 	cv::Mat colorImg, depth8bit, depthRaw;
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 	if (!m_Kinect.replay)
-		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(-3);
+		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(m_obstacle.initCameraAngle);
 	LONG angle = m_Kinect.getAngle();
 
 	m_obstacle.setCameraAngle(angle);
@@ -184,15 +184,17 @@ void Multithreading::ObstacleDetectionThread_Process()
 		double t = (double)getTickCount();
 		
 		m_Kinect.getMatrix(m_Kinect.All, colorImg, depthRaw, depth8bit, newTimeStamp);
+		m_obstacle.setCameraAngle(m_Kinect.getAngle());
 		if (newTimeStamp <= oldTimeStamp)
 			continue;
 		oldTimeStamp = newTimeStamp;
 
 		m_obstacle.setCurrentColor(&colorImg);
-		m_obstacle.setCameraAngle(m_Kinect.getAngle());
+		
 		m_obstacle.SetCurrentRawDepth(&depthRaw);
 		m_obstacle.run(&depth8bit);
-		m_obstacle.findHole(m_Kinect.pNuiSensor);
+		if (!m_Kinect.replay)
+			m_obstacle.findHole(m_Kinect.pNuiSensor);
 		m_obstacle.getOutputDepthImg(&depth8bit);
 		m_obstacle.getOutputColorImg(&colorImg);
 
@@ -216,7 +218,6 @@ void Multithreading::FaceDetectionThread_Process()
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
-
 		m_Kinect.getColor(colorImg, newTimeStamp);
 		if (newTimeStamp <= oldTimeStamp)
 			continue;

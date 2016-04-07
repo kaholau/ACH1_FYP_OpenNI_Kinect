@@ -14,9 +14,7 @@ bool OpenCVKinect::init()
 {
 	m_status = openni::STATUS_OK;
 	const char* deviceURI = openni::ANY_DEVICE;
-
 	m_status = openni::OpenNI::initialize();
-
 	std::cout << "After initialization: " << std::endl;
 	std::cout << openni::OpenNI::getExtendedError() << std::endl;
 
@@ -159,6 +157,17 @@ void OpenCVKinect::updateData()
 			m_depth.readFrame(&m_depthFrame);
 			newtime = m_depthFrame.getTimestamp() >> 16;
 
+			if (recording) {
+				pNuiSensor->NuiCameraElevationGetAngle(&angle);
+				file << angle << std::endl;
+			}
+
+			if (replay)
+			{
+				angle = angles.front();
+				angles.pop();
+			}
+
 			if (newtime <= this->m_depthTimeStamp)
 				continue;
 
@@ -195,11 +204,7 @@ void OpenCVKinect::updateData()
 		}
 	}
 
-	if (recording) {
-		LONG angle = 0;
-		pNuiSensor->NuiCameraElevationGetAngle(&angle);
-		file << angle << std::endl;
-	}
+	
 }
 
 void OpenCVKinect::getColor(cv::Mat &colorMat, uint64_t &colorTimeStamp)
@@ -262,13 +267,9 @@ void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawM
 
 LONG OpenCVKinect::getAngle()
 {
-	LONG angle = 0;
-	if (recording || !replay)
+
+	if (!replay)
 		pNuiSensor->NuiCameraElevationGetAngle(&angle);
-	else {
-		angle = angles.front();
-		angles.pop();
-	}
 
 	return angle;
 }
