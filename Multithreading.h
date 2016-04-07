@@ -2,17 +2,12 @@
 #include <Windows.h>
 #include <NuiApi.h>
 #include <stdlib.h>
+#include <thread>
+#include <future>
 
 #include "include.h"
 #include "OpenCVKinect.h"
-//#include "TextToSpeech.h"
-//#include "SignRecognizer.h"
-//#include "HumanFaceRecognizer.h"
-//#include "ObstacleDetection.h"
 
-#include <thread>
-#include <future>
-//#include <iostream>
 
 class Multithreading
 {
