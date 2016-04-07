@@ -12,9 +12,9 @@
 class StairDetection
 {
 private:
-	static const int cannyLowThreshold = 60;
+	static const int cannyLowThreshold = 20;
 	static const int max_cannyLowThreshold = 100;
-	static const int cannyRatio = 2;
+	static const int cannyRatio = 3;
 	static const int cannyKernelSize = 3;
 
 	static const int houghThreshold = 60;

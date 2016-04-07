@@ -286,7 +286,8 @@ void Multithreading::StairDetectionThread_Process()
 	cv::Mat colorImg, depth8bit, depthRaw;
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 	std::vector<cv::Point> stairConvexHull;
-
+	int previousFound = 0;
+	int foundThreshold = 3;
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
@@ -297,9 +298,21 @@ void Multithreading::StairDetectionThread_Process()
 		oldTimeStamp = newTimeStamp;
 
 		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
-		StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
 		if (!stairConvexHull.empty()) {
-			TextToSpeech::pushBack(string("Stairs Found"));
+			if (previousFound > foundThreshold) {
+				TextToSpeech::pushBack(string("Stairs Found"));
+				StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+				++previousFound;
+			}
+			else {
+				++previousFound;
+			}
+		}
+		else
+		{
+			--previousFound;
+			if (previousFound < 0)
+				previousFound = 0;
 		}
 		stairConvexHull.clear();
 	}
