@@ -24,7 +24,7 @@ class Multithreading
 	StairDetection m_stairs;
 	bool finished = false;
 	uint64_t startRecordingTime = 0;
-	const uint64_t recordingDuration = 120 ; //second
+	const uint64_t recordingDuration = 21 ; //second
 
 	std::future<void> KinectThread_Future;
 	std::future<void> TextToSpeechThread_Future;

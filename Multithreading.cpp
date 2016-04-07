@@ -72,7 +72,7 @@ void Multithreading::Hold()
 		{
 			m_Kinect.m_recorder.stop();
 			std::cout << "stop recording" << std::endl;
-			return;
+			break;
 		}
 		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat(), time);
 		if (time <= oldtime)
