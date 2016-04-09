@@ -9,9 +9,10 @@
 #include <vector>
 #include <mutex>
 
-#include <iostream>
 #include <fstream>
 #include <queue>
+
+#include "include.h"
 
 #define C_DEPTH_STREAM 0
 #define C_COLOR_STREAM 1
@@ -59,7 +60,7 @@ public:
 	std::ofstream file;
 	LONG angle = 0;
 	bool recording = false ;
-	bool replay = false;
+	bool replay = true;
 
 	bool init();
 	

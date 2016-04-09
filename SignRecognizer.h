@@ -1,8 +1,4 @@
 /* ----------------------------------------------------------------------------
-** This software is in the public domain, furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
 ** SignRecognizer.h
 **
 ** Date: 2016-01-13
@@ -38,31 +34,35 @@
 
 #include "TextToSpeech.h"
 
-//#define SPEAK_OUT_RESULT
 //#define SHOW_DEBUG_MESSAGES
 #define SHOW_MARKERS
 //#define SHOW_IMAGE_AND_RESULT
 //#define SAVE_IMAGE_AND_RESULT
 //#define USE_TRACKBAR
 
-#define WINDOW_NAME_EDGE_MASK	"Edge-Mask"
+#define WINDOW_NAME_EDGE_MASK	"_Edge_Mask"
 
-#define DEFAULT_FRAME_WIDTH		640
-#define DEFAULT_FRAME_HEIGHT	480
+#define DEFAULT_FRAME_WIDTH		1280
+#define DEFAULT_FRAME_HEIGHT	960
 #define MAX_VALUE_8BITS			255
 #define MID_VALUE_8BITS			(MAX_VALUE_8BITS/2)
 #define ABSOLUTE_WHITE			255
 #define ABSOLUTE_BLACK			0
 
-#define MEDIAN_BLUR_KSIZE			5
-#define CANNY_MAX_THRHD_RATIO		2.5
+#define CANNY_MAX_THRHD_RATIO		2.3
 #define AVG_GRAYSCALE_SCALE			1.29
+#define MEDIAN_BLUR_KSIZE			5
 
 #define SIGN_WIDTH_THRESHOLD		100
 //#define SAME_CONTOUR_THRESHOLD		0.85
 #define SAME_CONTOUR_THRESHOLD		0.5
 #define SAME_ELLIPSE_THRESHOLD		0.95
-#define CONTOUR_AREA_THRESHOLD		4000
+
+#define MAX_SIGN_WIDTH				(DEFAULT_FRAME_WIDTH / 3)
+#define MIN_SIGN_WIDTH				(DEFAULT_FRAME_WIDTH / 16)
+#define MAX_SIGN_HEIGHT				(DEFAULT_FRAME_HEIGHT / 3)
+#define MIN_SIGN_HEIGHT				(DEFAULT_FRAME_HEIGHT / 12)
+#define CONTOUR_AREA_THRESHOLD		3500
 #define CONTOUR_AREA_MAX_THRESHOLD	300000
 
 typedef class SignRecognizer
@@ -71,26 +71,19 @@ public:
 	SignRecognizer();
 	SignRecognizer(int, int, bool);
 	~SignRecognizer();
-	void runRecognizer(cv::Mat &);
+	void runRecognizer(cv::Mat &frame, std::string fName = "");
 	void setFrameSize(int, int);
 	void testExample(void);
 
 private:
-	static const std::string STRING_GROUND_FLOOR;
-	static const std::string STRING_FIRST_FLOOR;
-	static const std::string STRING_SECOND_FLOOR;
-	static const std::string STRING_THIRD_FLOOR;
-	static const std::string STRING_FOURTH_FLOOR;
-	static const std::string STRING_FIFTH_FLOOR;
-	static const std::string STRING_SIXTH_FLOOR;
-	static const std::string STRING_SEVEN_FLOOR;
-	static const std::string STRING_LG1;
-	static const std::string STRING_LG2;
-	static const std::string STRING_LG3;
-	static const std::string STRING_LG4;
-	static const std::string STRING_LG5;
-	static const std::string STRING_LG6;
-	static const std::string STRING_LG7;
+	static const std::wstring STRING_UPPER_FLOOR[8];
+	static const std::wstring STRING_LG1;
+	static const std::wstring STRING_LG2;
+	static const std::wstring STRING_LG3;
+	static const std::wstring STRING_LG4;
+	static const std::wstring STRING_LG5;
+	static const std::wstring STRING_LG6;
+	static const std::wstring STRING_LG7;
 
 	bool isLaterallyInverted;
 	double scale;
@@ -106,6 +99,7 @@ private:
 	bool getResultString(std::string &, std::wstring &);
 	void getContoursOfFrame(cv::Mat &, cv::Mat &,
 		std::vector<std::vector<cv::Point>> &, std::vector<cv::Vec4i> &);
+	cv::Mat* invertLaterally(cv::Mat *sign);
 	void updateMap(void);
 	void updateMap(cv::Size);
 } SignRecognizer;
