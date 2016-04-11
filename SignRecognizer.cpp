@@ -1,8 +1,4 @@
 /* ----------------------------------------------------------------------------
-** This software is in the public domain, furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
 ** SignRecognizer.cpp
 **
 ** Date: 2016-01-13
@@ -27,24 +23,29 @@
 **
 ** --------------------------------------------------------------------------*/
 #include "SignRecognizer.h"
+#include <future>
 
 using namespace cv;
 
-const std::string SignRecognizer::STRING_GROUND_FLOOR = "Ground floor";
-const std::string SignRecognizer::STRING_FIRST_FLOOR = "first floor";
-const std::string SignRecognizer::STRING_SECOND_FLOOR = "second floor";
-const std::string SignRecognizer::STRING_THIRD_FLOOR = "third floor";
-const std::string SignRecognizer::STRING_FOURTH_FLOOR = "fourth floor";
-const std::string SignRecognizer::STRING_FIFTH_FLOOR = "fifth floor";
-const std::string SignRecognizer::STRING_SIXTH_FLOOR = "sixth floor";
-const std::string SignRecognizer::STRING_SEVEN_FLOOR = "seven floor";
-const std::string SignRecognizer::STRING_LG1 = "LG1";
-const std::string SignRecognizer::STRING_LG2 = "LG2";
-const std::string SignRecognizer::STRING_LG3 = "LG3";
-const std::string SignRecognizer::STRING_LG4 = "LG4";
-const std::string SignRecognizer::STRING_LG5 = "LG5";
-const std::string SignRecognizer::STRING_LG6 = "LG6";
-const std::string SignRecognizer::STRING_LG7 = "LG7";
+
+const std::wstring SignRecognizer::STRING_UPPER_FLOOR[8] =
+{
+	L"Ground floor",
+	L"first floor",
+	L"second floor",
+	L"third floor",
+	L"fourth floor",
+	L"fifth floor",
+	L"sixth floor",
+	L"seventh floor"
+};
+const std::wstring SignRecognizer::STRING_LG1 = L"LG1";
+const std::wstring SignRecognizer::STRING_LG2 = L"LG2";
+const std::wstring SignRecognizer::STRING_LG3 = L"LG3";
+const std::wstring SignRecognizer::STRING_LG4 = L"LG4";
+const std::wstring SignRecognizer::STRING_LG5 = L"LG5";
+const std::wstring SignRecognizer::STRING_LG6 = L"LG6";
+const std::wstring SignRecognizer::STRING_LG7 = L"LG7";
 
 SignRecognizer::SignRecognizer()
 {
@@ -54,7 +55,7 @@ SignRecognizer::SignRecognizer()
 	isLaterallyInverted = true;
 	scale = 0.0;
 	lowThreshold = 45;
-	dilateSize = 1;
+	dilateSize = 2;
 
 	map_x.create(frameSize, CV_32FC1);
 	map_y.create(frameSize, CV_32FC1);
@@ -80,7 +81,7 @@ SignRecognizer::SignRecognizer(int w = DEFAULT_FRAME_WIDTH, int h = DEFAULT_FRAM
 	isLaterallyInverted = isLateralInvert;
 	scale = 0.0;
 	lowThreshold = 45;
-	dilateSize = 1;
+	dilateSize = 2;
 	
 	if (isLaterallyInverted)
 	{
@@ -106,15 +107,18 @@ SignRecognizer::~SignRecognizer()
 {
 }
 
-void SignRecognizer::runRecognizer(cv::Mat &frame)
+void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 {
 	std::ostringstream sout;
 	int k = 0;
 	cv::Mat frameGray;
 
+	double time = 0;
+	uint64_t oldCount = 0, curCount = 0;
+	curCount = cv::getTickCount();
 	std::vector<std::vector<cv::Point>> contours_all;
 	std::vector<cv::Vec4i> hierarchy;
-	getContoursOfFrame(frame, frameGray, contours_all, hierarchy);
+	getContoursOfFrame(frame, frameGray, contours_all, hierarchy); 
 
 	double a, b;
 	double area;
@@ -130,10 +134,19 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 	std::vector<int>::iterator it_end_index;
 	for (k = (int)contours_all.size() - 1; k >= 0; --k)
 	{
+		//cv::Rect rect = boundingRect(contours_all[k]);
+		//if (rect.width > MAX_SIGN_WIDTH || rect.width < MIN_SIGN_WIDTH ||
+		//	rect.height > MAX_SIGN_HEIGHT || rect.height < MIN_SIGN_HEIGHT)
+		//{
+		//	//std::cout << "Contoure Too wide / narror, width = " << rect.width << std::endl;
+		//	continue;
+		//}
+
 		area = contourArea(contours_all[k]);
 		//std::cout << "Area = " << area << ",\t";
 		if ((area < CONTOUR_AREA_THRESHOLD) || (area > CONTOUR_AREA_MAX_THRESHOLD))
 			continue;
+
 
 		// Calculate the similarity (confidence? distance?) between the current
 		// contour and the previous contour saved
@@ -146,10 +159,6 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 				CV_CONTOURS_MATCH_I3, 0);
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << "Contour[" << k << "] VS last SavedContour, distance = " << distance;
-			OutputDebugStringA("Contour[");
-			OutputDebugStringA(std::to_string(k).c_str());
-			OutputDebugStringA("] VS last SavedContour, distance = ");
-			OutputDebugStringA(std::to_string(distance).c_str());
 #endif
 			if (distance < SAME_CONTOUR_THRESHOLD)
 			{
@@ -169,9 +178,11 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 		drawContours(contourImg, contours_all, k, Scalar::all(MAX_VALUE_8BITS), 
 			CV_FILLED, 8, hierarchy, 0, Point());
 
+		// Find the best-fit ellipse by conic fitting
 		RotatedRect rrect = fitEllipse(contours_all[k]);
 		Mat foundEllipse(frameGray.size(), frameGray.type(), Scalar::all(0));
-
+		rrect.size.width *= 0.96;
+		rrect.size.height *= 0.96;
 		ellipse(foundEllipse, rrect, Scalar::all(MAX_VALUE_8BITS), CV_FILLED);
 
 		// After an ellipse is found, cut and save it
@@ -190,10 +201,6 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 		distance = (foundEllipse.dot(contourImg)) / a / b;
 #ifdef SHOW_DEBUG_MESSAGES
 		std::cout << "SavedContour[" << k << "] & estimated ellipse, distance = " << distance;
-		OutputDebugStringA("SavedContour[");
-		OutputDebugStringA(std::to_string(k).c_str());
-		OutputDebugStringA("] & estimated ellipse, distance = ");
-		OutputDebugStringA(std::to_string(distance).c_str());
 #endif
 
 		// Determine whether there is any contour of ellipse
@@ -214,13 +221,11 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << "Grayscale average: " << avg_tmp << std::endl;
-			OutputDebugStringA("Grayscale average: ");
-			OutputDebugStringA(std::to_string(avg_tmp).c_str());
-			OutputDebugStringA("\n");
 #endif
 
 			cv::Mat ellipseMask_inv(ellipseMask.size(), ellipseMask.type(), Scalar::all(0));
-			cv::bitwise_not(ellipseMask, ellipseMask_inv);
+			ellipseMask_inv = MAX_VALUE_8BITS - ellipseMask;
+			//cv::bitwise_not(ellipseMask, ellipseMask_inv);
 			cv::threshold(*sign, *sign, avg_tmp, ABSOLUTE_WHITE, THRESH_BINARY);
 			*sign |= ellipseMask_inv;
 			floodFill(*sign, Point(0, 0), Scalar::all(0));
@@ -238,6 +243,14 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 				smallSign = NULL;
 			}
 			medianBlur(*sign, *sign, MEDIAN_BLUR_KSIZE);
+			if (isLaterallyInverted)
+			{
+				sign = invertLaterally(sign);
+
+				sout.str("");
+				sout << fName << "_sign_" << k << ".bmp";
+				cv::imwrite(sout.str(), *sign);
+			}
 
 			// apply OCR to obtain the characters
 			tess.SetImage((uchar*)(sign->data), sign->cols, sign->rows, 1, sign->step1());
@@ -245,34 +258,26 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 			text.erase(remove(text.begin(), text.end(), '\n'), text.end());
 			text.erase(remove(text.begin(), text.end(), ' '), text.end());
 
-			if ((strcmp(text.c_str(), "") == 0) || (strcmp(lastDet.c_str(), text.c_str()) == 0))
-				continue;
+			//if ((strcmp(text.c_str(), "") == 0) || (strcmp(lastDet.c_str(), text.c_str()) == 0))
+			//	continue;
 
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << "SavedContour[" << k << "] text: " << text << "_Floor";
-			OutputDebugStringA("SavedContour[");
-			OutputDebugStringA(std::to_string(k).c_str());
-			OutputDebugStringA("] text: ");
-			OutputDebugStringA(text.c_str());
-			OutputDebugStringA("_Floor");
 #endif
-
+			std::cout << "SavedContour[" << k << "] text: " << text << "_Floor";
 			std::wstring out;
 			if (!getResultString(text, out)) {
 				std::cerr << std::endl << "Error on getResultString()" << std::endl;
 				continue;
 			}
 			TextToSpeech::pushBack(out);
-			//tts.pushBack(out);
-#ifdef SPEAK_OUT_RESULT
-			tts.speak();
-#endif
+
 			cv::putText(frame, text, contours_all[k][1], cv::FONT_HERSHEY_SIMPLEX, 1,
 				cv::Scalar(0, 128, 255), 2);
 
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << std::endl;
-			OutputDebugStringA("\n");
+			//OutputDebugStringA("\n");
 #endif
 
 			savedSigns_index.push_back(k);
@@ -282,21 +287,22 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 			savedSigns.push_back(*sign);
 
 			sout.str("");
-			sout << "_sign_" << k << ".bmp";
-			namedWindow(sout.str(), CV_WINDOW_AUTOSIZE);
-			cv::imshow(sout.str(), *sign);
+			sout << fName << "_sign_" << k << ".bmp";
+			//namedWindow(sout.str(), CV_WINDOW_AUTOSIZE);
+			//cv::imshow(sout.str(), *sign);
 
 #ifdef SAVE_IMAGE_AND_RESULT
-			cv::imwrite(sout.str(), sign);
+			cv::imwrite(sout.str(), *sign);
+			std::cout << sout.str() << " is saved!\n";
 #endif
 #endif
 
-//#ifdef SHOW_IMAGE_AND_RESULT
-//			sout.str("");
-//			sout << "Contours " << k;
-//			namedWindow(sout.str(), CV_WINDOW_AUTOSIZE);
-//			cv::imshow(sout.str(), contourImg);
-//#endif
+#ifdef SHOW_IMAGE_AND_RESULT
+			sout.str("");
+			sout << "Contours " << k;
+			namedWindow(sout.str(), CV_WINDOW_AUTOSIZE);
+			cv::imshow(sout.str(), contourImg);
+#endif
 
 			lastDet = text;
 			sign = NULL;
@@ -306,22 +312,22 @@ void SignRecognizer::runRecognizer(cv::Mat &frame)
 	}
 #ifdef SHOW_DEBUG_MESSAGES
 	std::cout << std::endl << "No of Contours saved = " << savedSigns_index.size() << std::endl;
-	OutputDebugStringA("] VS last SavedContour, distance = ");
-	OutputDebugStringA(std::to_string(savedSigns_index.size()).c_str());
-	OutputDebugStringA("\n");
 #endif
 
 #ifdef SHOW_IMAGE_AND_RESULT
 #ifdef SAVE_IMAGE_AND_RESULT
 	// Show and save the result
 	sout.str("");
-	sout << "_result.jpg";
+	sout << fName << "_result.bmp";
 	cv::imwrite(sout.str(), frame);
 #endif
 
 	namedWindow("Detection Result", CV_WINDOW_NORMAL);
 	cv::imshow("Detection Result", frame);
 #endif
+
+	time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
+	printf("SignRec Duration: %f\n", time);
 
 	return;
 }
@@ -333,7 +339,7 @@ void SignRecognizer::setFrameSize(int w, int h)
 		frameSize.width = w;
 
 	if (frameSize.height != h)
-	frameSize.height = h;
+		frameSize.height = h;
 
 	updateMap();
 
@@ -342,37 +348,62 @@ void SignRecognizer::setFrameSize(int w, int h)
 
 bool SignRecognizer::getResultString(std::string &in, std::wstring &out)
 {
-	if (strcmp(in.c_str(), "G") == 0)
+	if (in.length() == 1)
 	{
-		out = std::wstring(STRING_GROUND_FLOOR.begin(), STRING_GROUND_FLOOR.end());
+		char c = *(in.c_str());
+		std::cout << "\t\t found: " << c << std::endl;
+		switch (c)
+		{
+		case 'G':
+			out = std::wstring(STRING_UPPER_FLOOR[0]);
+			return true;
+			break;
+
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+			out = std::wstring(STRING_UPPER_FLOOR[(int)c - 48]);
+			return true;
+			break;
+
+		default:
+			return false;
+			break;
+		}
 	}
-	else if (strcmp(in.c_str(), "1") == 0)
+
+	/* if (strcmp(in.c_str(), "1") == 0)
 	{
-		out = std::wstring(STRING_FIRST_FLOOR.begin(), STRING_FIRST_FLOOR.end());
+		out = std::wstring(STRING_FIRST_FLOOR);
+	}*/
+	if ((strcmp(in.c_str(), "LG7") == 0) || (strcmp(in.c_str(), "G7") == 0)
+		|| (strcmp(in.c_str(), "67") == 0) || (strcmp(in.c_str(), "L67") == 0))
+	{
+		out = std::wstring(L"LG7");
 	}
-	else if (strcmp(in.c_str(), "2") == 0)
+	else if ((strcmp(in.c_str(), "LG1") == 0) || (strcmp(in.c_str(), "G1") == 0)
+		|| (strcmp(in.c_str(), "61") == 0) || (strcmp(in.c_str(), "L61") == 0))
 	{
-		out = std::wstring(STRING_SECOND_FLOOR.begin(), STRING_SECOND_FLOOR.end());
+		out = std::wstring(L"LG1");
 	}
-	else if (strcmp(in.c_str(), "3") == 0)
+	else if ((strcmp(in.c_str(), "LG5") == 0) || (strcmp(in.c_str(), "G5") == 0)
+		|| (strcmp(in.c_str(), "65") == 0) || (strcmp(in.c_str(), "L65") == 0))
 	{
-		out = std::wstring(STRING_THIRD_FLOOR.begin(), STRING_THIRD_FLOOR.end());
+		out = std::wstring(L"LG5");
 	}
-	else if (strcmp(in.c_str(), "4") == 0)
+	else if ((strcmp(in.c_str(), "LG3") == 0) || (strcmp(in.c_str(), "G3") == 0)
+		|| (strcmp(in.c_str(), "63") == 0) || (strcmp(in.c_str(), "L63") == 0))
 	{
-		out = std::wstring(STRING_FOURTH_FLOOR.begin(), STRING_FOURTH_FLOOR.end());
+		out = std::wstring(L"LG3");
 	}
-	else if (strcmp(in.c_str(), "5") == 0)
+	else if ((strcmp(in.c_str(), "LG2") == 0) || (strcmp(in.c_str(), "G2") == 0)
+		|| (strcmp(in.c_str(), "62") == 0) || (strcmp(in.c_str(), "L62") == 0))
 	{
-		out = std::wstring(STRING_FIFTH_FLOOR.begin(), STRING_FIFTH_FLOOR.end());
-	}
-	else if (strcmp(in.c_str(), "6") == 0)
-	{
-		out = std::wstring(STRING_SIXTH_FLOOR.begin(), STRING_SIXTH_FLOOR.end());
-	}
-	else if (strcmp(in.c_str(), "7") == 0)
-	{
-		out = std::wstring(STRING_SEVEN_FLOOR.begin(), STRING_SEVEN_FLOOR.end());
+		out = std::wstring(L"LG7");
 	}
 	else
 	{
@@ -384,18 +415,32 @@ bool SignRecognizer::getResultString(std::string &in, std::wstring &out)
 
 void SignRecognizer::getContoursOfFrame(cv::Mat &frame, cv::Mat &grayOut, std::vector<std::vector<Point>> &contours, std::vector<Vec4i> &hierarchy)
 {
-	if (isLaterallyInverted)
-	{
-		Mat image_lateralInvert(frame.size(), frame.type());
-		remap(frame, image_lateralInvert, map_x, map_y, CV_INTER_LINEAR);
-		frame = image_lateralInvert;
-	}
+	//double time = 0;
+	//uint64_t oldCount = 0, curCount = 0;
+	//curCount = cv::getTickCount();
+	//if (isLaterallyInverted)
+	//{
+	//	Mat image_lateralInvert(frame.size(), frame.type());
+	//	remap(frame, image_lateralInvert, map_x, map_y, CV_INTER_LINEAR);
+	//	frame = image_lateralInvert;
+	//}
+	//time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
+	//printf("invert Duration: %f\n", time);
 
-	Mat canny;
+	cv::Mat canny;
 	Mat image_gray_blur;
+	Mat channel[3];
+	split(frame, channel);
+	//grayOut = channel[2].clone();
 
 	cvtColor(frame, grayOut, CV_BGR2GRAY);  // Convert it to grayscale image
-	GaussianBlur(grayOut, image_gray_blur, cv::Size(9, 9), 2, 2);  // Reduce the noise
+	//grayOut /= 8;
+	//grayOut *= 16;
+
+	GaussianBlur(channel[2], image_gray_blur, cv::Size(7, 7), 2, 2);  // Reduce the noise
+	//blur(grayOut, image_gray_blur, cv::Size(3, 3));  // Reduce the noise
+	//time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
+	//printf("Blur Duration: %f\n", time);
 
 	Canny(image_gray_blur, canny, lowThreshold, (double)(lowThreshold)*CANNY_MAX_THRHD_RATIO); // Apply Canny detector
 
@@ -408,12 +453,34 @@ void SignRecognizer::getContoursOfFrame(cv::Mat &frame, cv::Mat &grayOut, std::v
 	cv::Mat dst(frame.size(), frame.type(), Scalar::all(0));
 	frame.copyTo(dst, canny);
 	cv::imshow(WINDOW_NAME_EDGE_MASK, dst);
+	cv::imwrite("_edge_mask.bmp", dst);
 #endif
 
 	// Finds contourts from the frame
 	cv::findContours(canny, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
 	return ;
+}
+
+cv::Mat* SignRecognizer::invertLaterally(cv::Mat *sign)
+{
+	cv::Mat mapX, mapY;
+	cv::Mat signInverted(sign->size(), sign->type());
+	mapX.create(sign->size(), CV_32FC1);
+	mapY.create(sign->size(), CV_32FC1);
+
+	for (int i = 0; i < sign->size().height; i++)
+	{
+		for (int j = 0; j < sign->size().width; j++)
+		{
+			mapX.at<float>(i, j) = (float)(sign->size().width - j);
+			mapY.at<float>(i, j) = (float)(i);
+		}
+	}
+
+	remap(*sign, signInverted, mapX, mapY, CV_INTER_LINEAR);
+	*sign = signInverted.clone();
+	return sign;
 }
 
 void SignRecognizer::updateMap(void)
@@ -458,10 +525,22 @@ void SignRecognizer::testExample(void)
 	//isLaterallyInverted = false;
 
 	//Mat src = imread("myImages/color34.bmp", CV_LOAD_IMAGE_COLOR);
-	Mat src = imread("myImages/color38.bmp", CV_LOAD_IMAGE_COLOR);
-	
-	if (!src.data)
-		std::cout << "no image is loaded" << std::endl;
-	else
-		this->runRecognizer(src);
+	//Mat src = imread("myImages/color38.bmp", CV_LOAD_IMAGE_COLOR);
+	std::stringstream oss;
+
+	for (int i = 1; i < 50; i++)
+	{
+		oss.str("");
+		oss << "myImages/color" << i << ".bmp";
+		Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
+		if (!src.data)
+		{
+			std::cout << oss.str() << " is not loaded" << std::endl;
+			continue;
+
+		}
+		oss.str("");
+		oss << "myImages/color" << i;
+		this->runRecognizer(src, oss.str());
+	}
 }

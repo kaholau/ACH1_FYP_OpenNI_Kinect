@@ -1,8 +1,4 @@
 /* ----------------------------------------------------------------------------
-** This software is in the public domain, furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
 ** TextToSpeech.cpp
 **
 ** Date: 2016-01-24
@@ -28,6 +24,8 @@ std::queue<std::wstring> TextToSpeech::strQueue;
 
 TextToSpeech::TextToSpeech()
 {
+	std::wstring empty = L"";
+	strQueue.push(empty);
 }
 
 TextToSpeech::~TextToSpeech()
@@ -56,9 +54,10 @@ bool TextToSpeech::speak(void)
 {
 	if (SUCCEEDED(isInitialized))
 	{
-		if (strQueue.size() > 0) {
-			hr = pVoice->Speak(strQueue.front().c_str(), 0, NULL);
+		if (strQueue.size() > 1)
+		{
 			strQueue.pop();
+			hr = pVoice->Speak(strQueue.front().c_str(), 0, NULL);
 			if (FAILED(hr))
 				std::cerr << "Text to speech HR error!\n";
 		}
@@ -110,6 +109,12 @@ void TextToSpeech::pushBack(std::string &s)
 {
 	std::wstring speech;
 	speech = std::wstring(s.begin(), s.end());
+
+	if (strQueue.size() != 0 && strQueue.back() == speech)
+	{
+		return;
+	}
+
 	strQueue.push(speech);
 }
 
@@ -117,6 +122,9 @@ void TextToSpeech::pushBack(std::string &s)
 // input datatype: wstring
 void TextToSpeech::pushBack(std::wstring &ws)
 {
+	if (strQueue.size() != 0 && strQueue.back() == ws)
+		return;
+
 	strQueue.push(ws);
 }
 

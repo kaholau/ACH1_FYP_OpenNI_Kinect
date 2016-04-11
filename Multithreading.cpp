@@ -73,7 +73,7 @@ void Multithreading::Hold()
 		{
 			m_Kinect.m_recorder.stop();
 			std::cout << "stop recording" << std::endl;
-			return;
+			break;
 		}
 		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat(), time);
 		if (time <= oldtime)
@@ -214,6 +214,9 @@ void Multithreading::FaceDetectionThread_Process()
 	cv::Mat colorImg;
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 
+
+	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD events;
 	std::string faceName;
 
 	while (waitKey(1) != ESCAPE_KEY) {
@@ -224,12 +227,9 @@ void Multithreading::FaceDetectionThread_Process()
 			continue;
 		oldTimeStamp = newTimeStamp;
 
-
-		HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
-		DWORD events;
 		INPUT_RECORD buffer;
 		PeekConsoleInput(handle, &buffer, 1, &events);
-		if (events > 0)
+		if (events > 0 && !m_Kinect.replay && !m_Kinect.recording)
 		{
 			ReadConsoleInput(handle, &buffer, 1, &events);
 			switch (buffer.Event.KeyEvent.wVirtualKeyCode)
@@ -278,7 +278,7 @@ void Multithreading::SignDetectionThread_Process()
 		oldTimeStamp = newTimeStamp;
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
 		m_sign.runRecognizer(colorImg);
-		cv::imshow("SIGN DETECTION", colorImg);
+		//cv::imshow("SIGN DETECTION", colorImg);
 	}
 }
 

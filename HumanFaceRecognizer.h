@@ -35,9 +35,9 @@
 #define DB_NAME_FILE_PATH  "db/name.csv"
 
 #define DETECTING          "detecting..."
-#define HELLO_MESSAGE      "Hello, "
+#define HELLO_MESSAGE      "This is "
 
-#define FACE_POS_OFFSET			30
+#define FACE_POS_OFFSET			40
 #define FACE_DET_THREHOLD		4
 #define UNDETECTED_THREHOLD		(FACE_DET_THREHOLD*1.5)
 #define NUM_OF_CHANNELS_COLOUR	3
