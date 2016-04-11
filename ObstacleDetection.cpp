@@ -76,7 +76,9 @@ void ObstacleDetection::getOutputColorImg(Mat *color)
 
 void ObstacleDetection::Segmentation(Mat& src)
 {
-
+	src_size = src.size();
+	src_cols = src.cols;
+	src_rows = src.rows;
 	Mat hist = HistogramCal(src);	
 	vector<int> LocalMinima = HistogramLocalMinima(hist);	
 	SegementLabel(src, LocalMinima);
@@ -218,7 +220,7 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 	int* localMinArray = new int[numOfSegement];
 	for (int i = 0; i < numOfSegement; i++)
 		localMinArray[i] = localMin[i];
-
+	//imshow("after no ground",src);
 	//seperate the segemeted region to different Mat according to the intervals among local minima
 	//the 0th Image is alaways black with no segment and the last one will always be the ignore segment
 	Mat* pThreasholdImageList = new Mat[numOfSegement-1];
@@ -242,13 +244,28 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		}
 	}
 
-
-
 	Mat obstacleMask (src.size(), CV_8UC1, Scalar(255));
+	Mat MaskLayer1(src.size(), CV_8UC1, Scalar(255));
+	Mat MaskLayer2(src.size(), CV_8UC1, Scalar(255));
+	for (int i = 1; i <= 7; i+=2){
+		rectangle(MaskLayer1, Point(src.cols*i / 7, 0), Point(src.cols * (i+1) / 7, src.rows), 0, CV_FILLED, 8, 0);
+	}
+	bitwise_not(MaskLayer1, MaskLayer2);
+	//imshow("MaskLayer1", MaskLayer1);
+	//imshow("MaskLayer2", MaskLayer2);
+	//waitKey();
 	//draw conuter to eliminate small segement, the 0th Image is alaways black with no segment and the last one will always the ignore segment
+	Mat temp;
 	for (int i = 1; i < numOfSegement - 1; i++)
 	{
-		obstacleDetect(pThreasholdImageList[i], obstacleMask);
+		temp = (MaskLayer1&pThreasholdImageList[i]);
+		//imshow("1 masked ThreasholdImageList", temp);
+		obstacleDetect(temp, obstacleMask);
+
+		temp = (MaskLayer2&pThreasholdImageList[i]);
+		//imshow("2 masked ThreasholdImageList", temp);
+		obstacleDetect(temp, obstacleMask);
+		
 	}
 	//myfile << "#ofObstacles: " << ObstacleList.size() << "#ofInterval: " << numOfSegement-1 << std::endl;
 #ifdef FOR_REPORT
@@ -257,11 +274,13 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 #endif
 
 	//imshow("obstacleMask", obstacleMask);
+	//imshow("Ground.img", Ground.img);
+
 	//GroundEroAndDilate(Ground.img, GroundBoolMat, dilation_size2,0);
 	bitwise_not(Ground.img, Ground.img);
-	vector<vector<Point> > contours;
-	vector<Vec4i> hierarchy;
-//	imshow("o", obstacleMask);
+	//vector<vector<Point> > contours;
+	//vector<Vec4i> hierarchy;
+	//waitKey();
 	if (!Ground.img.empty())
 	{
 		
@@ -271,6 +290,7 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		//findContours(Ground.img, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 		//for (size_t i = 0; i < contours.size(); i++)
 		//	drawContours(Ground.img, contours, i, Scalar(255), -1, 8, hierarchy, 0, Point());
+		//imshow("final G", Ground.img);
 		bitwise_not(Ground.img, Ground.img);
 		
 
@@ -356,6 +376,12 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 	line(currentDepth, Point(realColStart + realDepthColsWidth/3, currentDepth.rows),
 		Point(realColStart + realDepthColsWidth / 3, 0),
 		Scalar(255), 2, 8, 0);
+	line(currentDepth, Point(realColStart + realDepthColsWidth *4/ 9, currentDepth.rows),
+		Point(realColStart + realDepthColsWidth * 4 / 9, 0),
+		Scalar(255), 2, 8, 0);
+	line(currentDepth, Point(realColStart + realDepthColsWidth *5/ 9, currentDepth.rows),
+		Point(realColStart + realDepthColsWidth * 5 / 9, 0),
+		Scalar(255), 2, 8, 0);
 	line(currentDepth, Point(realColStart + realDepthColsWidth*2 / 3, currentDepth.rows),
 		Point(realColStart + realDepthColsWidth * 2 / 3, 0),
 		Scalar(255), 2, 8, 0);
@@ -374,7 +400,11 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 #endif
 
 }
+void ObstacleDetection::initMaskLayerForSegmentLabel()
+{
+	
 
+}
 void ObstacleDetection::obstacleDetect(Mat& img, Mat& output)
 {
 	vector<vector<Point> > contours;
@@ -392,22 +422,22 @@ void ObstacleDetection::obstacleDetect(Mat& img, Mat& output)
 		
 	//cal the hull after reduce the contour's number to save time for hull
 	vector<vector<Point> >hull(contours.size());
-	vector<Moments> mu(contours.size());
-	vector<Point2f> mc(contours.size());
+	//vector<Moments> mu(contours.size());
+	//vector<Point2f> mc(contours.size());
 	for (size_t i = 0; i < contours.size(); i++)
 	{
 		convexHull(Mat(contours[i]), hull[i], false);
 		//Scalar color = Scalar(theRNG().uniform(1, 254), theRNG().uniform(1, 254), theRNG().uniform(1, 254));
 		drawContours(output, hull, i, Scalar(0), -1, 8, hierarchy, 0, Point());
-		mu[i] = moments(contours[i], false);
+		//mu[i] = moments(contours[i], false);
 
-		//m00 is the zero moment which is the area of the contour
-		if (mu[i].m00 == 0) continue;
-		if (contourArea(contours[i]) / arcLength(contours[i], true) < 3) continue;
+		////m00 is the zero moment which is the area of the contour
+		//if (mu[i].m00 == 0) continue;
+		//if (contourArea(contours[i]) / arcLength(contours[i], true) < 3) continue;
 
 
-		mc[i] = Point2f((float)(mu[i].m10 / mu[i].m00), (float)(mu[i].m01 / mu[i].m00));
-		createObstacle(hull[i], OBSTACLE, Point((int)mc[i].x, (int)mc[i].y));	
+		//mc[i] = Point2f((float)(mu[i].m10 / mu[i].m00), (float)(mu[i].m01 / mu[i].m00));
+		//createObstacle(hull[i], OBSTACLE, Point((int)mc[i].x, (int)mc[i].y));	
 
 	}
 		
@@ -490,6 +520,7 @@ void ObstacleDetection::GroundMaskCreateRandom(Mat &img)
 	{
 		float vec1_y = (float)(pt1_r - center_r);
 		float vec2_y = (float)(pt2_r - center_r); 
+
 
 		//myfile << "{" << center_r << "}" << std::endl;
 
@@ -735,11 +766,11 @@ void ObstacleDetection::GroundMaskFill(Mat& img,Mat& boolMat, Point& location, V
 
 	if ((vector.val[0]!=0 || vector.val[2]!=0) && vector.val[1]<0)
 	{
-		float angal = GroundDirection(vector);
+		float angle = GroundDirection(vector);
 		
 #ifdef TEST_SEGMENTATION
 
-		if (angal > minThreashold_horizontalPlane && angal < maxThreashold_horizontalPlane)
+		if (angle > minThreashold_horizontalPlane && angle < maxThreashold_horizontalPlane)
 		{
 
 			//GroundArrowDraw(img, vector, location);
@@ -751,7 +782,7 @@ void ObstacleDetection::GroundMaskFill(Mat& img,Mat& boolMat, Point& location, V
 		
 #else
 		//horizontal plane
-		if (angal > minThreashold_horizontalPlane && angal < maxThreashold_horizontalPlane)
+		if (angle > minThreashold_horizontalPlane && angle < maxThreashold_horizontalPlane)
 		{
 			int h =(int) GetHeight(location.y, currentRawDepth.at<ushort>(location));
 			//myfile2 << h << std::endl;

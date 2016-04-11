@@ -121,6 +121,10 @@ class ObstacleDetection
 	Serial serial;
 
 private:
+	Size src_size;
+	int src_cols;
+	int src_rows;
+
 	//Height
 	double GetPointAngle(const int pointY);
 	double GetHeight(const int pointY, const int depth);
@@ -148,13 +152,14 @@ private:
 	void GroundRefine(Mat& boolMat, Mat& img);
 
 	//Histogram Segmentation
+	Mat MaskLayerForSegmentLabel;
 	Mat HistogramCal(Mat& img);
 	vector<int> HistogramLocalMinima(Mat& hist);
 	int getColorIndex(int pixelValue, int index[], int indexSize);
 	void Segmentation(Mat& src);
 	void SegementLabel(Mat& src, vector<int> &localMin);
 	void obstacleDetect(Mat& img, Mat& output);
-
+	void initMaskLayerForSegmentLabel();
 	//find path
 	string findPathByPartition();
 	int findPathByMassCenter();

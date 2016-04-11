@@ -39,7 +39,8 @@ bool Multithreading::InitializeKinect()
 
 	if (m_Kinect.recording) {
 		m_Kinect.m_recorder.start();
-		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(0);
+		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(m_obstacle.initCameraAngle);
+
 		startRecordingTime = cv::getTickCount() / cv::getTickFrequency();
 		std::cout << "start recording" << std::endl;
 	}

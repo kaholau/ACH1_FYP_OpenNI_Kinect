@@ -164,8 +164,12 @@ void OpenCVKinect::updateData()
 
 			if (replay)
 			{
-				angle = angles.front();
-				angles.pop();
+				if (angles.size() > 0)
+				{
+					angle = angles.front();
+					angles.pop();
+				}
+				
 			}
 
 			if (newtime <= this->m_depthTimeStamp)
