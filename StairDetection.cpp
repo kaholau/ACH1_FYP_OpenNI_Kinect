@@ -35,7 +35,12 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	SortLinesByAngle(allLines, angles);
 	DetermineStairAngle(angles, stairsAngle);
 
+	// stairs angle not found.
 	if (stairsAngle == -999)
+		return;
+
+	// set of lines that have the stair angle should not be more than 10 lines.
+	if (angles[stairsAngle].size() > 10) 
 		return;
 
 	GetStairMidLine(allLines, angles[stairsAngle], stairsAngle, stairMidLine);
