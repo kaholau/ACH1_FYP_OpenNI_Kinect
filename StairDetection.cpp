@@ -35,7 +35,12 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	SortLinesByAngle(allLines, angles);
 	DetermineStairAngle(angles, stairsAngle);
 
+	// stairs angle not found.
 	if (stairsAngle == -999)
+		return;
+
+	// set of lines that have the stair angle should not be more than 10 lines.
+	if (angles[stairsAngle].size() > 10) 
 		return;
 
 	GetStairMidLine(allLines, angles[stairsAngle], stairsAngle, stairMidLine);
@@ -59,7 +64,7 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 	int current = -1, plusFive = -1, minusFive = -1;
 	int previous = -1, zeroCount = 0;
 	const int ZeroConsequtiveLimit = 10;
-	const int PreviousDeltaAllowance = 2;
+	const int PreviousDeltaAllowance = 5;
 	const int MaxDepth = 160;
 	const int DepthStartLimit = 100;
 
@@ -71,7 +76,6 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 
 	for (int i = 0; i < it.count / 2; i++, ++it)
 	{
-		//file << (int)depthImg.getMat().at<uchar>(it.pos()) << std::endl;
 		current = (int)depthImg.getMat().at<uchar>(it.pos());
 
 		if (current == 0) {
@@ -85,7 +89,6 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 		}
 		zeroCount = 0;
 
-
 		/// If depth is very large, then user is too close to object.
 		/// impossible to be stairs.
 		if (current > MaxDepth)
@@ -96,8 +99,8 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 		/// Else it's not stairs at all.
 		if (current > previous)
 			previous = current;
-		else if (current > previous - PreviousDeltaAllowance)
-			previous = current;
+		else if (current > (previous - PreviousDeltaAllowance))
+			continue;
 		else
 			return false;
 	}
