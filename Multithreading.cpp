@@ -3,6 +3,7 @@
 Multithreading::Multithreading()
 //kaho wear kinect at 1020mm
 //color lab table give 820mm
+//yumi wear kinect at 900mm
 	: m_obstacle(1020)
 {
 
@@ -259,7 +260,7 @@ void Multithreading::FaceDetectionThread_Process()
 		else
 			m_face.runFaceRecognizer(&colorImg);
 
-		cv::imshow("FACE DETECTION", colorImg);
+		//cv::imshow("FACE DETECTION", colorImg);
 	}
 }
 

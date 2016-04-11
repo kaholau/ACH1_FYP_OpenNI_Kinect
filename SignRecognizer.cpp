@@ -113,9 +113,9 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 	int k = 0;
 	cv::Mat frameGray;
 
-	double time = 0;
-	uint64_t oldCount = 0, curCount = 0;
-	curCount = cv::getTickCount();
+	//double time = 0;
+	//uint64_t oldCount = 0, curCount = 0;
+	//curCount = cv::getTickCount();
 	std::vector<std::vector<cv::Point>> contours_all;
 	std::vector<cv::Vec4i> hierarchy;
 	getContoursOfFrame(frame, frameGray, contours_all, hierarchy); 
@@ -326,8 +326,8 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 	cv::imshow("Detection Result", frame);
 #endif
 
-	time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
-	printf("SignRec Duration: %f\n", time);
+	//time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
+	//printf("SignRec Duration: %f\n", time);
 
 	return;
 }
@@ -434,8 +434,6 @@ void SignRecognizer::getContoursOfFrame(cv::Mat &frame, cv::Mat &grayOut, std::v
 	//grayOut = channel[2].clone();
 
 	cvtColor(frame, grayOut, CV_BGR2GRAY);  // Convert it to grayscale image
-	//grayOut /= 8;
-	//grayOut *= 16;
 
 	GaussianBlur(channel[2], image_gray_blur, cv::Size(7, 7), 2, 2);  // Reduce the noise
 	//blur(grayOut, image_gray_blur, cv::Size(3, 3));  // Reduce the noise

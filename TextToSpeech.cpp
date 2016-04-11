@@ -21,6 +21,7 @@
 #include "TextToSpeech.h"
 
 std::queue<std::wstring> TextToSpeech::strQueue;
+int TextToSpeech::lasttime = 0;
 
 TextToSpeech::TextToSpeech()
 {
@@ -110,22 +111,27 @@ void TextToSpeech::pushBack(std::string &s)
 	std::wstring speech;
 	speech = std::wstring(s.begin(), s.end());
 
-	if (strQueue.size() != 0 && strQueue.back() == speech)
+	int timenow = cv::getTickCount() / cv::getTickFrequency();
+	if (strQueue.size() != 0 && strQueue.back() == speech && (timenow - lasttime) < 5)
 	{
 		return;
 	}
-
 	strQueue.push(speech);
+	lasttime = timenow;
 }
 
 // push a text at the end of queue 'strQueue'
 // input datatype: wstring
 void TextToSpeech::pushBack(std::wstring &ws)
 {
-	if (strQueue.size() != 0 && strQueue.back() == ws)
+	int timenow = cv::getTickCount() / cv::getTickFrequency();
+	if (strQueue.size() != 0 && strQueue.back() == ws && (timenow - lasttime) < 5)
+	{
 		return;
+	}
 
 	strQueue.push(ws);
+	lasttime = timenow;
 }
 
 void TextToSpeech::testExample(void)

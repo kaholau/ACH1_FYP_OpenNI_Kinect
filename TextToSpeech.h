@@ -31,6 +31,7 @@ extern CComModule _Module;
 #include <sapi.h>
 #include <string>
 #include <queue>
+#include <opencv2\opencv.hpp>
 
 typedef class TextToSpeech
 {
@@ -38,7 +39,7 @@ public:
 	TextToSpeech();
 	~TextToSpeech();
 
-
+	static int lasttime;
 	void Initialize();
 
 	// speak out the first string stored in queue 'strQueue' and pop it
