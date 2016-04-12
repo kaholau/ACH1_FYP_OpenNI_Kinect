@@ -12,6 +12,7 @@
 
 
 /* Defines */
+//#define DURATION_CHECK_FACE
 //#define SAVE_IMAGES
 //#define SAVE_FACES
 //#define SAVE_MASKS

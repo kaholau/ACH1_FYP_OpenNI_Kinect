@@ -34,6 +34,7 @@
 
 #include "TextToSpeech.h"
 
+//#define DURATION_CHECK
 //#define SHOW_DEBUG_MESSAGES
 #define SHOW_MARKERS
 //#define SHOW_IMAGE_AND_RESULT
@@ -50,7 +51,7 @@
 #define ABSOLUTE_BLACK			0
 
 #define CANNY_MAX_THRHD_RATIO		2.3
-#define AVG_GRAYSCALE_SCALE			1.29
+#define AVG_GRAYSCALE_SCALE			1.35
 #define MEDIAN_BLUR_KSIZE			5
 
 #define SIGN_WIDTH_THRESHOLD		100

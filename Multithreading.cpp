@@ -230,23 +230,26 @@ void Multithreading::FaceDetectionThread_Process()
 
 		INPUT_RECORD buffer;
 		PeekConsoleInput(handle, &buffer, 1, &events);
-		if (events > 0 && !m_Kinect.replay && !m_Kinect.recording)
+		if (events > 0 && !m_Kinect.recording && !m_Kinect.replay)
 		{
 			ReadConsoleInput(handle, &buffer, 1, &events);
 			switch (buffer.Event.KeyEvent.wVirtualKeyCode)
 			{
 			case 0x30:
-				while (true)
+				if (!m_face.isAddNewFace)
 				{
-					std::cout << "Please enter person's name to be added: ";
-					std::getline(std::cin, faceName);
-					if ((strcmp(faceName.c_str(), "") != 0) &&
-						(strcmp(faceName.c_str(), "0") != 0) &&
-						(strcmp(faceName.c_str(), "1") != 0))
-						break;
+					while (true)
+					{
+						std::cout << "Please enter person's name to be added: ";
+						std::getline(std::cin, faceName);
+						if ((strcmp(faceName.c_str(), "") != 0) &&
+							(strcmp(faceName.c_str(), "0") != 0) &&
+							(strcmp(faceName.c_str(), "1") != 0))
+							break;
+					}
+					m_face.isAddNewFace = true;
+					m_face.isUpdated = true;
 				}
-				m_face.isAddNewFace = true;
-				m_face.isUpdated = true;
 				break;
 
 			case 0x31:
@@ -281,6 +284,8 @@ void Multithreading::SignDetectionThread_Process()
 		m_sign.runRecognizer(colorImg);
 		//cv::imshow("SIGN DETECTION", colorImg);
 	}
+
+	//m_sign.testExample();
 }
 
 void Multithreading::StairDetectionThread_Process()

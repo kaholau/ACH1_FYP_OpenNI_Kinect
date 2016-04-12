@@ -109,13 +109,15 @@ SignRecognizer::~SignRecognizer()
 
 void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 {
+#ifdef DURATION_CHECK
+	double time = 0;
+	uint64_t oldCount = 0, curCount = 0;
+	curCount = cv::getTickCount();
+#endif
+
 	std::ostringstream sout;
 	int k = 0;
 	cv::Mat frameGray;
-
-	//double time = 0;
-	//uint64_t oldCount = 0, curCount = 0;
-	//curCount = cv::getTickCount();
 	std::vector<std::vector<cv::Point>> contours_all;
 	std::vector<cv::Vec4i> hierarchy;
 	getContoursOfFrame(frame, frameGray, contours_all, hierarchy); 
@@ -227,6 +229,13 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 			ellipseMask_inv = MAX_VALUE_8BITS - ellipseMask;
 			//cv::bitwise_not(ellipseMask, ellipseMask_inv);
 			cv::threshold(*sign, *sign, avg_tmp, ABSOLUTE_WHITE, THRESH_BINARY);
+
+#ifdef SAVE_IMAGE_AND_RESULT
+			sout.str("");
+			sout << fName << "_sign_orig" << k << ".bmp";
+			cv::imwrite(sout.str(), *sign);
+#endif
+
 			*sign |= ellipseMask_inv;
 			floodFill(*sign, Point(0, 0), Scalar::all(0));
 			floodFill(*sign, Point(sign->cols - 1, 0), Scalar::all(0));
@@ -247,9 +256,11 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 			{
 				sign = invertLaterally(sign);
 
+#ifdef SAVE_IMAGE_AND_RESULT
 				sout.str("");
 				sout << fName << "_sign_" << k << ".bmp";
 				cv::imwrite(sout.str(), *sign);
+#endif
 			}
 
 			// apply OCR to obtain the characters
@@ -258,8 +269,8 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 			text.erase(remove(text.begin(), text.end(), '\n'), text.end());
 			text.erase(remove(text.begin(), text.end(), ' '), text.end());
 
-			//if ((strcmp(text.c_str(), "") == 0) || (strcmp(lastDet.c_str(), text.c_str()) == 0))
-			//	continue;
+			if ((strcmp(text.c_str(), "") == 0) || (strcmp(lastDet.c_str(), text.c_str()) == 0))
+				continue;
 
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << "SavedContour[" << k << "] text: " << text << "_Floor";
@@ -274,13 +285,11 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 
 			cv::putText(frame, text, contours_all[k][1], cv::FONT_HERSHEY_SIMPLEX, 1,
 				cv::Scalar(0, 128, 255), 2);
+			savedSigns_index.push_back(k);
 
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << std::endl;
-			//OutputDebugStringA("\n");
 #endif
-
-			savedSigns_index.push_back(k);
 
 #ifdef SHOW_IMAGE_AND_RESULT
 			// Save and show the sign
@@ -307,8 +316,6 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 			lastDet = text;
 			sign = NULL;
 		}
-
-
 	}
 #ifdef SHOW_DEBUG_MESSAGES
 	std::cout << std::endl << "No of Contours saved = " << savedSigns_index.size() << std::endl;
@@ -326,8 +333,10 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 	cv::imshow("Detection Result", frame);
 #endif
 
-	//time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
-	//printf("SignRec Duration: %f\n", time);
+#ifdef DURATION_CHECK
+	time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
+	printf("SignRec Duration: %f\n", time);
+#endif
 
 	return;
 }
@@ -415,34 +424,41 @@ bool SignRecognizer::getResultString(std::string &in, std::wstring &out)
 
 void SignRecognizer::getContoursOfFrame(cv::Mat &frame, cv::Mat &grayOut, std::vector<std::vector<Point>> &contours, std::vector<Vec4i> &hierarchy)
 {
-	//double time = 0;
-	//uint64_t oldCount = 0, curCount = 0;
-	//curCount = cv::getTickCount();
+#ifdef DURATION_CHECK
+	double time = 0;
+	uint64_t oldCount = 0, curCount = 0;
+	curCount = cv::getTickCount();
+#endif
+
 	//if (isLaterallyInverted)
 	//{
 	//	Mat image_lateralInvert(frame.size(), frame.type());
 	//	remap(frame, image_lateralInvert, map_x, map_y, CV_INTER_LINEAR);
 	//	frame = image_lateralInvert;
 	//}
+
+#ifdef DURATION_CHECK
 	//time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
 	//printf("invert Duration: %f\n", time);
+#endif
 
 	cv::Mat canny;
 	Mat image_gray_blur;
 	Mat channel[3];
 	split(frame, channel);
-	//grayOut = channel[2].clone();
-
-	cvtColor(frame, grayOut, CV_BGR2GRAY);  // Convert it to grayscale image
+	grayOut = channel[2].clone();
+	//cvtColor(frame, grayOut, CV_BGR2GRAY);  // Convert to grayscale image
 
 	GaussianBlur(channel[2], image_gray_blur, cv::Size(7, 7), 2, 2);  // Reduce the noise
 	//blur(grayOut, image_gray_blur, cv::Size(3, 3));  // Reduce the noise
+
+#ifdef DURATION_CHECK
 	//time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
 	//printf("Blur Duration: %f\n", time);
+#endif
 
+	// Create mask for edges
 	Canny(image_gray_blur, canny, lowThreshold, (double)(lowThreshold)*CANNY_MAX_THRHD_RATIO); // Apply Canny detector
-
-	// Create mask for edges by dilation
 	cv::Mat dilate_element = cv::getStructuringElement(MORPH_ELLIPSE, Size(dilateSize, dilateSize), Point(-1, -1));
 	dilate(canny, canny, dilate_element);
 
