@@ -66,15 +66,15 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 	const int ZeroConsequtiveLimit = 10;
 	const int PreviousDeltaAllowance = 5;
 	const int MaxDepth = 160;
-	const int DepthStartLimit = 100;
+	//const int DepthStartLimit = 100;
 
 	/// Depth value too high at the beginning means
 	/// Object is very close to user.
 	/// Therefore, most likely walls or still going up stairs.
-	if (current > DepthStartLimit)
-		return false;
+	//if (current > DepthStartLimit)
+	//	return false;
 
-	for (int i = 0; i < it.count / 2; i++, ++it)
+	for (int i = 0; i < it.count; i++, ++it)
 	{
 		current = (int)depthImg.getMat().at<uchar>(it.pos());
 

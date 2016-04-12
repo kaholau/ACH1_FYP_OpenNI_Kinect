@@ -49,7 +49,7 @@ using namespace cv;
 #define  Valid_Distance 1		//grayscale pixel value
 #define  TooFarDistance 60
 #define  Ground_height 260		//30cm
-#define  INIT_CAMERA_ANGLE 21
+#define  INIT_CAMERA_ANGLE -4
 #define  TooLessGroundPercentage 0.03 
 //calHistogram
 #define HistSize 256 // bin size = 2^pixelDepth / histSize
@@ -69,7 +69,7 @@ using namespace cv;
 #define HOLE_DETECED_ONE_CONFIRM_COUNT 5
 #define HOLE_DETECED_CONFIRM_COUNT 5
 #define HOLE_DETECTED_SPEECH "hole detecting"
-#define MOTOR_LOOK_DOWN	-21
+#define MOTOR_LOOK_DOWN	-40
 
 
 //path advice	
