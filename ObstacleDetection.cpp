@@ -838,17 +838,17 @@ void ObstacleDetection::findHole(void* controller)
 		string speech = HOLE_DETECTED_SPEECH;
 		TextToSpeech::pushBack(speech);
 		INuiSensor *pNuiSensor = ((INuiSensor*)controller);
-		long angle = MOTOR_LOOK_DOWN;
-		pNuiSensor->NuiCameraElevationSetAngle(angle);
+		pNuiSensor->NuiCameraElevationSetAngle(MOTOR_LOOK_DOWN);
 		angleSetToLookDown = true;
 		std::cout << " lookdown" << std::endl;
 	}
 
 	if (!holeDetected&&angleSetToLookDown)
 	{
+		string speech = "no hole";
+		TextToSpeech::pushBack(speech);
 		INuiSensor *pNuiSensor = ((INuiSensor*)controller);
-		long angle = MOTOR_LOOK_DOWN;
-		pNuiSensor->NuiCameraElevationSetAngle(21);
+		pNuiSensor->NuiCameraElevationSetAngle(INIT_CAMERA_ANGLE);
 		angleSetToLookDown = false;
 		std::cout << " lookup " << std::endl;
 	}
@@ -978,7 +978,7 @@ int ObstacleDetection::getCameraAngle()
 
 void ObstacleDetection::setCameraAngle(int degree)
 {
-	CameraAngle = degree;
+	CameraAngle = (CameraAngle+degree)/2;
 }
 
 double ObstacleDetection::GetPointAngle(const int pointY)
