@@ -6,14 +6,6 @@
 
 
 /* Global Variables */
-//const std::string PERSON_NAME[NUM_OF_PERSON + 1] =
-//{
-//	"Guest",
-//	"Joel",
-//	"Ka Ho",
-//	"Yumi"
-//};
-
 int image_num = 0;
 
 
@@ -51,10 +43,6 @@ HumanFaceRecognizer::HumanFaceRecognizer()
 	}
 	num_of_person_in_db = PERSON_NAME.size();
 	std::cout << "num_of_person_in_db: " << num_of_person_in_db << std::endl;
-	//PERSON_NAME.push_back("Guest");
-	//PERSON_NAME.push_back("Joel");
-	//PERSON_NAME.push_back("Ka Ho");
-	//PERSON_NAME.push_back("Yumi");
 	fin.close();
 
 
@@ -69,6 +57,12 @@ HumanFaceRecognizer::~HumanFaceRecognizer()
 
 int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 {
+#ifdef DURATION_CHECK_FACE
+	double time = 0;
+	uint64_t oldCount = 0, curCount = 0;
+	curCount = cv::getTickCount();
+#endif
+
 #ifdef RESIZE_TO_SMALLER
 	cv::Mat original = detector.resizeToSmaller(frame);
 #else
@@ -323,25 +317,15 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #ifdef SHOW_MARKERS
 					else
 					{
-						oss.str("");
-						oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
-
-						//switch (facesInfo[p].label)
-						//{
-						//case Guest:
-						//case Joel:
-						//case KaHo:
-						//case Yumi:
-						//	//oss << PERSON_NAME[facesInfo[p].label] << "-" << confidence;
-						//	oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
-						//	//oss << PERSON_NAME[facesInfo[p].label];
-						//	break;
-
-						//default:
-						//	oss << "Special!! " << confidence;
-						//	//oss << NAME_GUEST;
-						//	break;
-						//}
+						if (predictedLabel > 0 && predictedLabel < PERSON_NAME.size())
+						{
+							oss.str("");
+							oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
+						}
+						else
+						{
+							oss << "Special!! " << confidence;
+						}
 					}
 #endif
 #ifdef SHOW_MARKERS
@@ -460,6 +444,11 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	cv::imshow("Video_Stream", *frame);
 #endif
 
+#ifdef DURATION_CHECK_FACE
+	time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
+	printf("\t FaceRecDur: %f\n", time);
+#endif
+
 	return 0;
 }
 
@@ -473,9 +462,6 @@ void HumanFaceRecognizer::addNewFace(cv::Mat &frame, std::string name)
 #endif
 
 	facesInfo.clear();
-
-	std::vector<cv::Mat> faceList;
-	std::vector<int> labelList;
 	
 	std::vector<cv::Rect> facePos;
 	detector.getFaces(frame, facePos); // Apply the classifier to the frame
@@ -520,18 +506,21 @@ void HumanFaceRecognizer::addNewFace(cv::Mat &frame, std::string name)
 
 
 	// Equalization
-	vector<Mat> channels;
-	Mat face_eq;
-	cvtColor(face, face_eq, CV_BGR2YCrCb); //change the color image from BGR to YCrCb format
-	split(face_eq, channels); //split the image into channels
-	equalizeHist(channels[0], channels[0]); //equalize histogram on the 1st channel (Y)
-	merge(channels, face_eq); //merge 3 channels including the modified 1st channel into one image
-	cvtColor(face_eq, face_eq, CV_YCrCb2BGR); //change the color image from YCrCb to BGR format (to display image properly)
-	cvtColor(face_eq, face_eq, CV_RGB2GRAY);
+	//vector<Mat> channels;
+	//Mat face_eq;
+	//cvtColor(face, face_eq, CV_BGR2YCrCb); //change the color image from BGR to YCrCb format
+	//split(face_eq, channels); //split the image into channels
+	//equalizeHist(channels[0], channels[0]); //equalize histogram on the 1st channel (Y)
+	//merge(channels, face_eq); //merge 3 channels including the modified 1st channel into one image
+	//cvtColor(face_eq, face_eq, CV_YCrCb2BGR); //change the color image from YCrCb to BGR format (to display image properly)
+	//cvtColor(face_eq, face_eq, CV_RGB2GRAY);
 
-	faceList.push_back(face_eq);
 
 	// update database
+	std::vector<cv::Mat> faceList;
+	std::vector<int> labelList;
+	faceList.push_back(face);
+
 	int label = -1;
 	int i;
 	std::string tmp1 = name;
