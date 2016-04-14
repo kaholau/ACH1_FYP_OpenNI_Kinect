@@ -306,12 +306,29 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 			//TextToSpeech::pushBack(path);
 			serial.SendDirection(path);
 		}
-		if (path!= NO_PATH)
-			currentDepth &= Ground.img;
+		if (path != NO_PATH){
+			//imshow("Ground.img", Ground.img);
+			Scalar groundIndicator = Scalar(0, 128, 0);
+			cvtColor(currentDepth, currentDepth, CV_GRAY2RGB);
+			for (int r = 0; r < Ground.img.rows; r++)
+				for (int c = 0; c < Ground.img.cols; c++)
+				{	
+					if (Ground.img.at<uchar>(r, c) == 0){
+						currentDepth.at<Vec3b>(r, c)[0] = groundIndicator[0];
+						currentDepth.at<Vec3b>(r, c)[1] = groundIndicator[1];
+						currentDepth.at<Vec3b>(r, c)[2] = groundIndicator[2];
+					}
+				}
+						
+		}
+		else
+		{
+			cvtColor(currentDepth, currentDepth, CV_GRAY2RGB);
+		}
+			
 	}
 	delete[] pThreasholdImageList;
 	
-	cvtColor(currentDepth, currentDepth, CV_GRAY2RGB);	
 	//imwrite(SAMPLE_IMG_PATH + std::to_string(time(NULL)) + ".jpg", currentDepth);
 //find path just using ground img
 	//imshow("Ground.img",Ground.img);
@@ -373,17 +390,17 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 	int realColStart = 20;
 	int realColEnd = Ground.img.cols - 2;
 
-	line(currentDepth, Point(realColStart + realDepthColsWidth/3, currentDepth.rows),
-		Point(realColStart + realDepthColsWidth / 3, 0),
+	line(currentDepth, Point(realColStart + realDepthColsWidth/4, currentDepth.rows),
+		Point(realColStart + realDepthColsWidth / 4, 0),
 		Scalar(255), 2, 8, 0);
-	line(currentDepth, Point(realColStart + realDepthColsWidth *4/ 9, currentDepth.rows),
-		Point(realColStart + realDepthColsWidth * 4 / 9, 0),
+	line(currentDepth, Point(realColStart + realDepthColsWidth *5/ 12, currentDepth.rows),
+		Point(realColStart + realDepthColsWidth * 5 / 12, 0),
 		Scalar(255), 2, 8, 0);
-	line(currentDepth, Point(realColStart + realDepthColsWidth *5/ 9, currentDepth.rows),
-		Point(realColStart + realDepthColsWidth * 5 / 9, 0),
+	line(currentDepth, Point(realColStart + realDepthColsWidth *7/ 12, currentDepth.rows),
+		Point(realColStart + realDepthColsWidth * 7 / 12, 0),
 		Scalar(255), 2, 8, 0);
-	line(currentDepth, Point(realColStart + realDepthColsWidth*2 / 3, currentDepth.rows),
-		Point(realColStart + realDepthColsWidth * 2 / 3, 0),
+	line(currentDepth, Point(realColStart + realDepthColsWidth*3 / 4, currentDepth.rows),
+		Point(realColStart + realDepthColsWidth * 3 / 4, 0),
 		Scalar(255), 2, 8, 0);
 	Scalar dir = Scalar(0, 0, 0);
 	if (currentPath ==TURN_LEFT)
@@ -398,7 +415,7 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		dir = Scalar(255, 0, 0);
 	arrowedLine(currentDepth, Point(pathDirCol, currentDepth.rows), Point(pathDirCol, currentDepth.rows-20), dir, 3, 8, 0, 0.6);
 #endif
-
+	flip(currentDepth, currentDepth, 1);
 }
 void ObstacleDetection::initMaskLayerForSegmentLabel()
 {
@@ -606,6 +623,7 @@ void ObstacleDetection::GroundMaskCreateRegular(Mat &img)
 	//myfile << "img.rows: " << img.rows << std::endl;
 	//Point startPoint = Point(0, m_edge-1);
 	Ground.img = Mat(img.size(), CV_8UC1,Scalar(255));
+	Mat GroundContour = Mat(img.size(), CV_8UC1, Scalar(0));
 	GroundBoolMat = Mat(img.rows / m_edge, img.cols / m_edge, CV_8UC1, Scalar(0));
 	Mat whitePaper = Mat(img.rows * 4, img.cols * 4, CV_8UC1, Scalar(255));
 	putText(whitePaper, std::to_string(CameraAngle), Point(50, 50), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
@@ -671,8 +689,9 @@ void ObstacleDetection::GroundMaskCreateRegular(Mat &img)
 	imshow("original_depth", img);
 	waitKey();
 #endif
+
 	GroundEroAndDilate(Ground.img, GroundBoolMat, dilation_size1, erosion_size);
-	//GroundRefine(GroundBoolMat, Ground.img);
+
 	bitwise_and(img, Ground.img, img);
 
 #ifdef FOR_REPORT
@@ -699,8 +718,29 @@ void ObstacleDetection::GroundDefault(Mat& img)
 	rectangle(img, pt1, pt2, Scalar(0), CV_FILLED);
 }
 
-void ObstacleDetection::GroundEroAndDilate(Mat& img, Mat& boolMat, int diSize,int eroSize)
+void ObstacleDetection::GroundEroAndDilate(Mat& Gimg, Mat& boolMat, int diSize,int eroSize)
 {
+	
+	vector<vector<Point>> contours;
+	vector<Vec4i> hierarchy;
+	int maxIndex = 0;
+	
+	Mat temp = boolMat.clone();
+	findContours(temp, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, Point(0, 0));
+	//imshow("bool", boolMat);
+	if (contours.size() < 1)	return;
+	for (int i = 0; i < contours.size(); i++)
+		if (contours[i].size()>contours[maxIndex].size())
+			maxIndex = i;
+
+	Mat temp1 = Mat(boolMat.size(), boolMat.type(), Scalar(0));
+	//std::cout << "maxIndex"<<maxIndex << std::endl;
+	//std::cout << "contours.size()"<<contours.size() << std::endl;
+
+	//std::cout << "contours[maxIndex].size()"<<contours[maxIndex].size() << std::endl;
+	drawContours(temp1, contours, maxIndex, Scalar(255), 1, 8);
+	imshow("OLDtemp", temp1);
+
 	int erosion_type;
 	if (erosion_elem == 0){ erosion_type = MORPH_RECT; }
 	else if (erosion_elem == 1){ erosion_type = MORPH_CROSS; }
@@ -724,20 +764,23 @@ void ObstacleDetection::GroundEroAndDilate(Mat& img, Mat& boolMat, int diSize,in
 		Point(diSize, diSize));
 	/// Apply the dilation operation
 	dilate(boolMat, boolMat, elementD);
-
-	GroundRefine(boolMat, img);
+	//std::cout << "TEST" << std::endl;
+	//std::cout << contours[maxIndex].size() << std::endl;
+	//GroundRefine(boolMat, Gimg, contours[maxIndex]);
+	GroundRefine(boolMat, Gimg, contours[maxIndex]);
 }
-void ObstacleDetection::GroundRefine(Mat& boolMat, Mat& img)
+void ObstacleDetection::GroundRefine(Mat& boolMat, Mat& Gimg, vector<Point> contour)
 {
 	for (int i = 0; i < boolMat.rows; i++)
 	{
 		for (int j = 0; j < boolMat.cols; j++)
-			if (boolMat.at<uchar>(i, j) == 255)
+			if ((boolMat.at<uchar>(i, j) == 255) && pointPolygonTest(contour, Point(j, i), 0)==1)
+			//if ((boolMat.at<uchar>(i, j) == 255))
 			{
 				Point location((j*planeEdgeForPlaneRemove) + (planeEdgeForPlaneRemove / 2), (i * planeEdgeForPlaneRemove) + (planeEdgeForPlaneRemove-1) + (planeEdgeForPlaneRemove / 2));
 	//			myfile << "[" << j << "," << i << "]=" ;
 		//		myfile << location << " ";
-				GroundMaskUnitFill(img, location);
+				GroundMaskUnitFill(Gimg, location);
 			}	
 		//myfile << std::endl;
 	}
@@ -785,6 +828,7 @@ void ObstacleDetection::GroundMaskFill(Mat& img,Mat& boolMat, Point& location, V
 		if (angle > minThreashold_horizontalPlane && angle < maxThreashold_horizontalPlane)
 		{
 			int h =(int) GetHeight(location.y, currentRawDepth.at<ushort>(location));
+			//GroundBoolMatUnitFill(boolMat, location);
 			//myfile2 << h << std::endl;
 			if (h < Ground_height && h != -1 && h>GROUND_MIN_HIEGHT)
 			{
@@ -1285,17 +1329,17 @@ int  ObstacleDetection::findPathByMassCenter()
 	int finalPositionOfArrow = ((float)SecondPath + 0.5)*(float)width + start;
 	
 	pathDirCol = finalPositionOfArrow;
-	if ((finalPositionOfArrow > 0) && (finalPositionOfArrow <= realColStart + realDepthColsWidth / 3))
+	if ((finalPositionOfArrow > 0) && (finalPositionOfArrow <= realColStart + realDepthColsWidth / 4))
 		return TURN_RIGHT;
 
-	if ((finalPositionOfArrow > realColStart + realDepthColsWidth* 3/ 9) && (finalPositionOfArrow <= realColStart + realDepthColsWidth * 4 / 9))
+	if ((finalPositionOfArrow > realColStart + realDepthColsWidth* 3/ 12) && (finalPositionOfArrow <= realColStart + realDepthColsWidth * 5 / 12))
 		return MIDDLE_RIGHT;
-	if ((finalPositionOfArrow > realColStart + realDepthColsWidth* 4/ 9) && (finalPositionOfArrow <= realColStart + realDepthColsWidth * 5 / 9))
+	if ((finalPositionOfArrow > realColStart + realDepthColsWidth* 5/ 12) && (finalPositionOfArrow <= realColStart + realDepthColsWidth * 7 / 12))
 		return MIDDLE_MIDDLE;
-	if ((finalPositionOfArrow > realColStart + realDepthColsWidth* 5/ 9) && (finalPositionOfArrow <= realColStart + realDepthColsWidth * 6 / 9))
+	if ((finalPositionOfArrow > realColStart + realDepthColsWidth* 7 / 12) && (finalPositionOfArrow <= realColStart + realDepthColsWidth * 9 / 12))
 		return MIDDLE_LEFT;
 
-	if ((finalPositionOfArrow > realColStart + realDepthColsWidth * 2 / 3) && (finalPositionOfArrow < realColStart + realDepthColsWidth))
+	if ((finalPositionOfArrow > realColStart + realDepthColsWidth * 9 / 12) && (finalPositionOfArrow < realColStart + realDepthColsWidth))
 		return TURN_LEFT;
 
 	return NO_PATH;

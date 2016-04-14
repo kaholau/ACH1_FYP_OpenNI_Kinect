@@ -57,9 +57,9 @@ void Multithreading::CreateAsyncThreads()
 
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
-	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
-	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
+	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
+	//StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
 
 void Multithreading::Hold()
@@ -205,11 +205,15 @@ void Multithreading::ObstacleDetectionThread_Process()
 		m_obstacle.getOutputDepthImg(&depth8bit);
 		m_obstacle.getOutputColorImg(&colorImg);
 
-		t = 1/(((double)getTickCount() - t) / getTickFrequency());
+		/*t = 1/(((double)getTickCount() - t) / getTickFrequency());
 		String fps = std::to_string(t) + "fps";
-		putText(depth8bit, fps, Point(20,20), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
+		putText(depth8bit, fps, Point(20,20), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);*/
 		//std::cout << " Total used : " << t << " seconds" << std::endl;
 		cv::imshow("DEPTH", depth8bit);
+		Mat resizeColor = Mat(Size(320, 240), colorImg.type());
+		resize(colorImg, resizeColor, Size(320, 240), 0, 0, 1);
+		flip(resizeColor, resizeColor, 1);
+		cv::imshow("resizeColor", resizeColor);
 		//waitKey();
 		//cv::imshow("COLOR", colorImg);
 	}

@@ -48,14 +48,14 @@ using namespace cv;
 
 #define  Valid_Distance 1		//grayscale pixel value
 #define  TooFarDistance 60
-#define  Ground_height 260		//30cm
+#define  Ground_height 460		//30cm
 #define  INIT_CAMERA_ANGLE -6
 #define  TooLessGroundPercentage 0.03 
 //calHistogram
 #define HistSize 256 // bin size = 2^pixelDepth / histSize
 
 //remove plane
-#define planeEdgeForPlaneRemove 12 
+#define planeEdgeForPlaneRemove 8 
 #define planeAreaForPlaneRemove (planeEdgeForPlaneRemove * planeEdgeForPlaneRemove)
 #define maxThreashold_horizontalPlane 0.5
 #define minThreashold_horizontalPlane 0.01
@@ -149,7 +149,7 @@ private:
 	void GroundDefault(Mat& img);
 	void GroundEroAndDilate();
 	void GroundEroAndDilate(Mat& img, Mat& boolMat, int diSize, int eroSize);
-	void GroundRefine(Mat& boolMat, Mat& img);
+	void GroundRefine(Mat& boolMat, Mat& img, vector<Point> contour);
 
 	//Histogram Segmentation
 	Mat MaskLayerForSegmentLabel;
