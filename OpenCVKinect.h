@@ -60,7 +60,7 @@ public:
 	std::ofstream file;
 	LONG angle = 0;
 	bool recording = false;
-	bool replay = false;
+	bool replay = true;
 
 	bool init();
 	
@@ -71,7 +71,8 @@ public:
 	void getColor(cv::Mat &colorMat, uint64_t &colorTimeStamp);
 	void getMatrix(MatFlag type, cv::Mat &color, cv::Mat &depthRaw, cv::Mat &depth8bit, uint64_t &timestamp);
 	LONG getAngle();
-	
+	void togglePlayback();
+
 	int getFrameIndexColor();
 	int getFrameIndexDepth();
 };
