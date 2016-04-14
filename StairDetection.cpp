@@ -26,19 +26,19 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	cv::resize(colorImg, scaledColor, cv::Size(320, 240));
 	cv::resize(depthImg, scaledDepth, cv::Size(320, 240));
 	//cv::imshow("Color Stairs", scaledColor);
-	cv::imshow("DEPTH Stairs", scaledDepth);
+	//cv::imshow("DEPTH Stairs", scaledDepth);
 	CannyThreshold(scaledColor, detected_edges);
 	ApplyFilter(detected_edges, scaledDepth, 254, 255, CV_THRESH_BINARY);
 	Probabilistic_Hough(detected_edges, allLines);
 
-	cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
-	cv::Scalar color(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
-	for (cv::Vec4i vec : allLines) {
-		cv::Point p1(vec[0], vec[1]);
-		cv::Point p2(vec[2], vec[3]);
-		cv::line(detected_edges_inv, p1, p2, color, 3);
-	}
-	cv::imshow("asdf", detected_edges_inv);
+	//cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
+	//cv::Scalar color(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
+	//for (cv::Vec4i vec : allLines) {
+	//	cv::Point p1(vec[0], vec[1]);
+	//	cv::Point p2(vec[2], vec[3]);
+	//	cv::line(detected_edges_inv, p1, p2, color, 3);
+	//}
+	//cv::imshow("asdf", detected_edges_inv);
 
 	SortLinesByAngle(allLines, angles);
 	DetermineStairAngle(angles, stairsAngle);
@@ -50,13 +50,13 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	GetStairMidLine(allLines, angles[stairsAngle], stairsAngle, stairMidLine);
 	GetStairPoints(allLines, stairMidLine, stairsAngle, stairPoints, stairsMidPoints);
 
-	cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
-	for (int i = 0; i < stairPoints.size() / 2; i+=2) {
-		cv::Point p1(stairPoints[i]);
-		cv::Point p2(stairPoints[i+1]);
-		cv::line(detected_edges_inv, p1, p2, color, 3);
-	}
-	cv::imshow("qwerty", detected_edges_inv);
+	//cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
+	//for (int i = 0; i < stairPoints.size() / 2; i+=2) {
+	//	cv::Point p1(stairPoints[i]);
+	//	cv::Point p2(stairPoints[i+1]);
+	//	cv::line(detected_edges_inv, p1, p2, color, 3);
+	//}
+	//cv::imshow("qwerty", detected_edges_inv);
 
 	if (!DetermineStairs(scaledDepth, stairMidLine, stairsMidPoints))
 		return;
