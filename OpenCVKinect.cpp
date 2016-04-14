@@ -149,6 +149,10 @@ void OpenCVKinect::updateData()
 	while (!depthCaptured || !colorCaptured || m_depthTimeStamp != m_colorTimeStamp)
 	{
 		m_status = openni::OpenNI::waitForAnyStream(m_streams, C_NUM_STREAMS, &m_currentStream, C_STREAM_TIMEOUT);
+		if (replay && m_device.getPlaybackControl()->getSpeed() == -1) {
+			continue;
+		}
+
 		if (m_status != openni::STATUS_OK)
 		{
 			std::cout << "OpenCVKinect: Unable to wait for streams. Exiting" << std::endl;
@@ -280,6 +284,14 @@ LONG OpenCVKinect::getAngle()
 		pNuiSensor->NuiCameraElevationGetAngle(&angle);
 
 	return angle;
+}
+
+void OpenCVKinect::togglePlayback() {
+	m_device.getPlaybackControl()->setSpeed(-1 * m_device.getPlaybackControl()->getSpeed());
+}
+
+int OpenCVKinect::getPlaybackStatus() {
+	return m_device.getPlaybackControl()->getSpeed();
 }
 
 OpenCVKinect::~OpenCVKinect(void)
