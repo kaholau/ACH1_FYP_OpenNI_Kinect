@@ -150,7 +150,7 @@ void OpenCVKinect::updateData()
 	{
 		m_status = openni::OpenNI::waitForAnyStream(m_streams, C_NUM_STREAMS, &m_currentStream, C_STREAM_TIMEOUT);
 		if (replay && m_device.getPlaybackControl()->getSpeed() == -1) {
-			continue;
+			return;
 		}
 
 		if (m_status != openni::STATUS_OK)
@@ -286,9 +286,11 @@ LONG OpenCVKinect::getAngle()
 	return angle;
 }
 
-void OpenCVKinect::togglePlayback() {
-	m_device.getPlaybackControl()->setSpeed(-1 * m_device.getPlaybackControl()->getSpeed());
+void OpenCVKinect::setPlayspeed(int playspeed) {
+	m_device.getPlaybackControl()->setSpeed(playspeed);
 }
+
+
 
 OpenCVKinect::~OpenCVKinect(void)
 {

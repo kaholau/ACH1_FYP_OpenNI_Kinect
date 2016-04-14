@@ -71,7 +71,7 @@ public:
 	void getColor(cv::Mat &colorMat, uint64_t &colorTimeStamp);
 	void getMatrix(MatFlag type, cv::Mat &color, cv::Mat &depthRaw, cv::Mat &depth8bit, uint64_t &timestamp);
 	LONG getAngle();
-	void togglePlayback();
+	void setPlayspeed(int playspeed);
 
 	int getFrameIndexColor();
 	int getFrameIndexDepth();

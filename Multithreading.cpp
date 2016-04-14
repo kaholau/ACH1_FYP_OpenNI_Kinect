@@ -69,11 +69,6 @@ void Multithreading::Hold()
 	uint64_t time = 0, oldtime = 0;
 	uint64_t curTime = 0;
 	while (waitKey(1) != ESCAPE_KEY) {
-		if (m_Kinect.replay && waitKey(1) == 'p') {
-			std::cout << "TOGGLE, current timestamp:" << cv::getTickCount() << std::endl;
-			m_Kinect.togglePlayback();
-		}
-
 		curTime = cv::getTickCount() / cv::getTickFrequency();
 		if (m_Kinect.recording && ((curTime - startRecordingTime) > recordingDuration))
 		{
@@ -232,14 +227,10 @@ void Multithreading::FaceDetectionThread_Process()
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
-		m_Kinect.getColor(colorImg, newTimeStamp);
-		if (newTimeStamp <= oldTimeStamp)
-			continue;
-		oldTimeStamp = newTimeStamp;
 
 		INPUT_RECORD buffer;
 		PeekConsoleInput(handle, &buffer, 1, &events);
-		if (events > 0 && !m_Kinect.recording && !m_Kinect.replay)
+		if (events > 0 && !m_Kinect.recording)
 		{
 			ReadConsoleInput(handle, &buffer, 1, &events);
 			switch (buffer.Event.KeyEvent.wVirtualKeyCode)
@@ -264,8 +255,22 @@ void Multithreading::FaceDetectionThread_Process()
 			case 0x31:
 				m_face.isAddNewFace = false;
 				break;
+
+			case 0x4F:
+				std::cout << "Play" << cv::getTickCount() << std::endl;
+				m_Kinect.setPlayspeed(1);
+				break;
+			case 0x50:
+				std::cout << "Pause" << cv::getTickCount() << std::endl;
+				m_Kinect.setPlayspeed(-1);
+				break;
 			}
 		}
+
+		m_Kinect.getColor(colorImg, newTimeStamp);
+		if (newTimeStamp <= oldTimeStamp)
+			continue;
+		oldTimeStamp = newTimeStamp;
 
 		if (m_face.isAddNewFace)
 			m_face.addNewFace(colorImg, faceName);
