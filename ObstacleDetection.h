@@ -69,7 +69,7 @@ using namespace cv;
 #define HOLE_DETECED_ONE_CONFIRM_COUNT 10
 #define HOLE_DETECED_CONFIRM_COUNT 7
 #define HOLE_DETECTED_SPEECH "hole detecting"
-#define MOTOR_LOOK_DOWN	-21
+#define MOTOR_LOOK_DOWN	-24
 
 
 //path advice	

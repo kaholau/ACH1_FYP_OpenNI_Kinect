@@ -294,7 +294,7 @@ void Multithreading::StairDetectionThread_Process()
 	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 	std::vector<cv::Point> stairConvexHull;
 	int previousFound = 0;
-	int foundThreshold = 3;
+	int foundThreshold = 2;
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;

@@ -15,22 +15,30 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	cv::Mat detected_edges, detected_edges_inv;
 	std::vector<cv::Point> stairsConvexHull_normal, stairsConvexHull_inverse;
 	cv::Mat scaledColor, scaledDepth;
-
 	std::vector<cv::Vec4i> allLines;
 	int stairsAngle = -999;
 	cv::Point stairMidPoint;
 	std::vector<std::vector<int>> angles = std::vector<std::vector<int>>(180, std::vector<int>());
 	std::vector<cv::Point> stairPoints, stairsHull;
-	std::vector<cv::Point> stairMidLine;
+	std::vector<cv::Point> stairMidLine, stairsMidPoints;
 	std::string timestamp = std::to_string(cv::getTickCount());
 
 	cv::resize(colorImg, scaledColor, cv::Size(320, 240));
 	cv::resize(depthImg, scaledDepth, cv::Size(320, 240));
 	//cv::imshow("Color Stairs", scaledColor);
-	//cv::imshow("DEPTH Stairs", scaledDepth);
+	cv::imshow("DEPTH Stairs", scaledDepth);
 	CannyThreshold(scaledColor, detected_edges);
 	ApplyFilter(detected_edges, scaledDepth, 254, 255, CV_THRESH_BINARY);
 	Probabilistic_Hough(detected_edges, allLines);
+
+	cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
+	cv::Scalar color(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
+	for (cv::Vec4i vec : allLines) {
+		cv::Point p1(vec[0], vec[1]);
+		cv::Point p2(vec[2], vec[3]);
+		cv::line(detected_edges_inv, p1, p2, color, 3);
+	}
+	cv::imshow("asdf", detected_edges_inv);
 
 	SortLinesByAngle(allLines, angles);
 	DetermineStairAngle(angles, stairsAngle);
@@ -39,45 +47,72 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	if (stairsAngle == -999)
 		return;
 
-	// set of lines that have the stair angle should not be more than 10 lines.
-	if (angles[stairsAngle].size() > 10) 
-		return;
-
 	GetStairMidLine(allLines, angles[stairsAngle], stairsAngle, stairMidLine);
-	GetStairPoints(allLines, stairMidLine, stairPoints);
-	
-	if (!DetermineStairs(scaledDepth, stairMidLine, stairPoints))
+	GetStairPoints(allLines, stairMidLine, stairsAngle, stairPoints, stairsMidPoints);
+
+	cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
+	for (int i = 0; i < stairPoints.size() / 2; i+=2) {
+		cv::Point p1(stairPoints[i]);
+		cv::Point p2(stairPoints[i+1]);
+		cv::line(detected_edges_inv, p1, p2, color, 3);
+	}
+	cv::imshow("qwerty", detected_edges_inv);
+
+	if (!DetermineStairs(scaledDepth, stairMidLine, stairsMidPoints))
 		return;
 
 	ExtractStairsHull(stairPoints, stairsConvexHull);
 	return;
-
 }
 
-bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Point> &stairMidLine, std::vector<cv::Point> &stairPoints)
+bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Point> &stairMidLine, std::vector<cv::Point> &stairMidPoints)
 {
-	//std::string timestamp = std::to_string(cv::getTickCount());
 
-	//std::ofstream file;
-	//file.open(timestamp + ".txt");
-	cv::LineIterator it(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
-	int current = -1, plusFive = -1, minusFive = -1;
+	// current holds the current found depth.
+	int current = -1, above = -1, below = -1;
 	int previous = -1, zeroCount = 0;
+
 	const int ZeroConsequtiveLimit = 10;
 	const int PreviousDeltaAllowance = 5;
-	const int MaxDepth = 160;
-	//const int DepthStartLimit = 100;
+	const int MaxDepth = 150;
 
-	/// Depth value too high at the beginning means
-	/// Object is very close to user.
-	/// Therefore, most likely walls or still going up stairs.
-	//if (current > DepthStartLimit)
-	//	return false;
+	if (cv::waitKey(1) == 's') {
+		cv::LineIterator it1(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
 
-	for (int i = 0; i < it.count; i++, ++it)
+		std::string timestamp = std::to_string(cv::getTickCount());
+		std::cout << "saving " << timestamp << std::endl;
+
+		std::ofstream file;
+		file.open(timestamp + ".txt");
+		for (int i = 0; i < it1.count / 2.0; i++, ++it1)
+		{
+			current = (int)depthImg.getMat().at<uchar>(it1.pos());
+			file << current << std::endl;
+		}
+
+		file << std::endl;
+		file.close();
+	}
+
+	cv::LineIterator it(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
+	std::vector<cv::Point>::iterator midpts = stairMidPoints.begin();
+
+	for (int i = 3; i < it.count / 2.0; i++, ++it) 
 	{
-		current = (int)depthImg.getMat().at<uchar>(it.pos());
+		// skip if this is not the stair edge.
+		// the stair edges are stored in midpts.
+		if (i != midpts->y)
+			continue;
 
+		cv::Point curPt(it.pos());
+		cv::Point abvPt(it.pos().x, it.pos().y + 3);
+		cv::Point blwPt(it.pos().x, it.pos().y - 3);
+
+		current = (int)depthImg.getMat().at<uchar>(curPt);
+		above = (int)depthImg.getMat().at<uchar>(abvPt);
+		below = (int)depthImg.getMat().at<uchar>(blwPt);
+
+		/// old code?
 		if (current == 0) {
 			++zeroCount;
 			/// if too many consecutive zeroes, 
@@ -89,30 +124,57 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 		}
 		zeroCount = 0;
 
-		/// If depth is very large, then user is too close to object.
-		/// impossible to be stairs.
-		if (current > MaxDepth)
-			return false;
+		/// Let current = depth at stairEdge at y;
+		///     below = depth at stairEdge at y - 3;
+		///     above = depth at stairEdge at y - 3;
+		/// then above similar to current AND 
+		///      below < current;
+		/// else not stairs;
 
-		/// Stairs should have ascending depth value;
-		/// However, on angled view stairs, the depth value can occasional drop a bit.
-		/// Else it's not stairs at all.
-		if (current > previous)
-			previous = current;
-		else if (current > (previous - PreviousDeltaAllowance))
+		// if absolute difference between above and current is < 3;
+		// difference between current's depth must more than 9 units.
+		if (((above - current) < 3) && (current - below) > 9)
 			continue;
 		else
 			return false;
+
+		// update to next stair edge.
+		++midpts;
 	}
 
-	//file << std::endl;
-	//file.close();
 
-	//cv::Mat temp;
-	//cvtColor(depthImg, temp, CV_GRAY2BGR);
-	//cv::Scalar color = cv::Scalar(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
-	//cv::line(temp, stairMidLine[0], stairMidLine[1], color, 3);
-	//cv::imwrite(timestamp + ".png", temp);
+	//cv::LineIterator it(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
+	//// until first half of the image.
+	//for (int i = 0; i < it.count / 2.0; i++, ++it)
+	//{
+	//	current = (int)depthImg.getMat().at<uchar>(it.pos());
+
+	//	if (current == 0) {
+	//		++zeroCount;
+	//		/// if too many consecutive zeroes, 
+	//		/// then this image is too corrupted / does not have stairs
+	//		if (zeroCount > ZeroConsequtiveLimit)
+	//			return false;
+
+	//		continue;
+	//	}
+	//	zeroCount = 0;
+
+	//	/// If depth is very large, then user is too close to object.
+	//	/// impossible to be stairs.
+	//	if (current > MaxDepth)
+	//		return false;
+
+	//	/// Stairs should have ascending depth value;
+	//	/// However, on angled view stairs, the depth value can occasional drop a bit.
+	//	/// Else it's not stairs at all.
+	//	if (current > previous)
+	//		previous = current;
+	//	else if (current > (previous - PreviousDeltaAllowance))
+	//		continue;
+	//	else
+	//		return false;
+	//}
 
 	return true;
 }
@@ -320,7 +382,7 @@ void StairDetection::GetStairMidLine(std::vector<cv::Vec4i> &allLines, std::vect
 /// Using the found best fit line that represents the stairs,
 /// find all lines that intersect with the fit line
 /// all lines that intersect belong to the stairs
-void StairDetection::GetStairPoints(std::vector<cv::Vec4i> &allLines, std::vector<cv::Point> &stairMidLine, std::vector<cv::Point> &stairPoints)
+void StairDetection::GetStairPoints(std::vector<cv::Vec4i> &allLines, std::vector<cv::Point> &stairMidLine, int &stairsAngle, std::vector<cv::Point> &stairPoints, std::vector<cv::Point> &stairMidPoints)
 {
 	cv::Point pt1 = stairMidLine[0];
 	cv::Point pt2 = stairMidLine[1];
@@ -328,10 +390,17 @@ void StairDetection::GetStairPoints(std::vector<cv::Vec4i> &allLines, std::vecto
 	for (cv::Vec4i vec : allLines) {
 		cv::Point l1(vec[0], vec[1]);
 		cv::Point l2(vec[2], vec[3]);
+		cv::Point r;
+		int theta = AngleBetween(l1.x, l1.y, l2.x, l2.y);
 
-		if (intersection(l1, l2, pt1, pt2, cv::Point())) {
-			stairPoints.push_back(l1);
-			stairPoints.push_back(l2);
+		// if the line is within +- 10 degs, and it intersects the midline, 
+		//   then it belongs to the set of lines that represents the stairs.
+		if (abs(stairsAngle - theta) <= 10) {
+			if (intersection(l1, l2, pt1, pt2, r)) {
+				stairPoints.push_back(l1);
+				stairPoints.push_back(l2);
+				stairMidPoints.push_back(r);
+			}
 		}
 	}
 }

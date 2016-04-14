@@ -29,7 +29,7 @@ private:
 	void SortLinesByAngle(std::vector<cv::Vec4i> &p_lines, std::vector<std::vector<int>> &angles);
 	void DetermineStairAngle(std::vector<std::vector<int>> &angles, int &stairsAngle);
 	void GetStairMidLine(std::vector<cv::Vec4i> &allLines, std::vector<int> &stairIndexes, int &stairsAngle, std::vector<cv::Point> &stairMidLine);
-	void GetStairPoints(std::vector<cv::Vec4i> &allLines, std::vector<cv::Point> &stairMidLine, std::vector<cv::Point> &stairPoints);
+	void GetStairPoints(std::vector<cv::Vec4i> &allLines, std::vector<cv::Point> &stairMidLine, int &stairsAngle, std::vector<cv::Point> &stairPoints, std::vector<cv::Point> &stairMidPoints);
 	void ExtractStairsHull(std::vector<cv::Point> &stairPoints, std::vector<cv::Point> &stairsHull);
 	void GetIntersectHull(std::vector<cv::Point> &stairsConvexHull_normal, std::vector<cv::Point> &stairsConvexHull_inverse, std::vector<cv::Point> &intersectConvexHull);
 	bool DetermineStairs(cv::InputArray depthImg, std::vector<cv::Point> &stairMidLine, std::vector<cv::Point> &stairPoints);
