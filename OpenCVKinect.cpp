@@ -290,10 +290,6 @@ void OpenCVKinect::togglePlayback() {
 	m_device.getPlaybackControl()->setSpeed(-1 * m_device.getPlaybackControl()->getSpeed());
 }
 
-int OpenCVKinect::getPlaybackStatus() {
-	return m_device.getPlaybackControl()->getSpeed();
-}
-
 OpenCVKinect::~OpenCVKinect(void)
 {
 	file.close();
