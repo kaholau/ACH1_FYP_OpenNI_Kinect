@@ -67,6 +67,10 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 
 bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Point> &stairMidLine, std::vector<cv::Point> &stairMidPoints)
 {
+	// stairs should have at least 3 edges.
+	if (stairMidPoints.size() < 3)
+		return false;
+
 
 	// current holds the current found depth.
 	int current = -1, above = -1, below = -1;
@@ -74,7 +78,6 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 
 	const int ZeroConsequtiveLimit = 10;
 	const int PreviousDeltaAllowance = 5;
-	const int MaxDepth = 150;
 
 	if (cv::waitKey(1) == 's') {
 		cv::LineIterator it1(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
@@ -143,38 +146,33 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 	}
 
 
-	//cv::LineIterator it(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
-	//// until first half of the image.
-	//for (int i = 0; i < it.count / 2.0; i++, ++it)
-	//{
-	//	current = (int)depthImg.getMat().at<uchar>(it.pos());
+	cv::LineIterator ascendingIt(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
+	// until first half of the image.
+	for (int i = 0; i < ascendingIt.count / 2.0; i++, ++ascendingIt)
+	{
+		current = (int)depthImg.getMat().at<uchar>(ascendingIt.pos());
 
-	//	if (current == 0) {
-	//		++zeroCount;
-	//		/// if too many consecutive zeroes, 
-	//		/// then this image is too corrupted / does not have stairs
-	//		if (zeroCount > ZeroConsequtiveLimit)
-	//			return false;
+		if (current == 0) {
+			++zeroCount;
+			/// if too many consecutive zeroes, 
+			/// then this image is too corrupted / does not have stairs
+			if (zeroCount > ZeroConsequtiveLimit)
+				return false;
 
-	//		continue;
-	//	}
-	//	zeroCount = 0;
+			continue;
+		}
+		zeroCount = 0;
 
-	//	/// If depth is very large, then user is too close to object.
-	//	/// impossible to be stairs.
-	//	if (current > MaxDepth)
-	//		return false;
-
-	//	/// Stairs should have ascending depth value;
-	//	/// However, on angled view stairs, the depth value can occasional drop a bit.
-	//	/// Else it's not stairs at all.
-	//	if (current > previous)
-	//		previous = current;
-	//	else if (current > (previous - PreviousDeltaAllowance))
-	//		continue;
-	//	else
-	//		return false;
-	//}
+		/// Stairs should have ascending depth value;
+		/// However, on angled view stairs, the depth value can occasional drop a bit.
+		/// Else it's not stairs at all.
+		if (current > previous)
+			previous = current;
+		else if (current > (previous - PreviousDeltaAllowance))
+			continue;
+		else
+			return false;
+	}
 
 	return true;
 }
