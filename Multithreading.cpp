@@ -318,7 +318,7 @@ void Multithreading::StairDetectionThread_Process()
 		if (!stairConvexHull.empty()) {
 			if (previousFound > foundThreshold) {
 				TextToSpeech::pushBack(string("Stairs Found"));
-				StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+				//StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
 				++previousFound;
 			}
 			else {

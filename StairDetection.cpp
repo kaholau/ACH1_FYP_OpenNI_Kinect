@@ -31,15 +31,6 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	ApplyFilter(detected_edges, scaledDepth, 254, 255, CV_THRESH_BINARY);
 	Probabilistic_Hough(detected_edges, allLines);
 
-	//cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
-	//cv::Scalar color(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
-	//for (cv::Vec4i vec : allLines) {
-	//	cv::Point p1(vec[0], vec[1]);
-	//	cv::Point p2(vec[2], vec[3]);
-	//	cv::line(detected_edges_inv, p1, p2, color, 3);
-	//}
-	//cv::imshow("asdf", detected_edges_inv);
-
 	SortLinesByAngle(allLines, angles);
 	DetermineStairAngle(angles, stairsAngle);
 
@@ -49,14 +40,6 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 
 	GetStairMidLine(allLines, angles[stairsAngle], stairsAngle, stairMidLine);
 	GetStairPoints(allLines, stairMidLine, stairsAngle, stairPoints, stairsMidPoints);
-
-	//cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
-	//for (int i = 0; i < stairPoints.size() / 2; i+=2) {
-	//	cv::Point p1(stairPoints[i]);
-	//	cv::Point p2(stairPoints[i+1]);
-	//	cv::line(detected_edges_inv, p1, p2, color, 3);
-	//}
-	//cv::imshow("qwerty", detected_edges_inv);
 
 	if (!DetermineStairs(scaledDepth, stairMidLine, stairsMidPoints))
 		return;
@@ -71,7 +54,6 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 	if (stairMidPoints.size() < 3)
 		return false;
 
-
 	// current holds the current found depth.
 	int current = -1, above = -1, below = -1;
 	int previous = -1, zeroCount = 0;
@@ -79,70 +61,35 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 	const int ZeroConsequtiveLimit = 10;
 	const int PreviousDeltaAllowance = 5;
 
-	if (cv::waitKey(1) == 's') {
-		cv::LineIterator it1(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
-
-		std::string timestamp = std::to_string(cv::getTickCount());
-		std::cout << "saving " << timestamp << std::endl;
-
-		std::ofstream file;
-		file.open(timestamp + ".txt");
-		for (int i = 0; i < it1.count / 2.0; i++, ++it1)
-		{
-			current = (int)depthImg.getMat().at<uchar>(it1.pos());
-			file << current << std::endl;
-		}
-
-		file << std::endl;
-		file.close();
-	}
-
 	cv::LineIterator it(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
 	std::vector<cv::Point>::iterator midpts = stairMidPoints.begin();
 
+	// for each row in half of the image frame 
 	for (int i = 3; i < it.count / 2.0; i++, ++it) 
 	{
-		// skip if this is not the stair edge.
+		// skip if this row is not the stair edge.
 		// the stair edges are stored in midpts.
 		if (i != midpts->y)
 			continue;
 
+		/// Let current = depth at stairEdge at y;
+		///     below = depth at stairEdge at y - 3;
+		///     above = depth at stairEdge at y - 3;
 		cv::Point curPt(it.pos());
 		cv::Point abvPt(it.pos().x, it.pos().y + 3);
 		cv::Point blwPt(it.pos().x, it.pos().y - 3);
-
 		current = (int)depthImg.getMat().at<uchar>(curPt);
 		above = (int)depthImg.getMat().at<uchar>(abvPt);
 		below = (int)depthImg.getMat().at<uchar>(blwPt);
 
-		/// old code?
-		if (current == 0) {
-			++zeroCount;
-			/// if too many consecutive zeroes, 
-			/// then this image is too corrupted / does not have stairs
-			if (zeroCount > ZeroConsequtiveLimit)
-				return false;
-
-			continue;
-		}
-		zeroCount = 0;
-
-		/// Let current = depth at stairEdge at y;
-		///     below = depth at stairEdge at y - 3;
-		///     above = depth at stairEdge at y - 3;
-		/// then above similar to current AND 
-		///      below < current;
-		/// else not stairs;
-
-		// if absolute difference between above and current is < 3;
-		// difference between current's depth must more than 9 units.
+		// if difference between above and current is < 3 depth units &&
+		//    difference between current's depth must more than 9 depth units.
 		if (((above - current) < 3) && (current - below) > 9)
-			continue;
+			// then it could be stairs, update to next stair edge.
+			++midpts;
 		else
+			// else it's not stairs at all.
 			return false;
-
-		// update to next stair edge.
-		++midpts;
 	}
 
 
@@ -153,16 +100,15 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 		current = (int)depthImg.getMat().at<uchar>(ascendingIt.pos());
 
 		if (current == 0) {
-			++zeroCount;
-			/// if too many consecutive zeroes, 
+			/// if too many consecutive empty depth, 
 			/// then this image is too corrupted / does not have stairs
-			if (zeroCount > ZeroConsequtiveLimit)
+			if (++zeroCount > ZeroConsequtiveLimit)
 				return false;
 
 			continue;
-		}
-		zeroCount = 0;
-
+		} 
+		zeroCount = 0;	
+			
 		/// Stairs should have ascending depth value;
 		/// However, on angled view stairs, the depth value can occasional drop a bit.
 		/// Else it's not stairs at all.
