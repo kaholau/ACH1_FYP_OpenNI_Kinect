@@ -31,7 +31,7 @@ class OpenCVKinect
 	int m_currentStream;
 	int frameIndex_color=-1;
 	int frameIndex_depth=-1;
-	uint64_t m_depthTimeStamp, m_colorTimeStamp;
+	uint64_t m_timeStamp;
 	cv::Mat m_depthImage, m_colorImage;
 	bool m_alignedStreamStatus, m_colorStreamStatus, m_depthStreamStatus;
 
@@ -40,6 +40,7 @@ class OpenCVKinect
 	std::queue<int> angles;
 	std::queue<int> frameIndexFromFile;
 
+	bool initialized = false;
 public:
 	static enum MatFlag
 	{
@@ -60,16 +61,17 @@ public:
 	std::ofstream file;
 	LONG angle = 0;
 	bool recording = false;
-	bool replay = true;
+	bool replay = false;
 
 	bool init();
 	
 	void updateData();
 	void updateDataDepthOnly();
-	void getDepthRaw(cv::Mat &depthRaw, uint64_t &depthTimeStamp);
-	void getDepth8bit(cv::Mat &depth8bit, uint64_t &depthTimeStamp);
-	void getColor(cv::Mat &colorMat, uint64_t &colorTimeStamp);
-	void getMatrix(MatFlag type, cv::Mat &color, cv::Mat &depthRaw, cv::Mat &depth8bit, uint64_t &timestamp);
+	void getDepthRaw(cv::Mat &depthRaw);
+	void getDepth8bit(cv::Mat &depth8bit);
+	void getColor(cv::Mat &colorMat);
+	void getMatrix(MatFlag type, cv::Mat &color, cv::Mat &depthRaw, cv::Mat &depth8bit);
+	uint64_t getTimestamp();
 	LONG getAngle();
 	void setPlayspeed(int playspeed);
 

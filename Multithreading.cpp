@@ -13,8 +13,13 @@ Multithreading::Multithreading()
 Multithreading::~Multithreading()
 {
 	finished = true;
+
+	if (!initialized)
+		return; 
+
 	if (m_Kinect.recording)
 		return;
+
 	KinectThread_Future.get();
 	TextToSpeechThread_Future.get();
 	ObstacleDetectionThread_Future.get();
@@ -32,11 +37,9 @@ bool Multithreading::InitializeKinect()
 	}
 
 	/// Ensure Matrix are filled before proceeding.
-	uint64_t t = 0;
 	do {
 		m_Kinect.updateData();
-		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat(), t);
-	} while (t == 0);
+	} while (m_Kinect.getTimestamp() == -1);
 
 	if (m_Kinect.recording) {
 		m_Kinect.m_recorder.start();
@@ -46,6 +49,7 @@ bool Multithreading::InitializeKinect()
 		std::cout << "start recording" << std::endl;
 	}
 
+	initialized = true;
 	return true;
 }
 
@@ -67,8 +71,8 @@ void Multithreading::CreateAsyncThreads()
 void Multithreading::Hold()
 {
 	// Use getMatrix's time return to prevent over spam.
-	uint64_t time = 0, oldtime = 0;
 	uint64_t curTime = 0;
+	namedWindow("Main Idle Window");
 	while (waitKey(1) != ESCAPE_KEY) {
 		curTime = cv::getTickCount() / cv::getTickFrequency();
 		if (m_Kinect.recording && ((curTime - startRecordingTime) > recordingDuration))
@@ -77,11 +81,7 @@ void Multithreading::Hold()
 			std::cout << "stop recording" << std::endl;
 			break;
 		}
-		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat(), time);
-		if (time <= oldtime)
-			continue;
-		
-		imshow("Main Idle Window", Mat(100, 100, CV_8U));
+		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat());
 	}
 
 	std::cout << "Exit Program!" << std::endl;
@@ -96,14 +96,13 @@ void Multithreading::Hold()
 void Multithreading::KinectThread_Process()
 {
 	cv::Mat colorImg, depth8bit;
-	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 
 	while (1) {
 		if (finished)
 			return;
 
 		m_Kinect.updateData();
-		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit, newTimeStamp);
+		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
 		
 		//cv::imshow("ORIGINAL COLOR", colorImg);
 		//cv::imshow("ORIGINAL DEPTH", depth8bit);
@@ -158,7 +157,6 @@ void Multithreading::ObstacleDetectionThread_Process()
 {
 
 	cv::Mat colorImg, depth8bit, depthRaw;
-	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 	if (!m_Kinect.replay)
 		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(m_obstacle.initCameraAngle);
 	LONG angle = m_Kinect.getAngle();
@@ -179,11 +177,8 @@ void Multithreading::ObstacleDetectionThread_Process()
 			return;
 		double t = (double)getTickCount();
 		
-		m_Kinect.getMatrix(m_Kinect.All, colorImg, depthRaw, depth8bit, newTimeStamp);
+		m_Kinect.getMatrix(m_Kinect.All, colorImg, depthRaw, depth8bit);
 		m_obstacle.setCameraAngle(m_Kinect.getAngle());
-		if (newTimeStamp <= oldTimeStamp)
-			continue;
-		oldTimeStamp = newTimeStamp;
 
 		m_obstacle.setCurrentColor(&colorImg);
 		
@@ -207,8 +202,6 @@ void Multithreading::ObstacleDetectionThread_Process()
 void Multithreading::FaceDetectionThread_Process()
 {
 	cv::Mat colorImg;
-	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
-
 
 	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD events;
@@ -261,10 +254,7 @@ void Multithreading::FaceDetectionThread_Process()
 			}
 		}
 
-		m_Kinect.getColor(colorImg, newTimeStamp);
-		if (newTimeStamp <= oldTimeStamp)
-			continue;
-		oldTimeStamp = newTimeStamp;
+		m_Kinect.getColor(colorImg);
 
 		if (m_face.getisAddFace())
 			m_face.addFace(colorImg);
@@ -281,16 +271,12 @@ void Multithreading::FaceDetectionThread_Process()
 void Multithreading::SignDetectionThread_Process()
 {
 	cv::Mat colorImg;
-	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
 
-		m_Kinect.getColor(colorImg, newTimeStamp);
-		if (newTimeStamp <= oldTimeStamp)
-			continue;
-		oldTimeStamp = newTimeStamp;
+		m_Kinect.getColor(colorImg);
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
 		m_sign.runRecognizer(colorImg);
 		cv::imshow("SIGN DETECTION", colorImg);
@@ -302,7 +288,6 @@ void Multithreading::SignDetectionThread_Process()
 void Multithreading::StairDetectionThread_Process()
 {
 	cv::Mat colorImg, depth8bit, depthRaw;
-	uint64_t oldTimeStamp = 0, newTimeStamp = 0;
 	std::vector<cv::Point> stairConvexHull;
 	int previousFound = 0;
 	int foundThreshold = 2;
@@ -310,11 +295,7 @@ void Multithreading::StairDetectionThread_Process()
 		if (finished)
 			return;
 
-		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit, newTimeStamp);
-		if (newTimeStamp <= oldTimeStamp)
-			continue;
-		oldTimeStamp = newTimeStamp;
-
+		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
 		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
 		if (!stairConvexHull.empty()) {
 			if (previousFound > foundThreshold) {

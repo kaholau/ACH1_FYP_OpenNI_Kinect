@@ -31,6 +31,9 @@ TextToSpeech::TextToSpeech()
 
 TextToSpeech::~TextToSpeech()
 {
+	if (FAILED(isInitialized))
+		return;
+
 	if (pVoice != NULL)
 	{
 		pVoice->Release();
