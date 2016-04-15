@@ -43,7 +43,6 @@ Detector::Detector()
 void Detector::getFaces(const cv::Mat &image, cv::vector<cv::Rect> &faces_pos)
 {
 	cv::Mat image_gray;
-
     cvtColor( image, image_gray, CV_BGR2GRAY );
 	cv::equalizeHist(image_gray, image_gray);
 

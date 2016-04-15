@@ -2,8 +2,7 @@
 
 OpenCVKinect::OpenCVKinect(void)
 {
-	m_depthTimeStamp = 0;
-	m_colorTimeStamp = 0;
+	m_timeStamp = -1;
 
 	m_alignedStreamStatus = true;
 	m_colorStreamStatus = true;
@@ -94,6 +93,7 @@ bool OpenCVKinect::init()
 	}
 
 	// Set Depth to Color Registration / Alignment
+	m_device.setDepthColorSyncEnabled(true);
 	m_device.setImageRegistrationMode(openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR);
 
 
@@ -138,6 +138,9 @@ bool OpenCVKinect::init()
 			break;
 		}
 	}
+
+	initialized = true;
+
 	return true;
 }
 
@@ -146,7 +149,7 @@ void OpenCVKinect::updateData()
 	bool depthCaptured = false, colorCaptured = false;
 	uint64_t newtime;
 
-	while (!depthCaptured || !colorCaptured || m_depthTimeStamp != m_colorTimeStamp)
+	while (!depthCaptured || !colorCaptured)
 	{
 		m_status = openni::OpenNI::waitForAnyStream(m_streams, C_NUM_STREAMS, &m_currentStream, C_STREAM_TIMEOUT);
 		if (replay && m_device.getPlaybackControl()->getSpeed() == -1) {
@@ -163,7 +166,6 @@ void OpenCVKinect::updateData()
 		{
 		case C_DEPTH_STREAM:
 			m_depth.readFrame(&m_depthFrame);
-			newtime = m_depthFrame.getTimestamp() >> 16;
 
 			if (recording) {
 				pNuiSensor->NuiCameraElevationGetAngle(&angle);
@@ -177,14 +179,10 @@ void OpenCVKinect::updateData()
 					angle = angles.front();
 					angles.pop();
 				}
-				
 			}
 
-			if (newtime <= this->m_depthTimeStamp)
-				continue;
-
 			depth_mutex.lock();
-			this->m_depthTimeStamp = newtime;
+			this->m_timeStamp = m_depthFrame.getTimestamp() >> 16;;
 			m_depthImage.create(m_depthFrame.getHeight(), m_depthFrame.getWidth(), CV_16UC1);
 			m_depthImage.data = (uchar*)m_depthFrame.getData();
 
@@ -196,13 +194,9 @@ void OpenCVKinect::updateData()
 			break;
 		case C_COLOR_STREAM:
 			m_color.readFrame(&m_colorFrame);
-			newtime = m_colorFrame.getTimestamp() >> 16;
-
-			if (newtime <= this->m_colorTimeStamp)
-				continue;
 
 			color_mutex.lock();
-			this->m_colorTimeStamp = newtime;
+			this->m_timeStamp = m_depthFrame.getTimestamp() >> 16;;
 			m_colorImage.create(m_colorFrame.getHeight(), m_colorFrame.getWidth(), CV_8UC3);
 			m_colorImage.data = (uchar*)m_colorFrame.getData();
 
@@ -219,23 +213,21 @@ void OpenCVKinect::updateData()
 	
 }
 
-void OpenCVKinect::getColor(cv::Mat &colorMat, uint64_t &colorTimeStamp)
+void OpenCVKinect::getColor(cv::Mat &colorMat)
 {
 	color_mutex.lock();
 	cv::cvtColor(m_colorImage, colorMat, CV_BGR2RGB);
-	colorTimeStamp = m_colorTimeStamp;
 	color_mutex.unlock();
 }
 
-void OpenCVKinect::getDepthRaw(cv::Mat &depthRaw, uint64_t &depthTimeStamp)
+void OpenCVKinect::getDepthRaw(cv::Mat &depthRaw)
 {
 	depth_mutex.lock();
 	depthRaw = m_depthImage.clone();
-	depthTimeStamp = m_depthTimeStamp;
 	depth_mutex.unlock();
 }
 
-void OpenCVKinect::getDepth8bit(cv::Mat &depth8bit, uint64_t &depthTimeStamp)
+void OpenCVKinect::getDepth8bit(cv::Mat &depth8bit)
 {
 	depth_mutex.lock();
 	double min, max;
@@ -244,7 +236,7 @@ void OpenCVKinect::getDepth8bit(cv::Mat &depth8bit, uint64_t &depthTimeStamp)
 	depth_mutex.unlock();
 }
 
-void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawMat, cv::Mat &depth8bitMat, uint64_t &timestamp)
+void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawMat, cv::Mat &depth8bitMat)
 {
 	bool color = type & 1;
 	bool depthRaw = type & 2;
@@ -268,18 +260,18 @@ void OpenCVKinect::getMatrix(MatFlag type, cv::Mat &colorMat, cv::Mat &depthRawM
 		m_depthImage.convertTo(depth8bitMat, CV_8U, 255.0 / max);
 	}
 
-	/// both color/depth timestamps are guaranteed same value
-	timestamp = m_colorTimeStamp;
-
 	if (color)
 		color_mutex.unlock();
 	if (depthRaw || depth8bit)
 		depth_mutex.unlock();
 }
 
+uint64_t OpenCVKinect::getTimestamp() {
+	return m_timeStamp;
+}
+
 LONG OpenCVKinect::getAngle()
 {
-
 	if (!replay)
 		pNuiSensor->NuiCameraElevationGetAngle(&angle);
 
@@ -290,10 +282,11 @@ void OpenCVKinect::setPlayspeed(int playspeed) {
 	m_device.getPlaybackControl()->setSpeed(playspeed);
 }
 
-
-
 OpenCVKinect::~OpenCVKinect(void)
 {
+	if (!initialized)
+		return;
+
 	file.close();
 	this->m_recorder.stop();
 	this->m_recorder.destroy();

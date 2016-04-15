@@ -736,13 +736,13 @@ void ObstacleDetection::GroundEroAndDilate(Mat& Gimg, Mat& boolMat, int diSize,i
 		if (contours[i].size()>contours[maxIndex].size())
 			maxIndex = i;
 
-	Mat temp1 = Mat(boolMat.size(), boolMat.type(), Scalar(0));
-	//std::cout << "maxIndex"<<maxIndex << std::endl;
-	//std::cout << "contours.size()"<<contours.size() << std::endl;
+	//Mat temp1 = Mat(boolMat.size(), boolMat.type(), Scalar(0));
+	////std::cout << "maxIndex"<<maxIndex << std::endl;
+	////std::cout << "contours.size()"<<contours.size() << std::endl;
 
-	//std::cout << "contours[maxIndex].size()"<<contours[maxIndex].size() << std::endl;
-	drawContours(temp1, contours, maxIndex, Scalar(255), 1, 8);
-	imshow("OLDtemp", temp1);
+	////std::cout << "contours[maxIndex].size()"<<contours[maxIndex].size() << std::endl;
+	//drawContours(temp1, contours, maxIndex, Scalar(255), 1, 8);
+	//imshow("OLDtemp", temp1);
 
 	int erosion_type;
 	if (erosion_elem == 0){ erosion_type = MORPH_RECT; }

@@ -35,6 +35,7 @@ class Multithreading
 	void FaceDetectionThread_Process();
 	void SignDetectionThread_Process();
 
+	bool initialized = false;
 public:
 	Multithreading();
 	~Multithreading();
