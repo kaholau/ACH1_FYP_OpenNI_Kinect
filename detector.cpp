@@ -6,7 +6,6 @@
 
 Detector::Detector()
 {
-
 	// Below statistics were obtained by evaluating the faces of LFW database
 	faceColour_avg[0] = 100.175;    // B
 	faceColour_avg[1] = 120.392;    // G
@@ -18,8 +17,8 @@ Detector::Detector()
 	faceColour_dev[2] = 76.6897;    // R
 
     attr_face.scaleFactor = 1.08;
-    attr_face.minNeighbors = 6;
-    attr_face.flags = 0|CV_HAAR_SCALE_IMAGE;
+	attr_face.minNeighbors = 6;
+	attr_face.flags = 0 | CV_HAAR_SCALE_IMAGE;
 	attr_face.minSize.width = attr_face.minSize.height = MIN_FACE_SIZE;
 	attr_face.maxSize.width = attr_face.maxSize.height = MAX_FACE_SIZE;
 
@@ -48,7 +47,7 @@ void Detector::getFaces(const cv::Mat &image, cv::vector<cv::Rect> &faces_pos)
 
     // Detect faces
     face_cascade.detectMultiScale(image_gray, faces_pos, attr_face.scaleFactor,
-		attr_face.minNeighbors, attr_face.flags, attr_face.minSize );
+		attr_face.minNeighbors, attr_face.flags, attr_face.minSize, attr_face.maxSize);
 
 	return ;
 }

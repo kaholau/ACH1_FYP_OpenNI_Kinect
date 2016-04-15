@@ -321,6 +321,8 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 	std::cout << std::endl << "No of Contours saved = " << savedSigns_index.size() << std::endl;
 #endif
 
+	resize(frame, frame, cv::Size(480, 360));
+
 #ifdef SHOW_IMAGE_AND_RESULT
 #ifdef SAVE_IMAGE_AND_RESULT
 	// Show and save the result

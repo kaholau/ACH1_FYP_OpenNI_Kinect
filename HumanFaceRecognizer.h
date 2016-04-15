@@ -18,7 +18,6 @@
 //#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
 //#define DISPLAY_IMAGES
-#define SHOW_MARKERS
 #define COMPARE_FACE_COLOUR
 
 #define NUM_OF_PERSON		3
@@ -62,10 +61,14 @@ typedef class HumanFaceRecognizer
 {
 public:
 	// Testing Use
+	double totalDur;
+	unsigned int NumFrame;
+
 	double totalConfidence;
 	double total_percent;
 	double total_percent_var;
 	unsigned int num_of_face_detected;
+
 
 
 	HumanFaceRecognizer();

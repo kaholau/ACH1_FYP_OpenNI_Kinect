@@ -114,7 +114,8 @@ void Multithreading::TextToSpeechThread_Process()
 {
 	m_tts.Initialize();
 
-	while (1) {
+	while (waitKey(100) != ESCAPE_KEY) {
+	//while (true) {
 		if (finished)
 			return;
 
