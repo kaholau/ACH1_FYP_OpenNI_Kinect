@@ -15,6 +15,7 @@ HumanFaceRecognizer::HumanFaceRecognizer()
 	model = cv::createLBPHFaceRecognizer();
 	model->load(DB_FACE_FILE_PATH);
 
+	totalConfidence = 0.0;
 	total_percent = 0.0;
 	total_percent_var = 0.0;
 	min_percent = 0.35;
@@ -47,7 +48,7 @@ HumanFaceRecognizer::HumanFaceRecognizer()
 
 
 	isUpdated = false;
-	isAddNewFace = false;
+	isAddFace = false;
 }
 
 HumanFaceRecognizer::~HumanFaceRecognizer()
@@ -57,11 +58,6 @@ HumanFaceRecognizer::~HumanFaceRecognizer()
 
 int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 {
-#ifdef DURATION_CHECK_FACE
-	double time = 0;
-	uint64_t oldCount = 0, curCount = 0;
-	curCount = cv::getTickCount();
-#endif
 
 #ifdef RESIZE_TO_SMALLER
 	cv::Mat original = detector.resizeToSmaller(frame);
@@ -75,68 +71,21 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 
 	double face_pixel_num = 0;
 	double similar_pixel_counter = 0;
-	int i, j, k, p, q, r;
+	int i, j, k, p;
 	int face_num = 0; // variable used when saving faces or masks
 	std::vector<cv::Rect> newFacePos;
 	std::ostringstream oss;
 
-
-	int face_counter1 = 0;
-	int face_counter2 = 0;
 	int predictedLabel = -1;
 	double confidence = 0.0;
-	double confidence_threshold = 100;
+	double confidence_threshold = 100.0;
 	bool isExistedFace = false;
 
 	// Apply the classifier to the frame
 	detector.getFaces(*frame, newFacePos);
 	cv::vector<cv::Rect>::iterator it = newFacePos.begin();
 
-
-	// Reject one of the detected faces if the positions of two faces are too closed
-	// Reject the one with fewer number of detected faces over the time at its position
-	for (p = 1; p < (int)(facesInfo.size()); ++p)
-	{
-		for (q = 0; (p != q) && (q < p) && p < (int)(facesInfo.size()); ++q)
-		{
-			if (abs(facesInfo[p].centerPos.x - facesInfo[q].centerPos.x) < FACE_POS_OFFSET &&
-				abs(facesInfo[p].centerPos.y - facesInfo[q].centerPos.y) < FACE_POS_OFFSET)
-			{
-				face_counter1 = 0;
-				face_counter2 = 0;
-				for (r = 0; r <= NUM_OF_PERSON; ++r)
-				{
-					face_counter1 += facesInfo[p].counter[r];
-					face_counter2 += facesInfo[q].counter[r];
-				}
-#ifdef SHOW_DEBUG_MESSAGES
-				std::cout << std::endl << face_counter1 << "\t" << face_counter2 << "\t";
-				std::cout << p << "\t" << q << std::endl;
-#endif
-
-				if (face_counter1 > face_counter2)
-				{
-					if (facesInfo[q].counter[facesInfo[p].label] > 0)
-					{
-						facesInfo[p].counter[facesInfo[p].label] += facesInfo[q].counter[facesInfo[p].label];
-						facesInfo[p].centerPos.x = facesInfo[q].centerPos.x;
-						facesInfo[p].centerPos.y = facesInfo[q].centerPos.y;
-					}
-					facesInfo.erase(facesInfo.begin() + q);
-				}
-				else if (face_counter1 < face_counter2)
-				{
-					if (facesInfo[p].counter[facesInfo[q].label] > 0)
-					{
-						facesInfo[q].counter[facesInfo[q].label] += facesInfo[p].counter[facesInfo[q].label];
-						facesInfo[q].centerPos.x = facesInfo[p].centerPos.x;
-						facesInfo[q].centerPos.y = facesInfo[p].centerPos.y;
-					}
-					facesInfo.erase(facesInfo.begin() + p);
-				}
-			}
-		}
-	}
+	removeFaceWithClosedPos();
 
 	// If a detected face at certain position is not detected for a period of time, it is discarded
 	for (p = 0; p < (int)facesInfo.size(); ++p)
@@ -179,7 +128,6 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 				cv::Scalar(0, 128, 255), 2);
 #endif
 		}
-
 	}
 
 	// evaluate a list of possible faces
@@ -193,6 +141,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #else
 		cv::Mat face = original(*it).clone();
 #endif
+		resize(face, face, cv::Size(FACE_REC_SIZE, FACE_REC_SIZE));
+
 		cv::Mat face_grey;
 		cv::Point center(it->x + it->width*0.5, it->y + it->height*0.5);
 		cv::Point top(it->x, it->y);
@@ -234,16 +184,25 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 
 #ifdef COMPARE_FACE_COLOUR
-		cv::cvtColor(face_eq, face_grey, CV_BGR2GRAY);
 		if ((similar_pixel_counter > min_percent) && (similar_pixel_counter < max_percent))  // if the percentage of similar pixeel is within certain range, it is a face
 #else
 		cv::cvtColor(face, face_grey, CV_BGR2GRAY);
 #endif
 		{
-			cv::imwrite("face_grey.bmp", face_grey);
+#ifdef DURATION_CHECK_FACE
+			double time = 0;
+			uint64_t oldCount = 0, curCount = 0;
+			curCount = cv::getTickCount();
+#endif
+			cv::cvtColor(face_eq, face_grey, CV_BGR2GRAY);
 			model->predict(face_grey, predictedLabel, confidence);
 			if (confidence > confidence_threshold)
 				predictedLabel = Guest;
+
+#ifdef DURATION_CHECK_FACE
+			time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
+			printf("\t FaceRecDur: %f\n", time);
+#endif
 
 			isExistedFace = false;
 			for (p = 0; p < facesInfo.size(); ++p)
@@ -397,7 +356,6 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 #endif
 		}
-#endif
 
 
 #ifdef DISPLAY_FACES_AND_MASKS
@@ -414,11 +372,12 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 #endif
 
-		num_of_face_detected++;
 		total_percent += similar_pixel_counter;
 		//total_percent_var += pow(similar_pixel_counter - total_percent, 2);
-
 		similar_pixel_counter = 0;
+#endif
+		totalConfidence += confidence;
+		num_of_face_detected++;
 	}
 
 #ifdef SHOW_MARKERS
@@ -444,24 +403,20 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	cv::imshow("Video_Stream", *frame);
 #endif
 
-#ifdef DURATION_CHECK_FACE
-	time = (cv::getTickCount() - curCount) / cv::getTickFrequency();
-	printf("\t FaceRecDur: %f\n", time);
-#endif
-
 	return 0;
 }
 
 
-void HumanFaceRecognizer::addNewFace(cv::Mat &frame, std::string name)
+void HumanFaceRecognizer::addFace(cv::Mat &frame)
 {
+	facesInfo.clear();
+
 #ifdef RESIZE_TO_SMALLER
 	cv::Mat original = detector.resizeToSmaller(&frame);
 #else
 	cv::Mat original = (*frame).clone();
 #endif
 
-	facesInfo.clear();
 	
 	std::vector<cv::Rect> facePos;
 	detector.getFaces(frame, facePos); // Apply the classifier to the frame
@@ -495,25 +450,15 @@ void HumanFaceRecognizer::addNewFace(cv::Mat &frame, std::string name)
 	cv::Mat face_r = original(facePos[realFaceIndex]).clone();
 #endif
 
-	//cv::Mat face_r = frame(facePos[realFaceIndex]).clone();
-	Mat mask(cv::Size(face_r.size()), face_r.type(), Scalar::all(0));
+	cv::Mat mask(cv::Size(face_r.size()), face_r.type(), Scalar::all(0));
 
 	circle(mask, Point(face_r.size().width / 2, face_r.size().height / 2),
 		face_r.size().width / 2, Scalar::all(255), -1);
 
-	Mat face = face_r & mask; // combine roi & mask
-	imshow("NEW FACE", face);
+	cv::Mat face = face_r & mask; // combine roi & mask
+	cv::imshow("NEW FACE", face);
 
-
-	// Equalization
-	//vector<Mat> channels;
-	//Mat face_eq;
-	//cvtColor(face, face_eq, CV_BGR2YCrCb); //change the color image from BGR to YCrCb format
-	//split(face_eq, channels); //split the image into channels
-	//equalizeHist(channels[0], channels[0]); //equalize histogram on the 1st channel (Y)
-	//merge(channels, face_eq); //merge 3 channels including the modified 1st channel into one image
-	//cvtColor(face_eq, face_eq, CV_YCrCb2BGR); //change the color image from YCrCb to BGR format (to display image properly)
-	//cvtColor(face_eq, face_eq, CV_RGB2GRAY);
+	cvtColor(face, face, CV_BGR2GRAY);
 
 
 	// update database
@@ -523,7 +468,7 @@ void HumanFaceRecognizer::addNewFace(cv::Mat &frame, std::string name)
 
 	int label = -1;
 	int i;
-	std::string tmp1 = name;
+	std::string tmp1 = NameStr;
 	std::transform(tmp1.begin(), tmp1.end(), tmp1.begin(), ::tolower);
 	for (i = 0; i < PERSON_NAME.size(); i++)
 	{
@@ -540,7 +485,7 @@ void HumanFaceRecognizer::addNewFace(cv::Mat &frame, std::string name)
 	if (i == PERSON_NAME.size())
 	{
 		label = i;
-		PERSON_NAME.push_back(name);
+		PERSON_NAME.push_back(NameStr);
 		num_of_person_in_db++;
 	}
 
@@ -554,23 +499,139 @@ void HumanFaceRecognizer::addNewFace(cv::Mat &frame, std::string name)
 	return;
 }
 
+/* Reject one of the detected faces if the positions of two faces are too closed.
+ * Reject the one with fewer number of detected faces over the time at its position */
+void HumanFaceRecognizer::removeFaceWithClosedPos(void)
+{
+	int face_counter1 = 0;
+	int face_counter2 = 0;
+	for (int p = 1; p < (int)(facesInfo.size()); ++p)
+	{
+		for (int q = 0; (p != q) && (q < p) && p < (int)(facesInfo.size()); ++q)
+		{
+			if (abs(facesInfo[p].centerPos.x - facesInfo[q].centerPos.x) < FACE_POS_OFFSET &&
+				abs(facesInfo[p].centerPos.y - facesInfo[q].centerPos.y) < FACE_POS_OFFSET)
+			{
+				face_counter1 = 0;
+				face_counter2 = 0;
+				for (int r = 0; r <= NUM_OF_PERSON; ++r)
+				{
+					face_counter1 += facesInfo[p].counter[r];
+					face_counter2 += facesInfo[q].counter[r];
+				}
+#ifdef SHOW_DEBUG_MESSAGES
+				std::cout << std::endl << face_counter1 << "\t" << face_counter2 << "\t";
+				std::cout << p << "\t" << q << std::endl;
+#endif
+
+				if (face_counter1 > face_counter2)
+				{
+					if (facesInfo[q].counter[facesInfo[p].label] > 0)
+					{
+						facesInfo[p].counter[facesInfo[p].label] += facesInfo[q].counter[facesInfo[p].label];
+						facesInfo[p].centerPos.x = facesInfo[q].centerPos.x;
+						facesInfo[p].centerPos.y = facesInfo[q].centerPos.y;
+					}
+					facesInfo.erase(facesInfo.begin() + q);
+				}
+				else if (face_counter1 < face_counter2)
+				{
+					if (facesInfo[p].counter[facesInfo[q].label] > 0)
+					{
+						facesInfo[q].counter[facesInfo[q].label] += facesInfo[p].counter[facesInfo[q].label];
+						facesInfo[q].centerPos.x = facesInfo[p].centerPos.x;
+						facesInfo[q].centerPos.y = facesInfo[p].centerPos.y;
+					}
+					facesInfo.erase(facesInfo.begin() + p);
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+void HumanFaceRecognizer::clearNameStr()
+{
+	NameStr.clear();
+}
+
+bool HumanFaceRecognizer::getisAddFace()
+{
+	return isAddFace;
+}
+
+bool HumanFaceRecognizer::getisUpdated()
+{
+	return isUpdated;
+}
+
+void HumanFaceRecognizer::saveFaceDatabase()
+{
+	model->save(DB_FACE_FILE_PATH);
+
+	std::ofstream fout;
+	fout.open(DB_NAME_FILE_PATH, std::ios::out);
+	for (int i = 0; i < PERSON_NAME.size(); i++)
+	{
+		fout << i << ',' << PERSON_NAME[i] << std::endl;
+	}
+
+	return;
+}
+
+void HumanFaceRecognizer::setisAddFace(bool b)
+{
+	isAddFace = b;
+}
+
+void HumanFaceRecognizer::setisUpdated(bool b)
+{
+	isUpdated = b;
+}
+
+void HumanFaceRecognizer::setNameStr(std::string name)
+{
+	NameStr = name;
+}
+
 void HumanFaceRecognizer::testExample(void)
 {
-	// Initialize Camera
-	cv::VideoCapture camera1;
-	camera1.open(0);
+	//// Initialize Camera
+	//cv::VideoCapture camera1;
+	//camera1.open(0);
 
-	cv::Mat frame;
-	while (true)
+	//cv::Mat frame;
+	//while (true)
+	//{
+	//	camera1 >> frame;
+	//	runFaceRecognizer(&frame);
+
+	//	if (cv::waitKey(1) == (int)'0')
+	//		break;
+	//}
+	//total_percent /= (double)(num_of_face_detected);
+	//std::cout << "Avg percent: " << total_percent << std::endl;
+
+	//cv::destroyAllWindows();
+
+
+
+	std::stringstream oss;
+	for (int i = 0; i < 300; i++)
 	{
-		camera1 >> frame;
-		runFaceRecognizer(&frame);
+		oss.str("");
+		oss << "_faceTestFrame/" << i << "_image.bmp";
+		Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
+		if (!src.data)
+		{
+			std::cout << oss.str() << " is not loaded" << std::endl;
+			continue;
 
-		if (cv::waitKey(1) == (int)'0')
-			break;
+		}
+
+		this->runFaceRecognizer(&src);
 	}
-	total_percent /= (double)(num_of_face_detected);
-	std::cout << "Avg percent: " << total_percent << std::endl;
-
-	cv::destroyAllWindows();
+	this->totalConfidence /= (double)(num_of_face_detected);
+	std::cout << "Avg confidence: " << totalConfidence << std::endl;
 }

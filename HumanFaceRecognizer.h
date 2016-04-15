@@ -12,7 +12,7 @@
 
 
 /* Defines */
-//#define DURATION_CHECK_FACE
+#define DURATION_CHECK_FACE
 //#define SAVE_IMAGES
 //#define SAVE_FACES
 //#define SAVE_MASKS
@@ -38,6 +38,7 @@
 #define DETECTING          "detecting..."
 #define HELLO_MESSAGE      "This is "
 
+#define FACE_REC_SIZE			120
 #define FACE_POS_OFFSET			40
 #define FACE_DET_THREHOLD		4
 #define UNDETECTED_THREHOLD		(FACE_DET_THREHOLD*1.5)
@@ -60,30 +61,51 @@ typedef enum DETECTED_PERSON {
 typedef class HumanFaceRecognizer
 {
 public:
-	bool isAddNewFace;
-	bool isUpdated;
-	cv::Ptr<cv::FaceRecognizer> model;
-	std::vector<std::string> PERSON_NAME;
-
-
+	// Testing Use
+	double totalConfidence;
 	double total_percent;
 	double total_percent_var;
 	unsigned int num_of_face_detected;
+
 
 	HumanFaceRecognizer();
 	~HumanFaceRecognizer();
 
 	int runFaceRecognizer(cv::Mat *);
 
-	void addNewFace(cv::Mat &frame, std::string name);
+	void addFace(cv::Mat &frame);
 
 	void testExample(void);
 
+	void clearNameStr();
+
+	bool getisAddFace();
+
+	bool getisUpdated();
+
+	void saveFaceDatabase();
+
+	void setisAddFace(bool b);
+
+	void setisUpdated(bool b);
+
+	void setNameStr(std::string name);
+
 private:
+	bool isAddFace;
+	bool isUpdated;
+
 	Detector detector;
 	double min_percent;
 	double max_percent;
 	int num_of_person_in_db;
+
+	cv::Ptr<cv::FaceRecognizer> model;
+	std::vector<std::string> PERSON_NAME;
 	std::vector<struct DetectionInfo> facesInfo;
 
+	std::string NameStr;
+
+
+	void removeFaceWithClosedPos(void);
 } HumanFaceRecognizer;

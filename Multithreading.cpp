@@ -62,9 +62,10 @@ void Multithreading::CreateAsyncThreads()
 	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
 
+
+/* Idle Main thread to prevent from closing */
 void Multithreading::Hold()
 {
-	// Idle Main thread to prevent from closing.
 	// Use getMatrix's time return to prevent over spam.
 	uint64_t time = 0, oldtime = 0;
 	uint64_t curTime = 0;
@@ -85,16 +86,9 @@ void Multithreading::Hold()
 
 	std::cout << "Exit Program!" << std::endl;
 	finished = true;
-	if (m_face.isUpdated)
+	if (m_face.getisUpdated())
 	{
-		m_face.model->save(DB_FACE_FILE_PATH);
-		std::ofstream fout;
-		fout.open(DB_NAME_FILE_PATH, std::ios::out);
-		for (int i = 0; i < m_face.PERSON_NAME.size(); i++)
-		{
-			fout << i << ',' << m_face.PERSON_NAME[i] << std::endl;
-		}
-
+		m_face.saveFaceDatabase();
 		std::cout << "Face Database Saved." << std::endl;
 	}
 }
@@ -232,7 +226,7 @@ void Multithreading::FaceDetectionThread_Process()
 			switch (buffer.Event.KeyEvent.wVirtualKeyCode)
 			{
 			case 0x30:
-				if (!m_face.isAddNewFace)
+				if (!m_face.getisAddFace())
 				{
 					while (true)
 					{
@@ -241,15 +235,19 @@ void Multithreading::FaceDetectionThread_Process()
 						if ((strcmp(faceName.c_str(), "") != 0) &&
 							(strcmp(faceName.c_str(), "0") != 0) &&
 							(strcmp(faceName.c_str(), "1") != 0))
+						{
+							m_face.setNameStr(faceName);
 							break;
+						}
 					}
-					m_face.isAddNewFace = true;
-					m_face.isUpdated = true;
+					m_face.setisAddFace(true);
+					m_face.setisUpdated(true);
 				}
 				break;
 
 			case 0x31:
-				m_face.isAddNewFace = false;
+				m_face.clearNameStr();
+				m_face.setisAddFace(false);
 				break;
 
 			case 0x4F:
@@ -268,13 +266,16 @@ void Multithreading::FaceDetectionThread_Process()
 			continue;
 		oldTimeStamp = newTimeStamp;
 
-		if (m_face.isAddNewFace)
-			m_face.addNewFace(colorImg, faceName);
+		if (m_face.getisAddFace())
+			m_face.addFace(colorImg);
 		else
 			m_face.runFaceRecognizer(&colorImg);
 
-		//cv::imshow("FACE DETECTION", colorImg);
+		cv::imshow("FACE DETECTION", colorImg);
 	}
+
+
+	//m_face.testExample();
 }
 
 void Multithreading::SignDetectionThread_Process()
@@ -292,7 +293,7 @@ void Multithreading::SignDetectionThread_Process()
 		oldTimeStamp = newTimeStamp;
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
 		m_sign.runRecognizer(colorImg);
-		//cv::imshow("SIGN DETECTION", colorImg);
+		cv::imshow("SIGN DETECTION", colorImg);
 	}
 
 	//m_sign.testExample();
