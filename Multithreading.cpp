@@ -57,9 +57,9 @@ void Multithreading::CreateAsyncThreads()
 
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
-	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
-	//StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
+	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
+	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
 
 void Multithreading::Hold()
@@ -170,9 +170,9 @@ void Multithreading::ObstacleDetectionThread_Process()
 	LONG angle = m_Kinect.getAngle();
 
 	m_obstacle.setCameraAngle(angle);
-	namedWindow("DEPTH", CV_WINDOW_NORMAL);
+	//namedWindow("DEPTH", CV_WINDOW_NORMAL);
 	int track_angle = (int)angle;
-	createTrackbar("CameraAngle", "DEPTH", &track_angle, 23, on_trackbarCameraAngle, m_Kinect.pNuiSensor);
+	//createTrackbar("CameraAngle", "DEPTH", &track_angle, 23, on_trackbarCameraAngle, m_Kinect.pNuiSensor);
 	
 	int ero = 0;
 	int di = 0;

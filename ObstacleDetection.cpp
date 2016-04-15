@@ -271,11 +271,12 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 #ifdef FOR_REPORT
 	imshow("obstacleMask_final", obstacleMask);
 	waitKey();
-#endif
 
-	//imshow("obstacleMask", obstacleMask);
+	Mat obstacleMasktemp = obstacleMask.clone();
+	flip(obstacleMasktemp, obstacleMasktemp, 1);
+	imshow("obstacleMask", obstacleMasktemp);
 	//imshow("Ground.img", Ground.img);
-
+#endif
 	//GroundEroAndDilate(Ground.img, GroundBoolMat, dilation_size2,0);
 	bitwise_not(Ground.img, Ground.img);
 	//vector<vector<Point> > contours;
@@ -336,15 +337,16 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 
 #ifdef DISPLAY_HULL
 	vector<Vec4i> hierarchy_HULL;
+	Mat hulldisplay = Mat(currentDepth.size(), currentDepth.type());
 	for (int i = 0; i < ObstacleList.size(); i++)
-		drawContours(currentDepth, ObstacleList[i].contour, 0,
+		drawContours(hulldisplay, ObstacleList[i].contour, 0,
 		Scalar(theRNG().uniform(1, 254), theRNG().uniform(1, 254), theRNG().uniform(1, 254)), -1, 8, hierarchy_HULL, 0, Point());
-	//imshow("currentDepth", currentDepth);
+	imshow("hulldisplay", hulldisplay);
 	//waitKey();
 #endif
 
 #ifdef DISPLAY_HEIGHT
-
+	Mat heightdisplay = Mat(currentDepth.size(), currentDepth.type(),Scalar(255,255,255));
 	vector<Point> test;
 	for (int y = 10; y < currentDepth.rows; y += 24)
 	{
@@ -357,11 +359,12 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 	for (Point p : test)
 	{
 		int y = (int)GetHeight(p.y, currentRawDepth.at<ushort>(p));
-		putText(currentDepth, std::to_string(y), p, FONT_HERSHEY_PLAIN, 0.7, Scalar(0, 0, 255), 1);
-		circle(currentDepth, p, 1, Scalar(0, 0, 255), 3);
+		putText(heightdisplay, std::to_string(y), p, FONT_HERSHEY_PLAIN, 0.7, Scalar(0, 0, 255), 1);
+		circle(heightdisplay, p, 1, Scalar(0, 0, 255), 3);
 	//	putText(currentColor, std::to_string(y), p, FONT_HERSHEY_PLAIN, 1.1, Scalar(0, 0, 255), 1);
 	//	circle(currentColor, p, 1, Scalar(0, 0, 255), 3);
-
+		flip(heightdisplay, heightdisplay, 1);
+		imshow("heightdisplay", heightdisplay);
 	}
 #endif
 
@@ -439,8 +442,8 @@ void ObstacleDetection::obstacleDetect(Mat& img, Mat& output)
 		
 	//cal the hull after reduce the contour's number to save time for hull
 	vector<vector<Point> >hull(contours.size());
-	//vector<Moments> mu(contours.size());
-	//vector<Point2f> mc(contours.size());
+	/*vector<Moments> mu(contours.size());
+	vector<Point2f> mc(contours.size());*/
 	for (size_t i = 0; i < contours.size(); i++)
 	{
 		convexHull(Mat(contours[i]), hull[i], false);
@@ -774,7 +777,7 @@ void ObstacleDetection::GroundRefine(Mat& boolMat, Mat& Gimg, vector<Point> cont
 	for (int i = 0; i < boolMat.rows; i++)
 	{
 		for (int j = 0; j < boolMat.cols; j++)
-			if ((boolMat.at<uchar>(i, j) == 255) && pointPolygonTest(contour, Point(j, i), 0)==1)
+			if ((boolMat.at<uchar>(i, j) == 255) && pointPolygonTest(contour, Point(j, i), 0)!=-1)
 			//if ((boolMat.at<uchar>(i, j) == 255))
 			{
 				Point location((j*planeEdgeForPlaneRemove) + (planeEdgeForPlaneRemove / 2), (i * planeEdgeForPlaneRemove) + (planeEdgeForPlaneRemove-1) + (planeEdgeForPlaneRemove / 2));

@@ -62,7 +62,7 @@ using namespace cv;
 #define humanShoulderLength 70
 //obstacle detection
 //#define obstacle_size_ignore 15  //320x240
-#define obstacle_size_ignore planeEdgeForPlaneRemove*4  //640x480 
+#define obstacle_size_ignore planeEdgeForPlaneRemove*2  //640x480 
 
 //find hole
 #define GROUND_MIN_HIEGHT -200
