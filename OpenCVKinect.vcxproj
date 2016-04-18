@@ -89,6 +89,7 @@
   <ItemGroup>
     <ClInclude Include="detector.h" />
     <ClInclude Include="HumanFaceRecognizer.h" />
+    <ClInclude Include="include.h" />
     <ClInclude Include="Multithreading.h" />
     <ClInclude Include="ObstacleDetection.h" />
     <ClInclude Include="OpenCVKinect.h" />

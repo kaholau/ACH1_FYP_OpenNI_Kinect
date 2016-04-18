@@ -6,7 +6,13 @@ Multithreading::Multithreading()
 //yumi wear kinect at 900mm
 	: m_obstacle(1020)
 {
-
+	if (recordProcessTime) {
+		int timestamp = cv::getTickCount();
+		FilePath.open(std::to_string(timestamp) + "FilePath.txt");
+		FileStair.open(std::to_string(timestamp) + "FileStair.txt");
+		FileFace.open(std::to_string(timestamp) + "FileFace.txt");
+		FileSign.open(std::to_string(timestamp) + "FileSign.txt");
+	}
 }
 
 
@@ -26,6 +32,13 @@ Multithreading::~Multithreading()
 	FaceDetectionThread_Future.get();
 	SignDetectionThread_Future.get();
 	StairDetectionThread_Future.get();
+
+	if (recordProcessTime) {
+		FilePath.close();
+		FileStair.close();
+		FileFace.close();
+		FileSign.close();
+	}
 }
 
 bool Multithreading::InitializeKinect()
@@ -102,8 +115,8 @@ void Multithreading::KinectThread_Process()
 			return;
 
 		m_Kinect.updateData();
-		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
-		
+
+		//m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
 		//cv::imshow("ORIGINAL COLOR", colorImg);
 		//cv::imshow("ORIGINAL DEPTH", depth8bit);
 		//cv::waitKey(1);
@@ -120,7 +133,6 @@ void Multithreading::TextToSpeechThread_Process()
 			return;
 
 		m_tts.speak();
-
 	}
 }
 
@@ -184,7 +196,12 @@ void Multithreading::ObstacleDetectionThread_Process()
 		m_obstacle.setCurrentColor(&colorImg);
 		
 		m_obstacle.SetCurrentRawDepth(&depthRaw);
+		int starttime = cv::getTickCount();
 		m_obstacle.run(&depth8bit);
+		int endtime = cv::getTickCount();
+		if (recordProcessTime)
+			FilePath << (endtime - starttime) / cv::getTickFrequency() << std::endl;
+
 		if (!m_Kinect.replay)
 			m_obstacle.findHole(m_Kinect.pNuiSensor);
 		m_obstacle.getOutputDepthImg(&depth8bit);
@@ -268,8 +285,13 @@ void Multithreading::FaceDetectionThread_Process()
 
 		if (m_face.getisAddFace())
 			m_face.addFace(colorImg);
-		else
+		else {
+			int startime = cv::getTickCount();
 			m_face.runFaceRecognizer(&colorImg);
+			int endtime = cv::getTickCount();
+
+			FileFace << (endtime - startime) / cv::getTickFrequency() << std::endl;
+		}
 
 		//cv::imshow("FACE DETECTION", colorImg);
 #else 
@@ -302,7 +324,12 @@ void Multithreading::SignDetectionThread_Process()
 
 		m_Kinect.getColor(colorImg);
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
+		int startime = cv::getTickCount();
 		m_sign.runRecognizer(colorImg);
+		int endtime = cv::getTickCount();
+		if (recordProcessTime)
+			FileSign << (endtime - startime) / cv::getTickFrequency() << std::endl;
+
 		cv::imshow("SIGN DETECTION", colorImg);
 	}
 
@@ -315,16 +342,25 @@ void Multithreading::StairDetectionThread_Process()
 	std::vector<cv::Point> stairConvexHull;
 	int previousFound = 0;
 	int foundThreshold = 2;
+	cv::namedWindow("Stairs");
+	
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
 
 		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
+		int startime = cv::getTickCount();
 		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
+		int endtime = cv::getTickCount();
+
+		if (recordProcessTime)
+			FileStair << (endtime - startime) / cv::getTickFrequency() << std::endl;
+
+
 		if (!stairConvexHull.empty()) {
-			if (previousFound > foundThreshold) {
+			StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+			if (previousFound >= foundThreshold) {
 				TextToSpeech::pushBack(string("Stairs Found"));
-				//StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
 				++previousFound;
 			}
 			else {
