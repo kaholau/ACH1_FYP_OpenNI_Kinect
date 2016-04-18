@@ -206,6 +206,10 @@ void Multithreading::ObstacleDetectionThread_Process()
 
 void Multithreading::FaceDetectionThread_Process()
 {
+#ifndef TEST_FACE
+#ifdef EXTRACT_FRAME_FOR_FACE
+	int image_num = 0;
+#endif
 	cv::Mat colorImg;
 
 	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
@@ -216,6 +220,7 @@ void Multithreading::FaceDetectionThread_Process()
 		if (finished)
 			return;
 
+#ifndef EXTRACT_FRAME_FOR_FACE
 		INPUT_RECORD buffer;
 		PeekConsoleInput(handle, &buffer, 1, &events);
 		if (events > 0 && !m_Kinect.recording)
@@ -266,11 +271,25 @@ void Multithreading::FaceDetectionThread_Process()
 		else
 			m_face.runFaceRecognizer(&colorImg);
 
-		cv::imshow("FACE DETECTION", colorImg);
+		//cv::imshow("FACE DETECTION", colorImg);
+#else 
+		m_Kinect.getColor(colorImg);
+
+		if (!colorImg.empty())
+		{
+			std::stringstream oss;
+			oss.str("");
+			oss << IMAGE_DIR << image_num++ << IMAGE_NAME_POSTFIX << IMAGE_EXTENSION;
+			cv::imwrite(oss.str(), colorImg);
+
+			colorImg.release();
+			waitKey(80);
+		}
+#endif
 	}
-
-
-	//m_face.testExample();
+#else
+	m_face.testExample();
+#endif
 }
 
 void Multithreading::SignDetectionThread_Process()

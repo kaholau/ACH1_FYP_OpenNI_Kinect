@@ -12,10 +12,10 @@
 
 
 /* Defines */
-#define DURATION_CHECK_FACE
-//#define SAVE_IMAGES
-//#define SAVE_FACES
-//#define SAVE_MASKS
+//#define DURATION_CHECK_FACE
+#define SAVE_IMAGES
+#define SAVE_FACES
+#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
 //#define DISPLAY_IMAGES
 #define COMPARE_FACE_COLOUR
@@ -38,7 +38,7 @@
 #define HELLO_MESSAGE      "This is "
 
 #define FACE_REC_SIZE			120
-#define FACE_POS_OFFSET			40
+#define FACE_POS_OFFSET			75
 #define FACE_DET_THREHOLD		4
 #define UNDETECTED_THREHOLD		(FACE_DET_THREHOLD*1.5)
 #define NUM_OF_CHANNELS_COLOUR	3
@@ -95,6 +95,8 @@ public:
 	void setNameStr(std::string name);
 
 private:
+	std::fstream fin, fout;
+
 	bool isAddFace;
 	bool isUpdated;
 

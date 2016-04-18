@@ -23,7 +23,7 @@ HumanFaceRecognizer::HumanFaceRecognizer()
 	model = cv::createLBPHFaceRecognizer();
 	model->load(DB_FACE_FILE_PATH);
 
-	min_percent = 0.35;
+	min_percent = 0.47;
 	max_percent = 0.65;
 	num_of_person_in_db = 0;
 
@@ -86,12 +86,25 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 
 	int predictedLabel = -1;
 	double confidence = 0.0;
-	double confidence_threshold = 100.0;
+	double confidence_threshold = 200.0;
 	bool isExistedFace = false;
+	bool isFace = false;
 
 	// Apply the classifier to the frame
 	detector.getFaces(*frame, newFacePos);
 	cv::vector<cv::Rect>::iterator it = newFacePos.begin();
+
+	if (newFacePos.size() == 0)
+	{
+		cv::waitKey(800);
+	}
+
+#ifdef TEST_FACE
+	if (newFacePos.size() == 0)
+	{
+		fout << image_num << ",," << isFace << ",1,,,,,0" << std::endl;
+	}
+#endif
 
 	removeFaceWithClosedPos();
 
@@ -142,6 +155,7 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	// evaluate a list of possible faces
 	for (i = 0, it = newFacePos.begin(); it != newFacePos.end(); ++it, ++i)
 	{
+		isFace = false;
 		++face_num;
 
 #ifdef RESIZE_TO_SMALLER
@@ -201,6 +215,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 		cv::cvtColor(face, face_grey, CV_BGR2GRAY);
 #endif
 		{
+			isFace = true;
+
 			model->predict(face_grey, predictedLabel, confidence);
 			if (confidence > confidence_threshold)
 				predictedLabel = Guest;
@@ -220,7 +236,9 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 					if (!(facesInfo[p].isRecognized))
 					{
 						std::string str;
+#ifdef SHOW_MARKERS
 						oss.str("");
+#endif
 						switch (predictedLabel)
 						{
 						case -1:
@@ -281,6 +299,7 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 						{
 							oss.str("");
 							oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
+							facesInfo[p].undetected_counter = 0;
 						}
 						else
 						{
@@ -357,6 +376,7 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 #endif
 		}
+#endif
 
 
 #ifdef DISPLAY_FACES_AND_MASKS
@@ -373,12 +393,23 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 #endif
 
+#ifdef TEST_FACE
+		fout << image_num << "," << face_num << "," << isFace << ",1,,"
+			<< predictedLabel << "," << similar_pixel_counter << "," 
+			<< confidence << "," << ((predictedLabel == 3) ? 1 : 0) << std::endl;
+#endif
+
+#ifdef COMPARE_FACE_COLOUR
 		total_percent += similar_pixel_counter;
 		//total_percent_var += pow(similar_pixel_counter - total_percent, 2);
 		similar_pixel_counter = 0;
 #endif
 		totalConfidence += confidence;
+		confidence = 0;
 		num_of_face_detected++;
+
+		predictedLabel = -1;
+		isFace = false;
 	}
 
 #ifdef SHOW_MARKERS
@@ -390,11 +421,11 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #ifdef SAVE_IMAGES
 	//oss.str("");
 	//oss << IMAGE_DIR << image_num << IMAGE_NAME_POSTFIX << IMAGE_EXTENSION;
-	//imwrite(oss.str(), original);
+	//cv::imwrite(oss.str(), original);
 
 	oss.str("");
 	oss << IMAGE_DIR << "frame_" << image_num << IMAGE_NAME_POSTFIX << IMAGE_EXTENSION;
-	imwrite(oss.str(), *frame);
+	cv::imwrite(oss.str(), *frame);
 #endif
 	++image_num;
 
@@ -410,7 +441,6 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 
 	totalDur += time;
 	NumFrame++;
-
 #endif
 
 	return 0;
@@ -432,7 +462,8 @@ void HumanFaceRecognizer::addFace(cv::Mat &frame)
 	detector.getFaces(frame, facePos); // Apply the classifier to the frame
 	if (facePos.size() == 0)
 	{
-		std::cerr << "Cannot see any face within the camera!\n";
+		//std::cerr << "Cannot see any face within the camera!\n";
+		TextToSpeech::pushBack(std::wstring(L"No Face"));
 		return;
 	}
 
@@ -626,12 +657,21 @@ void HumanFaceRecognizer::testExample(void)
 	//cv::destroyAllWindows();
 
 
+	fout.open("_Test_Face_3/out.csv", std::fstream::out);
+	if (!fout.is_open())
+		std::cout << "Cannot open out.csv" << std::endl;
+	else
+		fout << "Frame No,Face Num,isFace,isFaceInThisFrame,,prediction,similarity,confidence,isRecCorr" << std::endl;
 
 	std::stringstream oss;
-	for (int i = 0; i < 290; i++)
+	for (int i = 150; i < 320; i++)
 	{
 		oss.str("");
-		oss << "_faceTestFrame/" << i << "_image.bmp";
+		//oss << "7_image_frame320/" << i << "_image.bmp";
+		//oss << "_Test_Face_1/frame_" << i << "_image.bmp";
+		//oss << "_Test_Face_2/" << i << "_image.bmp";
+		oss << "_Test_Face_3/" << i << "_image.bmp";
+
 		Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
 		if (!src.data)
 		{
@@ -644,6 +684,10 @@ void HumanFaceRecognizer::testExample(void)
 	this->totalConfidence /= (double)(num_of_face_detected);
 	std::cout << "Avg confidence: " << totalConfidence << std::endl;
 
+#ifdef DURATION_CHECK_FACE
 	this->totalDur /= (double)NumFrame;
 	std::cout << "Avg Duration: " << totalDur << std::endl;
+#endif
+
+	fout.close();
 }

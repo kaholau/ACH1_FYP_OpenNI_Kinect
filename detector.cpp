@@ -17,7 +17,7 @@ Detector::Detector()
 	faceColour_dev[2] = 76.6897;    // R
 
     attr_face.scaleFactor = 1.08;
-	attr_face.minNeighbors = 6;
+	attr_face.minNeighbors = 4;
 	attr_face.flags = 0 | CV_HAAR_SCALE_IMAGE;
 	attr_face.minSize.width = attr_face.minSize.height = MIN_FACE_SIZE;
 	attr_face.maxSize.width = attr_face.maxSize.height = MAX_FACE_SIZE;
@@ -30,13 +30,13 @@ Detector::Detector()
 
 
     // Load the cascades
-    face_cascade_name = "db/haarcascade_frontalface_alt.xml";
-    eyes_cascade_name = "db/haarcascade_eye_tree_eyeglasses.xml";
+	face_cascade_name = "db/haarcascade_frontalface_alt.xml";
     if( !face_cascade.load(face_cascade_name) )
 		std::cout << "Face Features loading error!\n";
 
-    if( !eyes_cascade.load( eyes_cascade_name ) )
-		std::cout << "Eye Features loading error!\n";
+	//eyes_cascade_name = "db/haarcascade_eye_tree_eyeglasses.xml";
+	//if( !eyes_cascade.load( eyes_cascade_name ) )
+	//	std::cout << "Eye Features loading error!\n";
 }
 
 void Detector::getFaces(const cv::Mat &image, cv::vector<cv::Rect> &faces_pos)
@@ -64,12 +64,12 @@ bool Detector::hasEyes(cv::Mat &image)
 	eyes_cascade.detectMultiScale(face_gray, eyes, attr_eye.scaleFactor, attr_eye.minNeighbors, attr_eye.flags, attr_eye.minSize, attr_eye.maxSize);
 
     // Draw circles on the eyes
-//    for( size_t j = 0; j < eyes.size(); j++ )
-//    {
-//        Point center( eyes[j].x + eyes[j].width*0.5, eyes[j].y + eyes[j].height*0.5 );
-//        int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
-//        circle( image, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
-//    }
+    //for( size_t j = 0; j < eyes.size(); j++ )
+    //{
+    //    Point center( eyes[j].x + eyes[j].width*0.5, eyes[j].y + eyes[j].height*0.5 );
+    //    int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
+    //    circle( image, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
+    //}
 
     if (eyes.size() == 2)
         return true;
