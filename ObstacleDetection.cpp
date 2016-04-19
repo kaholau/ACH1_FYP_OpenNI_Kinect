@@ -220,7 +220,7 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 	int* localMinArray = new int[numOfSegement];
 	for (int i = 0; i < numOfSegement; i++)
 		localMinArray[i] = localMin[i];
-	//imshow("after no ground",src);
+
 	//seperate the segemeted region to different Mat according to the intervals among local minima
 	//the 0th Image is alaways black with no segment and the last one will always be the ignore segment
 	Mat* pThreasholdImageList = new Mat[numOfSegement-1];
@@ -251,64 +251,38 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		rectangle(MaskLayer1, Point(src.cols*i / 7, 0), Point(src.cols * (i+1) / 7, src.rows), 0, CV_FILLED, 8, 0);
 	}
 	bitwise_not(MaskLayer1, MaskLayer2);
-	//imshow("MaskLayer1", MaskLayer1);
-	//imshow("MaskLayer2", MaskLayer2);
-	//waitKey();
+
 	//draw conuter to eliminate small segement, the 0th Image is alaways black with no segment and the last one will always the ignore segment
 	Mat temp;
 	for (int i = 1; i < numOfSegement - 1; i++)
 	{
 		temp = (MaskLayer1&pThreasholdImageList[i]);
-		//imshow("1 masked ThreasholdImageList", temp);
 		obstacleDetect(temp, obstacleMask);
 
 		temp = (MaskLayer2&pThreasholdImageList[i]);
-		//imshow("2 masked ThreasholdImageList", temp);
 		obstacleDetect(temp, obstacleMask);
 		
 	}
-	//myfile << "#ofObstacles: " << ObstacleList.size() << "#ofInterval: " << numOfSegement-1 << std::endl;
+	
 #ifdef FOR_REPORT
-	imshow("obstacleMask_final", obstacleMask);
-	waitKey();
-
 	Mat obstacleMasktemp = obstacleMask.clone();
 	flip(obstacleMasktemp, obstacleMasktemp, 1);
 	imshow("obstacleMask", obstacleMasktemp);
-	//imshow("Ground.img", Ground.img);
 #endif
-	//GroundEroAndDilate(Ground.img, GroundBoolMat, dilation_size2,0);
 	bitwise_not(Ground.img, Ground.img);
-	//vector<vector<Point> > contours;
-	//vector<Vec4i> hierarchy;
-	//waitKey();
 	if (!Ground.img.empty())
 	{
-		
-//		imshow("ground", Ground.img);
-//		imshow("GroundBoolMatAfterE&D", GroundBoolMat);
-		Ground.img &= obstacleMask;
-		//findContours(Ground.img, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-		//for (size_t i = 0; i < contours.size(); i++)
-		//	drawContours(Ground.img, contours, i, Scalar(255), -1, 8, hierarchy, 0, Point());
-		//imshow("final G", Ground.img);
-		bitwise_not(Ground.img, Ground.img);
-		
 
-#ifdef FOR_REPORT
-		imshow("finalGround", Ground.img);
-		waitKey();
-#endif
+		Ground.img &= obstacleMask;
+		bitwise_not(Ground.img, Ground.img);
 		int path = findPathByMassCenter();
-		//std::cout << "path :" << path << std::endl;
+
 		if (currentPath != path)
 		{
 			currentPath = path;
-			//TextToSpeech::pushBack(path);
 			serial.SendDirection(path);
 		}
 		if (path != NO_PATH){
-			//imshow("Ground.img", Ground.img);
 			Scalar groundIndicator = Scalar(0, 128, 0);
 			cvtColor(currentDepth, currentDepth, CV_GRAY2RGB);
 			for (int r = 0; r < Ground.img.rows; r++)
@@ -320,7 +294,7 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 						currentDepth.at<Vec3b>(r, c)[2] = groundIndicator[2];
 					}
 				}
-						
+	
 		}
 		else
 		{
@@ -330,11 +304,6 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 	}
 	delete[] pThreasholdImageList;
 	
-	//imwrite(SAMPLE_IMG_PATH + std::to_string(time(NULL)) + ".jpg", currentDepth);
-//find path just using ground img
-	//imshow("Ground.img",Ground.img);
-	//waitKey();
-
 #ifdef DISPLAY_HULL
 	vector<Vec4i> hierarchy_HULL;
 	Mat hulldisplay = Mat(currentDepth.size(), currentDepth.type());
@@ -518,97 +487,6 @@ Vec3f ObstacleDetection::RandVector(Vec3f &vec1, Vec3f &vec2)
 
 	return vec1;
 }
-void ObstacleDetection::GroundMaskCreateRandom(Mat &img)
-{
-	int m_edge = planeEdgeForPlaneRemove;
-
-	//(col,row)=(x,y)
-	Point startPoint = Point(0, img.rows / 2 - 1);
-	//myfile << "img.rows: " << img.rows << std::endl;
-	//Point startPoint = Point(0, m_edge-1);
-	Ground.img = Mat(img.size(), CV_8UC1, Scalar(255));
-	Mat whitePaper = Mat(img.rows * 4, img.cols * 4, CV_8UC1, Scalar(255));
-	putText(whitePaper, std::to_string(CameraAngle), Point(50, 50), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
-	vector<float> tanList;
-#ifdef FOR_REPORT
-	Mat temp = Mat(img.size(), CV_8UC1, Scalar(255));
-#endif
-
-	for (int center_r = startPoint.y + m_edge / 2, pt1_r = startPoint.y, pt2_r = startPoint.y + m_edge, interval_r = 0;
-		center_r < img.rows&&pt1_r < img.rows&&pt2_r < img.rows;
-		center_r += m_edge, pt1_r += m_edge, pt2_r += m_edge, interval_r += m_edge)
-	{
-		float vec1_y = (float)(pt1_r - center_r);
-		float vec2_y = (float)(pt2_r - center_r); 
-
-
-		//myfile << "{" << center_r << "}" << std::endl;
-
-		for (int center_c = startPoint.x + m_edge / 2, pt1_c = startPoint.x + m_edge, pt2_c = startPoint.x + m_edge, interval_c = 0;
-			center_c < img.cols&&pt1_c < img.cols&&pt2_c < img.cols;
-			center_c += m_edge, pt1_c += m_edge, pt2_c += m_edge, interval_c += m_edge)
-		{
-			Vec3f vec1 = { (float)(pt1_c - center_c), vec1_y, (float)(img.at<uchar>(pt1_r, pt1_c) - img.at<uchar>(center_r, center_c)) };
-			Vec3f vec2 = { (float)(pt2_c - center_c), vec2_y, (float)(img.at<uchar>(pt2_r, pt2_c) - img.at<uchar>(center_r, center_c)) };
-			Vec3f	crossProduct = vec1.cross(vec2);
-			//myfile <<"["<< crossProduct.val[1]<<"]";
-			//myfile << crossProduct;
-			//myfile << "[" << atan(crossProduct.val[0] / crossProduct.val[1]) << "]";
-
-			//GroundMaskFill(Ground.img, Point(center_c, center_r), crossProduct);
-			GroundArrowDrawOnWhitePaper(whitePaper, crossProduct, Point(center_c + interval_c * 2, center_r + interval_r * 2));
-
-			if (crossProduct[0] > 0 || crossProduct[1]>0)
-			{
-				float tan = atan(crossProduct.val[0] / crossProduct.val[1]);
-				insertAndSort<float>(tanList, tan);
-			}
-		}
-		//myfile<< std::endl;
-	}
-	//GroundDefault(Ground.img);
-	for (int i = 0; i < tanList.size(); i++)
-	{
-		myfile << tanList[i] << " ";
-	}
-	myfile << std::endl;
-	//StairDetection stairs;
-	//std::vector<cv::Point> stairConvexHull;
-	//std::vector<std::vector<cv::Point> > hull(1);
-	//stairs.Run(currentColor, currentDepth, Ground.img, stairConvexHull);
-	//if (!stairConvexHull.empty()) {
-	//	cv::Mat temp = currentColor.clone();
-	//	cv::Scalar color = Scalar(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
-	//	hull.push_back(stairConvexHull);
-	//	for (int i = 0; i<hull.size(); ++i) {
-	//		drawContours(temp, hull, i, color, 3, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
-	//	}
-	//	//imshow(std::to_string(cv::getTickCount()), temp);
-	//	//imshow("s", temp);
-	//}
-
-#ifdef FOR_REPORT
-	Ground.img.copyTo(temp);
-#endif
-#ifdef FOR_REPORT
-	imshow("original_depth", img);
-	waitKey();
-#endif
-
-	//bitwise_and(img, Ground.img, img);
-
-#ifdef FOR_REPORT
-	imshow("ground", temp);
-	imshow("brief ground in srcDepth", img);
-	waitKey();
-#endif
-
-
-	//imshow("for ground", Ground.img);
-	imshow("whitePaper", whitePaper);
-	//imshow("depth", img);
-	waitKey(1);
-}
 
 float ObstacleDetection::GroundDirection(Vec3f& vector)
 {
@@ -630,10 +508,6 @@ void ObstacleDetection::GroundMaskCreateRegular(Mat &img)
 	GroundBoolMat = Mat(img.rows / m_edge, img.cols / m_edge, CV_8UC1, Scalar(0));
 	Mat whitePaper = Mat(img.rows * 4, img.cols * 4, CV_8UC1, Scalar(255));
 	putText(whitePaper, std::to_string(CameraAngle), Point(50, 50), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
-
-#ifdef FOR_REPORT
-	Mat temp = Mat(img.size(), CV_8UC1, Scalar(255));
-#endif
 
 	for (int center_r = startPoint.y + m_edge / 2, pt1_r = startPoint.y, pt2_r = startPoint.y + m_edge, interval_r=0;
 		center_r < img.rows&&pt1_r < img.rows&&pt2_r < img.rows;
@@ -684,35 +558,22 @@ void ObstacleDetection::GroundMaskCreateRegular(Mat &img)
 	//}
 	//myfile <<"==========================="<< std::endl;
 #endif
-	
-#ifdef FOR_REPORT
-	Ground.img.copyTo(temp);
-#endif
-#ifdef FOR_REPORT
-	imshow("original_depth", img);
-	waitKey();
-#endif
 
 	GroundEroAndDilate(Ground.img, GroundBoolMat, dilation_size1, erosion_size);
-
 	bitwise_and(img, Ground.img, img);
-
 #ifdef FOR_REPORT
-	imshow("ground", temp);
-	imshow("brief ground in srcDepth", img);
-	waitKey();
+	Mat temp = Ground.img.clone();
+	flip(temp, temp, 1);
+	Mat temp1 = img.clone();
+	flip(temp1, temp1, 1);
+	imshow("ground mask", temp);
+	imshow("img mask", temp1);
 #endif
 
-	
-
-
-	//imshow("for ground", Ground.img);
 #ifdef DISPLAY_ARROW
 	imshow("whitePaper", whitePaper);
 #endif
-	//imshow("GroundBoolMat", GroundBoolMat);
-	//imshow("depth", img);
-	//waitKey(1);
+
 }
 
 void ObstacleDetection::GroundDefault(Mat& img)
@@ -735,14 +596,11 @@ void ObstacleDetection::GroundEroAndDilate(Mat& Gimg, Mat& boolMat, int diSize,i
 	for (int i = 0; i < contours.size(); i++)
 		if (contours[i].size()>contours[maxIndex].size())
 			maxIndex = i;
-
-	//Mat temp1 = Mat(boolMat.size(), boolMat.type(), Scalar(0));
-	////std::cout << "maxIndex"<<maxIndex << std::endl;
-	////std::cout << "contours.size()"<<contours.size() << std::endl;
-
-	////std::cout << "contours[maxIndex].size()"<<contours[maxIndex].size() << std::endl;
-	//drawContours(temp1, contours, maxIndex, Scalar(255), 1, 8);
-	//imshow("OLDtemp", temp1);
+#ifdef FOR_REPORT
+	Mat temp1 = Mat(boolMat.size(), boolMat.type(), Scalar(0));
+	drawContours(temp1, contours, maxIndex, Scalar(255), 1, 8);
+	imshow("OLDtemp", temp1);
+#endif
 
 	int erosion_type;
 	if (erosion_elem == 0){ erosion_type = MORPH_RECT; }
@@ -755,8 +613,6 @@ void ObstacleDetection::GroundEroAndDilate(Mat& Gimg, Mat& boolMat, int diSize,i
 
 	/// Apply the erosion operation
 	//erode(boolMat, boolMat, elementE);
-
-
 	int dilation_type;
 	if (dilation_elem == 0){ dilation_type = MORPH_RECT; }
 	else if (dilation_elem == 1){ dilation_type = MORPH_CROSS; }
@@ -767,9 +623,6 @@ void ObstacleDetection::GroundEroAndDilate(Mat& Gimg, Mat& boolMat, int diSize,i
 		Point(diSize, diSize));
 	/// Apply the dilation operation
 	dilate(boolMat, boolMat, elementD);
-	//std::cout << "TEST" << std::endl;
-	//std::cout << contours[maxIndex].size() << std::endl;
-	//GroundRefine(boolMat, Gimg, contours[maxIndex]);
 	GroundRefine(boolMat, Gimg, contours[maxIndex]);
 }
 void ObstacleDetection::GroundRefine(Mat& boolMat, Mat& Gimg, vector<Point> contour)

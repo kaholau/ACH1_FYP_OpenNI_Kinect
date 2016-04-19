@@ -105,6 +105,7 @@ void Multithreading::KinectThread_Process()
 		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
 		
 		//cv::imshow("ORIGINAL COLOR", colorImg);
+
 		//cv::imshow("ORIGINAL DEPTH", depth8bit);
 		//cv::waitKey(1);
 	}
@@ -197,7 +198,7 @@ void Multithreading::ObstacleDetectionThread_Process()
 		Mat resizeColor = Mat(Size(320, 240), colorImg.type());
 		resize(colorImg, resizeColor, Size(320, 240), 0, 0, 1);
 		flip(resizeColor, resizeColor, 1);
-		cv::imshow("resizeColor", resizeColor);
+		//cv::imshow("resizeColor", resizeColor);
 		//waitKey();
 		//cv::imshow("COLOR", colorImg);
 	}
@@ -295,6 +296,7 @@ void Multithreading::StairDetectionThread_Process()
 	std::vector<cv::Point> stairConvexHull;
 	int previousFound = 0;
 	int foundThreshold = 2;
+	cv::namedWindow("Stairs");
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
@@ -304,7 +306,7 @@ void Multithreading::StairDetectionThread_Process()
 		if (!stairConvexHull.empty()) {
 			if (previousFound > foundThreshold) {
 				TextToSpeech::pushBack(string("Stairs Found"));
-				//StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+				StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
 				++previousFound;
 			}
 			else {
