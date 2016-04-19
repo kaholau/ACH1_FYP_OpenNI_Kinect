@@ -36,6 +36,12 @@ class Multithreading
 	void SignDetectionThread_Process();
 
 	bool initialized = false;
+
+	std::ofstream FilePath;
+	std::ofstream FileStair;
+	std::ofstream FileFace;
+	std::ofstream FileSign;
+	bool recordProcessTime = true;
 public:
 	Multithreading();
 	~Multithreading();

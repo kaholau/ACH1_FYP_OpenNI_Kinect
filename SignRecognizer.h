@@ -36,7 +36,6 @@
 
 //#define DURATION_CHECK
 //#define SHOW_DEBUG_MESSAGES
-#define SHOW_MARKERS
 //#define SHOW_IMAGE_AND_RESULT
 //#define SAVE_IMAGE_AND_RESULT
 //#define USE_TRACKBAR
