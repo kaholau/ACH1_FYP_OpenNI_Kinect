@@ -12,13 +12,12 @@
 
 
 /* Defines */
-#define DURATION_CHECK_FACE
+//#define DURATION_CHECK_FACE
 //#define SAVE_IMAGES
 //#define SAVE_FACES
 //#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
 //#define DISPLAY_IMAGES
-#define SHOW_MARKERS
 #define COMPARE_FACE_COLOUR
 
 #define NUM_OF_PERSON		3
@@ -39,7 +38,7 @@
 #define HELLO_MESSAGE      "This is "
 
 #define FACE_REC_SIZE			120
-#define FACE_POS_OFFSET			40
+#define FACE_POS_OFFSET			75
 #define FACE_DET_THREHOLD		4
 #define UNDETECTED_THREHOLD		(FACE_DET_THREHOLD*1.5)
 #define NUM_OF_CHANNELS_COLOUR	3
@@ -62,10 +61,14 @@ typedef class HumanFaceRecognizer
 {
 public:
 	// Testing Use
+	double totalDur;
+	unsigned int NumFrame;
+
 	double totalConfidence;
 	double total_percent;
 	double total_percent_var;
 	unsigned int num_of_face_detected;
+
 
 
 	HumanFaceRecognizer();
@@ -92,6 +95,8 @@ public:
 	void setNameStr(std::string name);
 
 private:
+	std::fstream fin, fout;
+
 	bool isAddFace;
 	bool isUpdated;
 

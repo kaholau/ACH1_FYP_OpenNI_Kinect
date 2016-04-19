@@ -19,7 +19,7 @@ class Multithreading
 	StairDetection m_stairs;
 	bool finished = false;
 	uint64_t startRecordingTime = 0;
-	const uint64_t recordingDuration = 20 ; //second
+	const uint64_t recordingDuration = 60 ; //second
 
 	std::future<void> KinectThread_Future;
 	std::future<void> TextToSpeechThread_Future;
@@ -36,6 +36,12 @@ class Multithreading
 	void SignDetectionThread_Process();
 
 	bool initialized = false;
+
+	std::ofstream FilePath;
+	std::ofstream FileStair;
+	std::ofstream FileFace;
+	std::ofstream FileSign;
+	bool recordProcessTime = true;
 public:
 	Multithreading();
 	~Multithreading();
