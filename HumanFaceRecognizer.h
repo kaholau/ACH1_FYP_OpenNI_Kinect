@@ -5,17 +5,14 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <sstream>
 #include <string.h>
-
 #include "include.h"
-//#include "detector.h"
-//#include "TextToSpeech.h"
 
 
 /* Defines */
 //#define DURATION_CHECK_FACE
-#define SAVE_IMAGES
-#define SAVE_FACES
-#define SAVE_MASKS
+//#define SAVE_IMAGES
+//#define SAVE_FACES
+//#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
 //#define DISPLAY_IMAGES
 #define COMPARE_FACE_COLOUR
@@ -29,7 +26,7 @@
 #define IMAGE_NAME_POSTFIX "_image"
 #define FACE_NAME_POSTFIX  "_face"
 #define MASK_NAME_POSTFIX  "_face_mask"
-#define IMAGE_EXTENSION    ".bmp"
+#define IMAGE_EXTENSION    ".png"
 
 #define DB_FACE_FILE_PATH  "db/lbp_face.xml"
 #define DB_NAME_FILE_PATH  "db/name.csv"

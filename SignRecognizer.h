@@ -24,6 +24,7 @@
 ** --------------------------------------------------------------------------*/
 #pragma once
 
+/* Includes */
 #include <math.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -31,13 +32,14 @@
 #include <string>
 #include <tesseract/baseapi.h>
 #include <Windows.h>
+#include "include.h"
 
-#include "TextToSpeech.h"
 
+/* Macros */
 //#define DURATION_CHECK
 //#define SHOW_DEBUG_MESSAGES
-//#define SHOW_IMAGE_AND_RESULT
-//#define SAVE_IMAGE_AND_RESULT
+#define SHOW_IMAGE_AND_RESULT
+#define SAVE_IMAGE_AND_RESULT
 //#define USE_TRACKBAR
 
 #define WINDOW_NAME_EDGE_MASK	"_Edge_Mask"
@@ -50,21 +52,23 @@
 #define ABSOLUTE_BLACK			0
 
 #define CANNY_MAX_THRHD_RATIO		2.3
-#define AVG_GRAYSCALE_SCALE			1.35
-#define MEDIAN_BLUR_KSIZE			5
+#define AVG_GRAYSCALE_SCALE			1.29
+#define MEDIAN_BLUR_KSIZE			3
 
 #define SIGN_WIDTH_THRESHOLD		100
 //#define SAME_CONTOUR_THRESHOLD		0.85
 #define SAME_CONTOUR_THRESHOLD		0.5
-#define SAME_ELLIPSE_THRESHOLD		0.95
+#define SAME_ELLIPSE_THRESHOLD		0.9
 
 #define MAX_SIGN_WIDTH				(DEFAULT_FRAME_WIDTH / 3)
 #define MIN_SIGN_WIDTH				(DEFAULT_FRAME_WIDTH / 16)
 #define MAX_SIGN_HEIGHT				(DEFAULT_FRAME_HEIGHT / 3)
 #define MIN_SIGN_HEIGHT				(DEFAULT_FRAME_HEIGHT / 12)
-#define CONTOUR_AREA_THRESHOLD		3500
-#define CONTOUR_AREA_MAX_THRESHOLD	300000
+#define CONTOUR_AREA_THRESHOLD		800
+#define CONTOUR_AREA_MAX_THRESHOLD	20000
 
+
+/* Class */
 typedef class SignRecognizer
 {
 public:
@@ -102,5 +106,7 @@ private:
 	cv::Mat* invertLaterally(cv::Mat *sign);
 	void updateMap(void);
 	void updateMap(cv::Size);
+
+	std::fstream fout;
 } SignRecognizer;
 

@@ -37,7 +37,6 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	// stairs angle not found.
 	if (stairsAngle == -999)
 		return;
-
 	GetStairMidLine(allLines, angles[stairsAngle], stairsAngle, stairMidLine);
 	GetStairPoints(allLines, stairMidLine, stairsAngle, stairPoints, stairsMidPoints);
 
@@ -51,8 +50,8 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Point> &stairMidLine, std::vector<cv::Point> &stairMidPoints)
 {
 	// stairs should have at least 3 edges.
-	if (stairMidPoints.size() < 3)
-		return false;
+	//if (stairMidPoints.size() < 3)
+	//	return false;
 
 	// current holds the current found depth.
 	int current = -1, above = -1, below = -1;
@@ -92,33 +91,32 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 			return false;
 	}
 
+	//cv::LineIterator ascendingIt(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
+	//// until first half of the image.
+	//for (int i = 0; i < ascendingIt.count / 2.0; i++, ++ascendingIt)
+	//{
+	//	current = (int)depthImg.getMat().at<uchar>(ascendingIt.pos());
 
-	cv::LineIterator ascendingIt(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
-	// until first half of the image.
-	for (int i = 0; i < ascendingIt.count / 2.0; i++, ++ascendingIt)
-	{
-		current = (int)depthImg.getMat().at<uchar>(ascendingIt.pos());
+	//	if (current == 0) {
+	//		/// if too many consecutive empty depth, 
+	//		/// then this image is too corrupted / does not have stairs
+	//		if (++zeroCount > ZeroConsequtiveLimit)
+	//			return false;
 
-		if (current == 0) {
-			/// if too many consecutive empty depth, 
-			/// then this image is too corrupted / does not have stairs
-			if (++zeroCount > ZeroConsequtiveLimit)
-				return false;
-
-			continue;
-		} 
-		zeroCount = 0;	
-			
-		/// Stairs should have ascending depth value;
-		/// However, on angled view stairs, the depth value can occasional drop a bit.
-		/// Else it's not stairs at all.
-		if (current > previous)
-			previous = current;
-		else if (current > (previous - PreviousDeltaAllowance))
-			continue;
-		else
-			return false;
-	}
+	//		continue;
+	//	} 
+	//	zeroCount = 0;	
+	//		
+	//	/// Stairs should have ascending depth value;
+	//	/// However, on angled view stairs, the depth value can occasional drop a bit.
+	//	/// Else it's not stairs at all.
+	//	if (current > previous)
+	//		previous = current;
+	//	else if (current > (previous - PreviousDeltaAllowance))
+	//		continue;
+	//	else
+	//		return false;
+	//}
 
 	return true;
 }
@@ -235,7 +233,7 @@ void StairDetection::DetermineStairAngle(std::vector<std::vector<int>> &angles, 
 	for (int angle = 0; angle < 180; ++angle) {
 		std::vector<int> &vec = angles.at(angle);
 
-		if (!vec.empty() && vec.size() > 3 && vec.size() > max) {
+		if (!vec.empty() /*&& vec.size() > 3*/ && vec.size() > max) {
 			stairsAngle = angle;
 			max = vec.size();
 		}
@@ -285,7 +283,7 @@ void StairDetection::GetStairMidLine(std::vector<cv::Vec4i> &allLines, std::vect
 		cv::fitLine(points, temp, CV_DIST_L2, 0, 0.01, 0.01);
 
 	cv::Point pt1, pt2;
-	double theta = stairsAngle * CV_PI / 180;
+	double theta = stairsAngle * CV_PI / 180.0;
 	double a = cos(theta), b = sin(theta);
 
 	pt1.x = cvRound(temp[2] + 320 * -b);

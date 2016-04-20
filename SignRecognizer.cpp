@@ -28,6 +28,9 @@
 using namespace cv;
 
 
+int currSet = 0;
+
+
 const std::wstring SignRecognizer::STRING_UPPER_FLOOR[8] =
 {
 	L"Ground floor",
@@ -55,7 +58,7 @@ SignRecognizer::SignRecognizer()
 	isLaterallyInverted = true;
 	scale = 0.0;
 	lowThreshold = 45;
-	dilateSize = 2;
+	dilateSize = 1;
 
 	map_x.create(frameSize, CV_32FC1);
 	map_y.create(frameSize, CV_32FC1);
@@ -183,8 +186,8 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 		// Find the best-fit ellipse by conic fitting
 		RotatedRect rrect = fitEllipse(contours_all[k]);
 		Mat foundEllipse(frameGray.size(), frameGray.type(), Scalar::all(0));
-		rrect.size.width *= 0.96;
-		rrect.size.height *= 0.96;
+		rrect.size.width *= 0.99;
+		rrect.size.height *= 0.99;
 		ellipse(foundEllipse, rrect, Scalar::all(MAX_VALUE_8BITS), CV_FILLED);
 
 		// After an ellipse is found, cut and save it
@@ -251,16 +254,27 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 				sign = smallSign;
 				smallSign = NULL;
 			}
-			medianBlur(*sign, *sign, MEDIAN_BLUR_KSIZE);
+
+			// Erosion
+			Mat element = getStructuringElement(MORPH_ELLIPSE, Size(3, 3), Point(1, 1));
+			erode(*sign, *sign, element);
+#ifdef SAVE_IMAGE_AND_RESULT
+			sout.str("");
+			sout << fName << "_sign_" << k << "_ero.bmp";
+			cv::imwrite(sout.str(), *sign);
+#endif
+
+
+			//medianBlur(*sign, *sign, MEDIAN_BLUR_KSIZE);
 			if (isLaterallyInverted)
 			{
 				sign = invertLaterally(sign);
 
-#ifdef SAVE_IMAGE_AND_RESULT
-				sout.str("");
-				sout << fName << "_sign_" << k << ".bmp";
-				cv::imwrite(sout.str(), *sign);
-#endif
+//#ifdef SAVE_IMAGE_AND_RESULT
+//				sout.str("");
+//				sout << fName << "_sign_" << k << ".bmp";
+//				cv::imwrite(sout.str(), *sign);
+//#endif
 			}
 
 			// apply OCR to obtain the characters
@@ -269,8 +283,8 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 			text.erase(remove(text.begin(), text.end(), '\n'), text.end());
 			text.erase(remove(text.begin(), text.end(), ' '), text.end());
 
-			if ((strcmp(text.c_str(), "") == 0) || (strcmp(lastDet.c_str(), text.c_str()) == 0))
-				continue;
+			//if ((strcmp(text.c_str(), "") == 0) || (strcmp(lastDet.c_str(), text.c_str()) == 0))
+			//	continue;
 
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << "SavedContour[" << k << "] text: " << text << "_Floor";
@@ -287,6 +301,10 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 				cv::Scalar(0, 128, 255), 2);
 			savedSigns_index.push_back(k);
 
+#ifdef TEST_SIGN
+			fout << fName << "," << text << "," << out.c_str() << "," << ((out == L"LG3")?1:0) << std::endl;
+#endif
+
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << std::endl;
 #endif
@@ -302,16 +320,15 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 
 #ifdef SAVE_IMAGE_AND_RESULT
 			cv::imwrite(sout.str(), *sign);
-			std::cout << sout.str() << " is saved!\n";
 #endif
 #endif
 
-#ifdef SHOW_IMAGE_AND_RESULT
-			sout.str("");
-			sout << "Contours " << k;
-			namedWindow(sout.str(), CV_WINDOW_AUTOSIZE);
-			cv::imshow(sout.str(), contourImg);
-#endif
+//#ifdef SHOW_IMAGE_AND_RESULT
+//			sout.str("");
+//			sout << fName << "_Contours_" << k;
+//			cv::imshow(sout.str(), contourImg);
+//			cv::imwrite(sout.str(), contourImg);
+//#endif
 
 			lastDet = text;
 			sign = NULL;
@@ -392,33 +409,39 @@ bool SignRecognizer::getResultString(std::string &in, std::wstring &out)
 		out = std::wstring(STRING_FIRST_FLOOR);
 	}*/
 	if ((strcmp(in.c_str(), "LG7") == 0) || (strcmp(in.c_str(), "G7") == 0)
-		|| (strcmp(in.c_str(), "67") == 0) || (strcmp(in.c_str(), "L67") == 0))
+		|| (strcmp(in.c_str(), "67") == 0) || (strcmp(in.c_str(), "L67") == 0)
+		|| (strcmp(in.c_str(), "L7") == 0) || (strcmp(in.c_str(), "767") == 0))
 	{
 		out = std::wstring(L"LG7");
 	}
 	else if ((strcmp(in.c_str(), "LG1") == 0) || (strcmp(in.c_str(), "G1") == 0)
-		|| (strcmp(in.c_str(), "61") == 0) || (strcmp(in.c_str(), "L61") == 0))
+		|| (strcmp(in.c_str(), "61") == 0) || (strcmp(in.c_str(), "L61") == 0)
+		|| (strcmp(in.c_str(), "L1") == 0) || (strcmp(in.c_str(), "761") == 0))
 	{
 		out = std::wstring(L"LG1");
 	}
 	else if ((strcmp(in.c_str(), "LG5") == 0) || (strcmp(in.c_str(), "G5") == 0)
-		|| (strcmp(in.c_str(), "65") == 0) || (strcmp(in.c_str(), "L65") == 0))
+		|| (strcmp(in.c_str(), "65") == 0) || (strcmp(in.c_str(), "L65") == 0)
+		|| (strcmp(in.c_str(), "L5") == 0) || (strcmp(in.c_str(), "765") == 0))
 	{
 		out = std::wstring(L"LG5");
 	}
 	else if ((strcmp(in.c_str(), "LG3") == 0) || (strcmp(in.c_str(), "G3") == 0)
-		|| (strcmp(in.c_str(), "63") == 0) || (strcmp(in.c_str(), "L63") == 0))
+		|| (strcmp(in.c_str(), "63") == 0) || (strcmp(in.c_str(), "L63") == 0)
+		|| (strcmp(in.c_str(), "L3") == 0) || (strcmp(in.c_str(), "763") == 0))
 	{
 		out = std::wstring(L"LG3");
 	}
 	else if ((strcmp(in.c_str(), "LG2") == 0) || (strcmp(in.c_str(), "G2") == 0)
-		|| (strcmp(in.c_str(), "62") == 0) || (strcmp(in.c_str(), "L62") == 0))
+		|| (strcmp(in.c_str(), "62") == 0) || (strcmp(in.c_str(), "L62") == 0)
+		|| (strcmp(in.c_str(), "L2") == 0) || (strcmp(in.c_str(), "762") == 0))
 	{
 		out = std::wstring(L"LG7");
 	}
 	else
 	{
 		out = std::wstring(in.begin(), in.end());
+		return false;
 	}
 
 	return true;
@@ -451,7 +474,7 @@ void SignRecognizer::getContoursOfFrame(cv::Mat &frame, cv::Mat &grayOut, std::v
 	grayOut = channel[2].clone();
 	//cvtColor(frame, grayOut, CV_BGR2GRAY);  // Convert to grayscale image
 
-	GaussianBlur(channel[2], image_gray_blur, cv::Size(7, 7), 2, 2);  // Reduce the noise
+	GaussianBlur(grayOut, image_gray_blur, cv::Size(5, 5), 2, 2);  // Reduce the noise
 	//blur(grayOut, image_gray_blur, cv::Size(3, 3));  // Reduce the noise
 
 #ifdef DURATION_CHECK
@@ -544,19 +567,57 @@ void SignRecognizer::testExample(void)
 	//Mat src = imread("myImages/color38.bmp", CV_LOAD_IMAGE_COLOR);
 	std::stringstream oss;
 
-	for (int i = 1; i < 50; i++)
+
+
+
+	for (int i = 0; i < 1000; i++)
 	{
 		oss.str("");
-		oss << "myImages/color" << i << ".bmp";
+		oss << "bye2/" << i << "_colour.png";
 		Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
 		if (!src.data)
 		{
-			std::cout << oss.str() << " is not loaded" << std::endl;
+			//std::cout << oss.str() << " is not loaded" << std::endl;
 			continue;
 
 		}
 		oss.str("");
-		oss << "myImages/color" << i;
+		oss << "bye2/result/" << i;
 		this->runRecognizer(src, oss.str());
 	}
+
+
+
+	//for (currSet = 9; currSet <= 9; currSet++)
+	//{
+	//	oss.str("");
+	//	oss << "_Test_Sign_" << currSet << "/result/result.csv";
+	//	fout.open(oss.str(), std::fstream::out);
+	//	if (!fout.is_open())
+	//	{
+	//		std::cout << "Cannot open result.csv" << std::endl;
+	//		system("pause");
+	//		return;
+	//	}
+	//	fout << "Frame No,detected text,floor,isCorr" << std::endl;
+
+	//	for (int i = 0; i < 300; i++)
+	//	{
+	//		oss.str("");
+	//		oss << "_Test_Sign_" << currSet << "/" << i << "_image.bmp";
+	//		Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
+	//		if (!src.data)
+	//		{
+	//			//std::cout << oss.str() << " is not loaded" << std::endl;
+	//			continue;
+
+	//		}
+	//		oss.str("");
+	//		oss << "_Test_Sign_" << currSet << "/result/" << i;
+	//		this->runRecognizer(src, oss.str());
+	//	}
+
+	//	fout.close();
+	//}
+	std::cout << "Finished" << std::endl;
 }

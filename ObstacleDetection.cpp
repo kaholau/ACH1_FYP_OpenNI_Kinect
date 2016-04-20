@@ -270,8 +270,7 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 	//myfile << "#ofObstacles: " << ObstacleList.size() << "#ofInterval: " << numOfSegement-1 << std::endl;
 #ifdef FOR_REPORT
 	imshow("obstacleMask_final", obstacleMask);
-	waitKey();
-
+	
 	Mat obstacleMasktemp = obstacleMask.clone();
 	flip(obstacleMasktemp, obstacleMasktemp, 1);
 	imshow("obstacleMask", obstacleMasktemp);
@@ -297,7 +296,7 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 
 #ifdef FOR_REPORT
 		imshow("finalGround", Ground.img);
-		waitKey();
+		
 #endif
 		int path = findPathByMassCenter();
 		//std::cout << "path :" << path << std::endl;
@@ -363,7 +362,7 @@ void ObstacleDetection::SegementLabel(Mat& src, vector<int> &localMin)
 		circle(heightdisplay, p, 1, Scalar(0, 0, 255), 3);
 	//	putText(currentColor, std::to_string(y), p, FONT_HERSHEY_PLAIN, 1.1, Scalar(0, 0, 255), 1);
 	//	circle(currentColor, p, 1, Scalar(0, 0, 255), 3);
-		flip(heightdisplay, heightdisplay, 1);
+		//flip(heightdisplay, heightdisplay, 1);
 		imshow("heightdisplay", heightdisplay);
 	}
 #endif
@@ -592,7 +591,7 @@ void ObstacleDetection::GroundMaskCreateRandom(Mat &img)
 #endif
 #ifdef FOR_REPORT
 	imshow("original_depth", img);
-	waitKey();
+	
 #endif
 
 	//bitwise_and(img, Ground.img, img);
@@ -600,7 +599,7 @@ void ObstacleDetection::GroundMaskCreateRandom(Mat &img)
 #ifdef FOR_REPORT
 	imshow("ground", temp);
 	imshow("brief ground in srcDepth", img);
-	waitKey();
+	
 #endif
 
 
@@ -690,7 +689,7 @@ void ObstacleDetection::GroundMaskCreateRegular(Mat &img)
 #endif
 #ifdef FOR_REPORT
 	imshow("original_depth", img);
-	waitKey();
+	
 #endif
 
 	GroundEroAndDilate(Ground.img, GroundBoolMat, dilation_size1, erosion_size);
@@ -700,7 +699,7 @@ void ObstacleDetection::GroundMaskCreateRegular(Mat &img)
 #ifdef FOR_REPORT
 	imshow("ground", temp);
 	imshow("brief ground in srcDepth", img);
-	waitKey();
+	
 #endif
 
 	

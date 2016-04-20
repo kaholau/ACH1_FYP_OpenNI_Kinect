@@ -35,8 +35,8 @@ class OpenCVKinect
 	cv::Mat m_depthImage, m_colorImage;
 	bool m_alignedStreamStatus, m_colorStreamStatus, m_depthStreamStatus;
 
-	std::string timestamp = "250994780507_03";
-	std::string path = "D:/New folder/";
+	std::string timestamp = "temp";
+	std::string path = "I:/fyp video/for poster/";
 	std::queue<int> angles;
 	std::queue<int> frameIndexFromFile;
 
@@ -61,7 +61,7 @@ public:
 	std::ofstream file;
 	LONG angle = 0;
 	bool recording = false;
-	bool replay = false;
+	bool replay = true;
 
 	bool init();
 	

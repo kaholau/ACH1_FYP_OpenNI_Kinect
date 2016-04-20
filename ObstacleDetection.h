@@ -31,7 +31,7 @@ using namespace cv;
 //#define TEST_SEGMENTATION
 //#define DISPLAY_HIST
 //#define record_hist
-//#define DISPLAY_HEIGHT	
+#define DISPLAY_HEIGHT	
 //#define DISPLAY_DISTANCE
 //#define DISPLAY_HULL
 //#define record_noGround
@@ -183,7 +183,7 @@ public:
 	int dilation_size2 = 0;
 	const int initCameraAngle = INIT_CAMERA_ANGLE;
 
-	int CameraAngle;
+	int CameraAngle=0;
 	ObstacleDetection(int userHeight);
 	~ObstacleDetection();
 	void run(Mat* src);

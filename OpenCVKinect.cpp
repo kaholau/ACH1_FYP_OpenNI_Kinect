@@ -144,6 +144,17 @@ bool OpenCVKinect::init()
 	return true;
 }
 
+//void OpenCVKinect::updateData() {
+//	if (m_timeStamp == -1) {
+//		string colorFile = "image/95_colour.png";
+//		string depthFile = "image/95_depthraw.png";
+//		Mat temp = imread(colorFile, CV_LOAD_IMAGE_COLOR);
+//		//cv::cvtColor(temp, m_colorImage, CV_BGR2RGB);
+//		m_depthImage = imread(depthFile, CV_LOAD_IMAGE_ANYDEPTH);
+//		m_timeStamp = 1;
+//	}
+//}
+
 void OpenCVKinect::updateData()
 {
 	bool depthCaptured = false, colorCaptured = false;
