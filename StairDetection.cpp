@@ -30,6 +30,12 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	CannyThreshold(scaledColor, detected_edges);
 	ApplyFilter(detected_edges, scaledDepth, 254, 255, CV_THRESH_BINARY);
 	Probabilistic_Hough(detected_edges, allLines);
+	cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
+	for (cv::Vec4i vec : allLines) {
+		cv::Point p1(vec[0], vec[1]);
+		cv::Point p2(vec[2], vec[3]);
+		cv::line(detected_edges_inv, p1, p2, cv::Scalar(0, 255, 0), 3);
+	}
 
 	SortLinesByAngle(allLines, angles);
 	DetermineStairAngle(angles, stairsAngle);
@@ -40,6 +46,14 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	GetStairMidLine(allLines, angles[stairsAngle], stairsAngle, stairMidLine);
 	GetStairPoints(allLines, stairMidLine, stairsAngle, stairPoints, stairsMidPoints);
 
+	cv::line(detected_edges_inv, stairMidLine[0], stairMidLine[1], cv::Scalar(200), 3);
+
+	for (cv::Point pt : stairsMidPoints) {
+		std::cout << pt << std::endl;
+		cv::circle(detected_edges_inv, pt, 2, cv::Scalar(0, 0, 255), 3);
+	}
+	cv::imshow("lines", detected_edges_inv);
+	cv::imwrite("stairs.png", detected_edges_inv);
 	if (!DetermineStairs(scaledDepth, stairMidLine, stairsMidPoints))
 		return;
 
@@ -59,6 +73,14 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 
 	const int ZeroConsequtiveLimit = 10;
 	const int PreviousDeltaAllowance = 5;
+	std::ofstream file;
+	file.open("stairs.txt");
+	cv::LineIterator it1(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
+	for (int i = 0; i < it1.count; i++, ++it1) {
+		file << (int)depthImg.getMat().at<uchar>(it1.pos()) << std::endl;
+	}
+	file.close();
+
 
 	cv::LineIterator it(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
 	std::vector<cv::Point>::iterator midpts = stairMidPoints.begin();
@@ -90,6 +112,8 @@ bool StairDetection::DetermineStairs(cv::InputArray depthImg, std::vector<cv::Po
 			// else it's not stairs at all.
 			return false;
 	}
+
+
 
 	//cv::LineIterator ascendingIt(depthImg.getMat(), stairMidLine[0], stairMidLine[1], 8, false);
 	//// until first half of the image.
@@ -191,8 +215,8 @@ int StairDetection::GroupAngles(int angle)
 {
 	/// ignore angles between this range.
 	/// because stairs shouldn't be perpendicular to the user.
-	if (angle > 33 & angle < 147)
-		return -1;
+	//if (angle > 33 & angle < 147)
+	//	return -1;
 
 	/// shift the angle into the middle angle.
 	int binSize = 10;
@@ -242,7 +266,7 @@ void StairDetection::DetermineStairAngle(std::vector<std::vector<int>> &angles, 
 
 // Finds the intersection of two lines, or returns false.
 // The lines are defined by (o1, p1) and (o2, p2).
-bool StairDetection::intersection(cv::Point2f o1, cv::Point2f p1, cv::Point2f o2, cv::Point2f p2, cv::Point r)
+bool StairDetection::intersection(cv::Point2f o1, cv::Point2f p1, cv::Point2f o2, cv::Point2f p2, cv::Point &r)
 {
 	cv::Point2f x = o2 - o1;
 	cv::Point2f d1 = p1 - o1;
@@ -269,6 +293,8 @@ void StairDetection::GetStairMidLine(std::vector<cv::Vec4i> &allLines, std::vect
 {
 	std::vector<cv::Point2f> points;
 	cv::Vec4f temp;
+	cv::Mat output(240, 320, CV_8UC3);
+
 	for (int index : stairIndexes) {
 		cv::Vec4i &l = allLines[index];
 
@@ -277,7 +303,10 @@ void StairDetection::GetStairMidLine(std::vector<cv::Vec4i> &allLines, std::vect
 
 		points.push_back(p1);
 		points.push_back(p2);
+		cv::circle(output, p1, 2, cv::Scalar(255, 0, 0), 3);
+		cv::circle(output, p2, 2, cv::Scalar(0, 255, 0), 3);
 	}
+	cv::imshow("dots", output);
 
 	if (!points.empty())
 		cv::fitLine(points, temp, CV_DIST_L2, 0, 0.01, 0.01);

@@ -61,8 +61,8 @@ void Multithreading::CreateAsyncThreads()
 		return;
 
 	//TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
-	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	//ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
+	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
 	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
 	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
@@ -380,8 +380,8 @@ void Multithreading::StairDetectionThread_Process()
 	int previousFound = 0;
 	int foundThreshold = 2;
 
-	string colorFile = "bye2/132_colour.png";
-	string depthFile = "bye2/132_depthraw.png";
+	string colorFile = "132_colour.png";
+	string depthFile = "132_depthraw.png";
 	colorImg = imread(colorFile, CV_LOAD_IMAGE_COLOR);
 	//	cv::cvtColor(temp, colorImg, CV_BGR2RGB);
 	depthRaw = imread(depthFile, CV_LOAD_IMAGE_ANYDEPTH);

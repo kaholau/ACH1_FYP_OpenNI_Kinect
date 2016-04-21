@@ -119,10 +119,10 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 			std::cout << "erase: " << p << std::endl;
 #endif
 #ifdef SHOW_MARKERS
-			oss.str("");
-			oss << "ERASE";
-			putText(*frame, oss.str(), facesInfo[p].centerPos, cv::FONT_HERSHEY_SIMPLEX, 0.6,
-				cv::Scalar(0, 128, 255), 2);
+			//oss.str("");
+			//oss << "ERASE";
+			//putText(*frame, oss.str(), facesInfo[p].centerPos, cv::FONT_HERSHEY_SIMPLEX, 0.6,
+			//	cv::Scalar(0, 128, 255), 2);
 #endif
 
 			facesInfo.erase(facesInfo.begin() + p--);
@@ -145,10 +145,10 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 			std::cout << "undetected: " << facesInfo[p].undetected_counter << std::endl;
 #endif
 #ifdef SHOW_MARKERS
-			oss.str("");
-			oss << "++";
-			putText(*frame, oss.str(), facesInfo[p].centerPos, cv::FONT_HERSHEY_SIMPLEX, 0.6,
-				cv::Scalar(0, 128, 255), 2);
+			//oss.str("");
+			//oss << "++";
+			//putText(*frame, oss.str(), facesInfo[p].centerPos, cv::FONT_HERSHEY_SIMPLEX, 0.6,
+			//	cv::Scalar(0, 128, 255), 2);
 #endif
 		}
 	}
@@ -271,7 +271,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 							if (facesInfo[p].counter[predictedLabel] >= FACE_DET_THREHOLD) {
 #ifdef SHOW_MARKERS
 								//oss << PERSON_NAME[facesInfo[p].label] << " " << confidence;
-								oss << PERSON_NAME[predictedLabel] << " detected";
+								//oss << PERSON_NAME[predictedLabel] << " detected";
+								oss << PERSON_NAME[predictedLabel];
 #endif
 								facesInfo[p].isRecognized = true;
 								facesInfo[p].label = (DETECTED_PERSON)predictedLabel;
@@ -286,7 +287,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 							else
 							{
 								//oss << DETECTING << ", maybe " << PERSON_NAME[facesInfo[p].label];
-								oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
+								//oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
+								oss << PERSON_NAME[predictedLabel];
 							}
 #endif
 							break;
@@ -307,7 +309,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 							}
 
 							oss.str("");
-							oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
+							//oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
+							oss << PERSON_NAME[facesInfo[p].label];
 							facesInfo[p].undetected_counter = 0;
 						}
 						else

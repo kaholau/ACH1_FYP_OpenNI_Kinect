@@ -35,8 +35,8 @@ class OpenCVKinect
 	cv::Mat m_depthImage, m_colorImage;
 	bool m_alignedStreamStatus, m_colorStreamStatus, m_depthStreamStatus;
 
-	std::string timestamp = "temp";
-	std::string path = "I:/fyp video/for poster/";
+	std::string timestamp = "asdf";
+	std::string path = "E:/";
 	std::queue<int> angles;
 	std::queue<int> frameIndexFromFile;
 
