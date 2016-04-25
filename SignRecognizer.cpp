@@ -321,8 +321,6 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 	std::cout << std::endl << "No of Contours saved = " << savedSigns_index.size() << std::endl;
 #endif
 
-	resize(frame, frame, cv::Size(480, 360));
-
 #ifdef SHOW_IMAGE_AND_RESULT
 #ifdef SAVE_IMAGE_AND_RESULT
 	// Show and save the result
@@ -448,10 +446,10 @@ void SignRecognizer::getContoursOfFrame(cv::Mat &frame, cv::Mat &grayOut, std::v
 	Mat image_gray_blur;
 	Mat channel[3];
 	split(frame, channel);
-	//grayOut = channel[2].clone();
-	cvtColor(frame, grayOut, CV_BGR2GRAY);  // Convert to grayscale image
+	grayOut = channel[2].clone();
+	//cvtColor(frame, grayOut, CV_BGR2GRAY);  // Convert to grayscale image
 
-	GaussianBlur(grayOut, image_gray_blur, cv::Size(7, 7), 2, 2);  // Reduce the noise
+	GaussianBlur(channel[2], image_gray_blur, cv::Size(7, 7), 2, 2);  // Reduce the noise
 	//blur(grayOut, image_gray_blur, cv::Size(3, 3));  // Reduce the noise
 
 #ifdef DURATION_CHECK

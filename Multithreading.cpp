@@ -6,13 +6,7 @@ Multithreading::Multithreading()
 //yumi wear kinect at 900mm
 	: m_obstacle(1020)
 {
-	if (recordProcessTime) {
-		int timestamp = cv::getTickCount();
-		FilePath.open(std::to_string(timestamp) + "FilePath.txt");
-		FileStair.open(std::to_string(timestamp) + "FileStair.txt");
-		FileFace.open(std::to_string(timestamp) + "FileFace.txt");
-		FileSign.open(std::to_string(timestamp) + "FileSign.txt");
-	}
+
 }
 
 
@@ -32,13 +26,6 @@ Multithreading::~Multithreading()
 	FaceDetectionThread_Future.get();
 	SignDetectionThread_Future.get();
 	StairDetectionThread_Future.get();
-
-	if (recordProcessTime) {
-		FilePath.close();
-		FileStair.close();
-		FileFace.close();
-		FileSign.close();
-	}
 }
 
 bool Multithreading::InitializeKinect()
@@ -74,9 +61,9 @@ void Multithreading::CreateAsyncThreads()
 
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
-	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
-	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
+	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
+	//StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
 
 
@@ -115,8 +102,8 @@ void Multithreading::KinectThread_Process()
 			return;
 
 		m_Kinect.updateData();
-
-		//m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
+		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
+		
 		//cv::imshow("ORIGINAL COLOR", colorImg);
 
 		//cv::imshow("ORIGINAL DEPTH", depth8bit);
@@ -128,44 +115,15 @@ void Multithreading::TextToSpeechThread_Process()
 {
 	m_tts.Initialize();
 
-	while (waitKey(100) != ESCAPE_KEY) {
-	//while (true) {
+	while (1) {
 		if (finished)
 			return;
 
 		m_tts.speak();
+
 	}
 }
 
-void on_trackbarCameraAngle(int i, void* userData)
-{
-	INuiSensor *pNuiSensor = ((INuiSensor*)userData);
-
-	i = i - 27;
-	if (userData!=NULL)
-		pNuiSensor->NuiCameraElevationSetAngle((long)i);
-	else
-		std::cout << "NULL userdata" << std::endl;
-}
-
-void on_trackbarErosion(int i, void* userData)
-{
-	ObstacleDetection *obpt = ((ObstacleDetection*)userData);
-	obpt->erosion_size = i;
-}
-
-
-void on_trackbarDilation1(int i, void* userData)
-{
-	ObstacleDetection *obpt = ((ObstacleDetection*)userData);
-	obpt->dilation_size1 = i;
-}
-
-void on_trackbarDilation2(int i, void* userData)
-{
-	ObstacleDetection *obpt = ((ObstacleDetection*)userData);
-	obpt->dilation_size2 = i;
-}
 
 void Multithreading::ObstacleDetectionThread_Process()
 {
@@ -173,41 +131,25 @@ void Multithreading::ObstacleDetectionThread_Process()
 	cv::Mat colorImg, depth8bit, depthRaw;
 	if (!m_Kinect.replay)
 		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(m_obstacle.initCameraAngle);
-	LONG angle = m_Kinect.getAngle();
 
-	m_obstacle.setCameraAngle(angle);
-	//namedWindow("DEPTH", CV_WINDOW_NORMAL);
-	int track_angle = (int)angle;
-	//createTrackbar("CameraAngle", "DEPTH", &track_angle, 23, on_trackbarCameraAngle, m_Kinect.pNuiSensor);
-	
-	int ero = 0;
-	int di = 0;
-	//createTrackbar("dilation1", "DEPTH", &di1, 21, on_trackbarDilation1, &m_obstacle);
-	//createTrackbar("erosion", "DEPTH", &di2, 21, on_trackbarErosion, &m_obstacle);
-	//createTrackbar("dilation2", "DEPTH", &di2, 21, on_trackbarDilation2, &m_obstacle);
 	while (waitKey(1) != ESCAPE_KEY)
 	{
 		if (finished)
 			return;
 		double t = (double)getTickCount();
-		
 		m_Kinect.getMatrix(m_Kinect.All, colorImg, depthRaw, depth8bit);
-		m_obstacle.setCameraAngle(m_Kinect.getAngle());
-
-		m_obstacle.setCurrentColor(&colorImg);
 		
-		m_obstacle.SetCurrentRawDepth(&depthRaw);
-		int starttime = cv::getTickCount();
-		m_obstacle.run(&depth8bit);
-		int endtime = cv::getTickCount();
-		if (recordProcessTime)
-			FilePath << (endtime - starttime) / cv::getTickFrequency() << std::endl;
-
+		m_obstacle.run(&depth8bit, &depthRaw, m_Kinect.getAngle());
+		//TODO edit find hole
 		if (!m_Kinect.replay)
-			m_obstacle.findHole(m_Kinect.pNuiSensor);
+		{
+			int angle = m_obstacle.findHole();
+			if (angle<22 && angle>-22)
+				m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(angle);
+		}
+			
 		m_obstacle.getOutputDepthImg(&depth8bit);
-		m_obstacle.getOutputColorImg(&colorImg);
-
+		
 		/*t = 1/(((double)getTickCount() - t) / getTickFrequency());
 		String fps = std::to_string(t) + "fps";
 		putText(depth8bit, fps, Point(20,20), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);*/
@@ -224,10 +166,6 @@ void Multithreading::ObstacleDetectionThread_Process()
 
 void Multithreading::FaceDetectionThread_Process()
 {
-#ifndef TEST_FACE
-#ifdef EXTRACT_FRAME_FOR_FACE
-	int image_num = 0;
-#endif
 	cv::Mat colorImg;
 
 	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
@@ -238,7 +176,6 @@ void Multithreading::FaceDetectionThread_Process()
 		if (finished)
 			return;
 
-#ifndef EXTRACT_FRAME_FOR_FACE
 		INPUT_RECORD buffer;
 		PeekConsoleInput(handle, &buffer, 1, &events);
 		if (events > 0 && !m_Kinect.recording)
@@ -286,33 +223,14 @@ void Multithreading::FaceDetectionThread_Process()
 
 		if (m_face.getisAddFace())
 			m_face.addFace(colorImg);
-		else {
-			int startime = cv::getTickCount();
+		else
 			m_face.runFaceRecognizer(&colorImg);
-			int endtime = cv::getTickCount();
 
-			FileFace << (endtime - startime) / cv::getTickFrequency() << std::endl;
-		}
-
-		//cv::imshow("FACE DETECTION", colorImg);
-#else 
-		m_Kinect.getColor(colorImg);
-
-		if (!colorImg.empty())
-		{
-			std::stringstream oss;
-			oss.str("");
-			oss << IMAGE_DIR << image_num++ << IMAGE_NAME_POSTFIX << IMAGE_EXTENSION;
-			cv::imwrite(oss.str(), colorImg);
-
-			colorImg.release();
-			waitKey(80);
-		}
-#endif
+		cv::imshow("FACE DETECTION", colorImg);
 	}
-#else
-	m_face.testExample();
-#endif
+
+
+	//m_face.testExample();
 }
 
 void Multithreading::SignDetectionThread_Process()
@@ -325,12 +243,7 @@ void Multithreading::SignDetectionThread_Process()
 
 		m_Kinect.getColor(colorImg);
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
-		int startime = cv::getTickCount();
 		m_sign.runRecognizer(colorImg);
-		int endtime = cv::getTickCount();
-		if (recordProcessTime)
-			FileSign << (endtime - startime) / cv::getTickFrequency() << std::endl;
-
 		cv::imshow("SIGN DETECTION", colorImg);
 	}
 
@@ -344,24 +257,16 @@ void Multithreading::StairDetectionThread_Process()
 	int previousFound = 0;
 	int foundThreshold = 2;
 	cv::namedWindow("Stairs");
-	
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
 
 		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
-		int startime = cv::getTickCount();
 		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
-		int endtime = cv::getTickCount();
-
-		if (recordProcessTime)
-			FileStair << (endtime - startime) / cv::getTickFrequency() << std::endl;
-
-
 		if (!stairConvexHull.empty()) {
-			StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
-			if (previousFound >= foundThreshold) {
+			if (previousFound > foundThreshold) {
 				TextToSpeech::pushBack(string("Stairs Found"));
+				StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
 				++previousFound;
 			}
 			else {
