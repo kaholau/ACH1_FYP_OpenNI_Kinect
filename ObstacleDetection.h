@@ -27,44 +27,35 @@
 #include "SerialClass.h"
 
 using namespace cv;
-//#define FOR_REPORT
-//#define TEST_SEGMENTATION
+#define FOR_REPORT
 //#define DISPLAY_HIST
-//#define record_hist
 //#define DISPLAY_HEIGHT	
 //#define DISPLAY_DISTANCE
 //#define DISPLAY_HULL
-//#define record_noGround
 //#define DISPLAY_ARROW
-//#define COLLECT_TAN_LIST
 #define DISPLAY_DIR_LINE
 
-#define  Valid_Distance 1		//grayscale pixel value
-#define  TooFarDistance 60
-#define  Ground_height 460		//30cm
-#define  INIT_CAMERA_ANGLE -6
-//calHistogram
-#define HistSize 256 // bin size = 2^pixelDepth / histSize
-
-//remove square plane in ground detection
-#define planeEdgeForPlaneRemove 8 
-#define planeAreaForPlaneRemove (planeEdgeForPlaneRemove * planeEdgeForPlaneRemove)
-#define maxThreashold_horizontalPlane 0.5	//angle of surface normal vector 
-#define minThreashold_horizontalPlane 0.01	//angle of surface normal vector 
-//#define humanShoulderLength 70
-#define DILATION_SIZE 1 //if 1, the size is 2*dilation_size1+1
-//obstacle detection
-#define obstacle_size_ignore planeEdgeForPlaneRemove*2  
-
-//find hole
+/*Ground detection*/
+#define  GROUND_HEIGHT 460		//mm
+#define  INIT_CAMERA_ANGLE -6	//degree
+#define SQUARE_PLANE_EDGE 8 
+#define SQUARE_PLANE_AREA (SQUARE_PLANE_EDGE * SQUARE_PLANE_EDGE)
+#define MAX_TH_NORMAL 0.5	//angle of surface normal vector 
+#define MIN_TH_NORMAL 0.01	//angle of surface normal vector 
+#define DILATION_SIZE 2 //if 1, the size is 2*dilation_size1+1
+/*hole detection*/
 #define GROUND_MIN_HIEGHT -200
 #define HOLE_DETECED_ONE_CONFIRM_COUNT 10
 #define HOLE_DETECED_CONFIRM_COUNT 7
 #define HOLE_DETECTED_SPEECH "hole detected"
 #define NO_HOLE_DETECTED_SPEECH "no hole"
 #define MOTOR_LOOK_DOWN	-27
-
-//path direction
+/*Obstacle detection*/
+#define HISTOGRAM_SIZE 256 // bin size = 2^pixelDepth / histSize
+#define  TOO_FAR_PIXEL_VALUE 60		//pixel value
+#define OBSTACLE_SIZE_IGNORE SQUARE_PLANE_EDGE*2  
+#define MAX_NUM_LOCALMINMA 15
+/*Path direction*/
 #define TURN_LEFT			1
 #define MIDDLE_LEFT			2
 #define MIDDLE_MIDDLE		3
@@ -84,25 +75,36 @@ class ObstacleDetection
 	int DepthMatRow;
 	int DepthMatCol;
 	int CameraAngle = 0;
+	int mUserHeight;
+	Mat outputDepth8bit; //this is the depth used for imshow in multithreading.cpp
 	Mat currentDepth16bit;
 	Mat currentDepth8bit;
+	/*ground detection*/
 	Mat GroundMat;
 	Mat GroundBoolMat;
+	/*detect hole*/
+	bool angleSetToLookDown = false;
+	bool holeDetectedInOneFrame = false;
+	bool holeDetected = false;
+	bool restoreAngle = false;
+	int holeDetectedCountInOneFrame = 0;
+	int holeDetectedCount = 0;
+	/*obstacle detection*/
+	Mat* pThreasholdImageList;
+	Mat obstacleMask;
+	Mat MaskLayer1;
+	Mat MaskLayer2;
 	vector<Object> ObstacleList;
-	int mUserHeight;
+	/*Path direction*/
 	int currentPathDir; // 
 	int currentPathDirCol; //col value of the center of mass of ground
-
 	Serial serial;
 
 private:
-
-
 	//Height
 	double GetPointAngle(const int pointY);
 	double GetHeight(const int pointY, const int depth);
-	void createObstacle(vector<Point> contour, Point center);
-	
+		
 	//Square plane filter
 	void GroundMaskCreate();
 	void GroundBoolMatFill(Point& location, Vec3f& vector);
@@ -111,31 +113,25 @@ private:
 	void GroundArrowDrawOnWhitePaper(Mat& img, Vec3f& vector, Point& start);
 	float GroundDirection(Vec3f& vector);
 	
-	
 	//Histogram Segmentation for obstacle detection
-	Mat HistogramCal(Mat& img);
+	Mat HistogramCal();
 	vector<int> HistogramLocalMinima(Mat& hist);
 	int getColorIndex(int pixelValue, int index[], int indexSize);
-	void Segmentation(Mat& src);
-	void SegementLabel(Mat& src, vector<int> &localMin);
+	void Segmentation();
+	void SegementLabel(vector<int> &localMin);
 	void obstacleDetect(Mat& img, Mat& output);
+	void createObstacle(vector<Point> contour, Point center);
 
 	//find path
 	int findPathByMassCenter();
 
-	//find hole
-	bool angleSetToLookDown = false;
-	bool holeDetectedInOneFrame = false;
-	bool holeDetected = false;
-	bool restoreAngle = false;
-	int holeDetectedCountInOneFrame = 0;
-	int holeDetectedCount = 0;
+	void output();
 
 public:
 	const int initCameraAngle = INIT_CAMERA_ANGLE;
-
 	ObstacleDetection(int userHeight);
 	~ObstacleDetection();
+	void init(Size depthResolution);
 	void run(Mat* depth8bit, Mat* depth16bit, int angle);
 	void getOutputDepthImg(Mat* depth);
 	//find hole

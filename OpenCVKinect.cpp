@@ -46,6 +46,7 @@ bool OpenCVKinect::init()
 	const openni::SensorInfo* sinfo = m_device.getSensorInfo(openni::SENSOR_DEPTH);
 	const openni::Array<openni::VideoMode> &videoModes = sinfo->getSupportedVideoModes();
 	m_depth.setVideoMode(videoModes[1]);
+
 	if (m_status == openni::STATUS_OK)
 	{
 		m_status = m_depth.start();

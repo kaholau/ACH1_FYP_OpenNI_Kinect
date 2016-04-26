@@ -131,7 +131,8 @@ void Multithreading::ObstacleDetectionThread_Process()
 	cv::Mat colorImg, depth8bit, depthRaw;
 	if (!m_Kinect.replay)
 		m_Kinect.pNuiSensor->NuiCameraElevationSetAngle(m_obstacle.initCameraAngle);
-
+	m_Kinect.getMatrix(m_Kinect.All, colorImg, depthRaw, depth8bit);
+	m_obstacle.init(depthRaw.size());
 	while (waitKey(1) != ESCAPE_KEY)
 	{
 		if (finished)
@@ -150,9 +151,9 @@ void Multithreading::ObstacleDetectionThread_Process()
 			
 		m_obstacle.getOutputDepthImg(&depth8bit);
 		
-		/*t = 1/(((double)getTickCount() - t) / getTickFrequency());
+		t = 1/(((double)getTickCount() - t) / getTickFrequency());
 		String fps = std::to_string(t) + "fps";
-		putText(depth8bit, fps, Point(20,20), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);*/
+		putText(depth8bit, fps, Point(20,20), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
 		//std::cout << " Total used : " << t << " seconds" << std::endl;
 		cv::imshow("DEPTH", depth8bit);
 		Mat resizeColor = Mat(Size(320, 240), colorImg.type());
