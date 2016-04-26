@@ -13,10 +13,6 @@
 #include "TextToSpeech.h"
 
 
-//#define EXTRACT_FRAME_FOR_FACE
-//#define TEST_FACE
-
-#define SHOW_MARKERS
 #define COLOUR_FRAME_USE_HIGHEST_RESOLUTION_1280x960
 
 #ifdef COLOUR_FRAME_USE_HIGHEST_RESOLUTION_1280x960
@@ -28,6 +24,8 @@
 	#define COLOUR_FRAME_WIDTH     640
 	#define COLOUR_FRAME_HEIGHT    480
 #endif
+
+
 
 #define ESCAPE_KEY    27
 
