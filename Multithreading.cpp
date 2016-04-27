@@ -61,9 +61,9 @@ void Multithreading::CreateAsyncThreads()
 
 	TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
 	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
-	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
-	//StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
+	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
+	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
 
 
@@ -267,22 +267,23 @@ void Multithreading::StairDetectionThread_Process()
 		if (!stairConvexHull.empty()) {
 			if (previousFound > foundThreshold) {
 				TextToSpeech::pushBack(string("Stairs Found"));
-			StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
-			if (previousFound >= foundThreshold) {
-				TextToSpeech::pushBack(string("Stairs Found"));
-				++previousFound;
+				StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+				if (previousFound >= foundThreshold) {
+					TextToSpeech::pushBack(string("Stairs Found"));
+					++previousFound;
+				}
+				else {
+					++previousFound;
+				}
 			}
-			else {
-				++previousFound;
+			else
+			{
+				--previousFound;
+				if (previousFound < 0)
+					previousFound = 0;
 			}
+			stairConvexHull.clear();
 		}
-		else
-		{
-			--previousFound;
-			if (previousFound < 0)
-				previousFound = 0;
-		}
-		stairConvexHull.clear();
 	}
 }
 

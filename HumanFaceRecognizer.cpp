@@ -7,6 +7,7 @@
 
 /* Global Variables */
 int image_num = 0;
+int currPer = 1;
 
 
 /* Functions */
@@ -22,6 +23,11 @@ HumanFaceRecognizer::HumanFaceRecognizer()
 	max_percent = 0.65;
 	num_of_face_detected = 0;
 
+	model = cv::createLBPHFaceRecognizer();
+	model->load(DB_FACE_FILE_PATH);
+
+	min_percent = 0.484;
+	max_percent = 0.65;
 	num_of_person_in_db = 0;
 
 	std::ifstream fin;
@@ -84,6 +90,13 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	// Apply the classifier to the frame
 	detector.getFaces(*frame, newFacePos);
 	cv::vector<cv::Rect>::iterator it = newFacePos.begin();
+
+#ifdef TEST_FACE
+	if (newFacePos.size() == 0)
+	{
+		fout << image_num << ",,N/A," << isFace << ",1,0,,N/A,N/A,N/A,N/A" << std::endl;
+	}
+#endif
 
 	removeFaceWithClosedPos();
 
@@ -251,7 +264,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 							if (facesInfo[p].counter[predictedLabel] >= FACE_DET_THREHOLD) {
 #ifdef SHOW_MARKERS
 								//oss << PERSON_NAME[facesInfo[p].label] << " " << confidence;
-								oss << PERSON_NAME[predictedLabel] << " detected";
+								//oss << PERSON_NAME[predictedLabel] << " detected";
+								oss << PERSON_NAME[predictedLabel];
 #endif
 								facesInfo[p].isRecognized = true;
 								facesInfo[p].label = (DETECTED_PERSON)predictedLabel;
@@ -273,23 +287,36 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 						}
 
 					}
-#ifdef SHOW_MARKERS
 					else
 					{
 						if (predictedLabel > 0 && predictedLabel < PERSON_NAME.size())
 						{
+							if ((float)facesInfo[p].counter[predictedLabel] / (float)facesInfo[p].counter[facesInfo[p].label] > 2.0)
+							{
+								facesInfo[p].label = (DETECTED_PERSON)predictedLabel;
+
+								/* Text to Speech */
+								TextToSpeech::pushBack(std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]));
+							}
+
+#ifdef SHOW_MARKERS
 							oss.str("");
-							oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
+							//oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
+							oss << PERSON_NAME[facesInfo[p].label];
+							facesInfo[p].undetected_counter = 0;
+#endif
 						}
+#ifdef SHOW_MARKERS
 						else
 						{
 							oss << "Special!! " << confidence;
 						}
-					}
 #endif
+					}
 #ifdef SHOW_MARKERS
 					putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
 						cv::Scalar(0, 0, 255), 1);
+
 #endif
 					isExistedFace = true;
 				}
@@ -308,9 +335,14 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 
 #ifdef SHOW_MARKERS
 				oss.str("");
-				oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
-				putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
-					cv::Scalar(255, 0, 255, 1));
+				//oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
+				//putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
+				//	cv::Scalar(255, 0, 255, 1));
+
+				oss << PERSON_NAME[predictedLabel];
+				cv::Point bot(it->x + it->width, it->y + it->height + 50);
+				putText(*frame, oss.str(), bot, cv::FONT_HERSHEY_SIMPLEX, 4,
+					cv::Scalar(0, 0, 255), 8);
 #endif
 			}
 #ifdef SHOW_DEBUG_MESSAGES
@@ -318,20 +350,28 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 
 #ifdef SHOW_MARKERS
-			ellipse(*frame, center, cv::Size(it->width*0.5, it->height*0.5), 0, 0, 360, cv::Scalar(0, 0, 255), 4, 8, 0);
+			ellipse(*frame, center, cv::Size(it->width*0.5, it->height*0.5), 0, 0, 360, cv::Scalar(0, 0, 255), 6, 8, 0);
 #endif
 
 #ifdef SAVE_IMAGES
 #ifdef SAVE_FACES
 			oss.str("");
+#ifdef TEST_FACE
+			oss << "_Test_Face_B" << currPer << "_" << BASE_DIR << CORRECT_DIR << image_num << "_" << face_num << FACE_NAME_POSTFIX << IMAGE_EXTENSION;
+#else
 			oss << BASE_DIR << CORRECT_DIR << image_num << "_" << face_num << FACE_NAME_POSTFIX << IMAGE_EXTENSION;
-			imwrite(oss.str(), face);
+#endif
+			cv::imwrite(oss.str(), face);
 #endif
 #ifdef COMPARE_FACE_COLOUR
 #ifdef SAVE_MASKS
 			oss.str("");
+#ifdef TEST_FACE
+			oss << "_Test_Face_B" << currPer << "_" << BASE_DIR << CORRECT_DIR << image_num << "_" << face_num << MASK_NAME_POSTFIX << IMAGE_EXTENSION;
+#else
 			oss << BASE_DIR << CORRECT_DIR << image_num << "_" << face_num << MASK_NAME_POSTFIX << IMAGE_EXTENSION;
-			imwrite(oss.str(), outputMask);
+#endif
+			cv::imwrite(oss.str(), outputMask);
 #endif
 #endif
 #endif
@@ -346,16 +386,25 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #ifdef SAVE_IMAGES
 #ifdef SAVE_FACES
 			oss.str("");
+#ifdef TEST_FACE
+			oss << "_Test_Face_B" << currPer << "_" << BASE_DIR << WRONG_DIR << image_num << "_" << face_num << FACE_NAME_POSTFIX << IMAGE_EXTENSION;
+#else
 			oss << BASE_DIR << WRONG_DIR << image_num << "_" << face_num << FACE_NAME_POSTFIX << IMAGE_EXTENSION;
-			imwrite(oss.str(), face);
+#endif
+			cv::imwrite(oss.str(), face);
 #endif
 #ifdef SAVE_MASKS
 			oss.str("");
+#ifdef TEST_FACE
+			oss << "_Test_Face_B" << currPer << "_" << BASE_DIR << WRONG_DIR << image_num << "_" << face_num << MASK_NAME_POSTFIX << IMAGE_EXTENSION;
+#else
 			oss << BASE_DIR << WRONG_DIR << image_num << "_" << face_num << MASK_NAME_POSTFIX << IMAGE_EXTENSION;
-			imwrite(oss.str(), outputMask);
+#endif
+			cv::imwrite(oss.str(), outputMask);
 #endif
 #endif
 		}
+#endif
 
 
 #ifdef DISPLAY_FACES_AND_MASKS
@@ -372,6 +421,23 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 #endif
 
+#ifdef TEST_FACE
+		if (isFace)
+		{
+			fout << image_num << "," << face_num << "," << similar_pixel_counter 
+				<< "," << isFace << ",1,,," << predictedLabel << "," << confidence
+				<< "," << ((predictedLabel == currPer) ? 1 : 0)
+				<< "," << ((isExistedFace && facesInfo[p - 1].isRecognized && (facesInfo[p - 1].label == currPer)) ||
+				(isExistedFace && !facesInfo[p - 1].isRecognized && (predictedLabel == currPer)) ||
+				(!isExistedFace && (predictedLabel == currPer)) ? 1 : 0) << std::endl;
+		}
+		else {
+			fout << image_num << "," << face_num << "," << similar_pixel_counter
+			<< "," << isFace << ",0,,,N/A,N/A,N/A,N/A" << std::endl;
+		}
+#endif
+
+#ifdef COMPARE_FACE_COLOUR
 		total_percent += similar_pixel_counter;
 		//total_percent_var += pow(similar_pixel_counter - total_percent, 2);
 		similar_pixel_counter = 0;
@@ -381,9 +447,9 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	}
 
 #ifdef SHOW_MARKERS
-	oss.str("");
-	oss << facesInfo.size();
-	putText(*frame, oss.str(), cv::Size(10, 50), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 255), 2);
+	//oss.str("");
+	//oss << facesInfo.size();
+	//putText(*frame, oss.str(), cv::Size(10, 50), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 255), 2);
 #endif
 
 #ifdef SAVE_IMAGES
@@ -392,8 +458,14 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	//imwrite(oss.str(), original);
 
 	oss.str("");
+#ifdef TEST_FACE
+	oss << "_Test_Face_B" << currPer << "_" << IMAGE_DIR << "frame_" << image_num << IMAGE_NAME_POSTFIX << IMAGE_EXTENSION;
+	cv::imwrite(oss.str(), *frame);
+#else
 	oss << IMAGE_DIR << "frame_" << image_num << IMAGE_NAME_POSTFIX << IMAGE_EXTENSION;
-	imwrite(oss.str(), *frame);
+#endif
+	cv::imwrite(oss.str(), *frame);
+
 #endif
 	++image_num;
 
@@ -570,11 +642,11 @@ void HumanFaceRecognizer::saveFaceDatabase()
 {
 	model->save(DB_FACE_FILE_PATH);
 
-	std::ofstream fout;
-	fout.open(DB_NAME_FILE_PATH, std::ios::out);
+	std::ofstream file;
+	file.open(DB_NAME_FILE_PATH, std::ios::out);
 	for (int i = 0; i < PERSON_NAME.size(); i++)
 	{
-		fout << i << ',' << PERSON_NAME[i] << std::endl;
+		file << i << ',' << PERSON_NAME[i] << std::endl;
 	}
 
 	return;
@@ -615,23 +687,47 @@ void HumanFaceRecognizer::testExample(void)
 
 	//cv::destroyAllWindows();
 
-
-
 	std::stringstream oss;
-	for (int i = 0; i < 300; i++)
+
+	for (currPer = 2; currPer <= 2; currPer++)
 	{
 		oss.str("");
-		oss << "_faceTestFrame/" << i << "_image.bmp";
-		Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
-		if (!src.data)
-		{
-			std::cout << oss.str() << " is not loaded" << std::endl;
-			continue;
+		oss << "_Test_Face_B" << currPer << "/out.csv";
+		fout.open(oss.str(), std::fstream::out);
+		if (!fout.is_open())
+			std::cout << "Cannot open out.csv" << std::endl;
+		else
+			fout << "Frame No,Face Num,similarity,isFace,isFaceInThisFrame,isCorr,,prediction,confidence,isRecCorr,isTrackRecCorr" << std::endl;
 
+		for (int i = 0; i < 320; i++)
+		{
+			oss.str("");
+			//oss << "7_image_frame320/" << i << "_image.bmp";
+			//oss << "_Test_Face_1/frame_" << i << "_image.bmp";
+			//oss << "_Test_Face_A2/" << i << "_image.bmp";
+			//oss << "_Test_Face_3/" << i << "_image.bmp";
+
+			oss << "_Test_Face_B" << currPer << "/" << i << "_image.bmp";
+
+			Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
+			if (!src.data)
+			{
+				std::cout << oss.str() << " is not loaded" << std::endl;
+				continue;
+			}
+
+			this->runFaceRecognizer(&src);
 		}
 
-		this->runFaceRecognizer(&src);
+		//this->totalConfidence /= (double)(num_of_face_detected);
+		//std::cout << "Avg confidence: " << totalConfidence << std::endl;
+
+#ifdef DURATION_CHECK_FACE
+		this->totalDur /= (double)NumFrame;
+		std::cout << "Avg Duration: " << totalDur << std::endl;
+#endif
+
+		fout.close();
 	}
-	this->totalConfidence /= (double)(num_of_face_detected);
-	std::cout << "Avg confidence: " << totalConfidence << std::endl;
+
 }

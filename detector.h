@@ -21,8 +21,8 @@
 	#define RESIZE_SCALE       (8.0/3.0)
 	#define RESIZE_WIDTH       (int)((float)ORIGINAL_WIDTH / RESIZE_SCALE)
 	#define RESIZE_HEIGHT      (int)((float)ORIGINAL_HEIGHT / RESIZE_SCALE)
-	#define MIN_FACE_SIZE      (RESIZE_WIDTH / 14)
-	#define MAX_FACE_SIZE      (RESIZE_HEIGHT / 3)
+	#define MIN_FACE_SIZE      (RESIZE_WIDTH / 20)
+	#define MAX_FACE_SIZE      (RESIZE_WIDTH / 4)
 #else
 	#define MIN_FACE_SIZE      80
 	#define MAX_FACE_SIZE      600
