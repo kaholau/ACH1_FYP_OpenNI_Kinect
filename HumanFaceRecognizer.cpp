@@ -95,11 +95,6 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	detector.getFaces(*frame, newFacePos);
 	cv::vector<cv::Rect>::iterator it = newFacePos.begin();
 
-	if (newFacePos.size() == 0)
-	{
-		cv::waitKey(800);
-	}
-
 #ifdef TEST_FACE
 	if (newFacePos.size() == 0)
 	{
