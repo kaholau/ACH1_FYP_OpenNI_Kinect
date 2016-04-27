@@ -264,8 +264,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 							if (facesInfo[p].counter[predictedLabel] >= FACE_DET_THREHOLD) {
 #ifdef SHOW_MARKERS
 								//oss << PERSON_NAME[facesInfo[p].label] << " " << confidence;
-								//oss << PERSON_NAME[predictedLabel] << " detected";
-								oss << PERSON_NAME[predictedLabel];
+								oss << PERSON_NAME[predictedLabel] << " detected";
+								//oss << PERSON_NAME[predictedLabel];
 #endif
 								facesInfo[p].isRecognized = true;
 								facesInfo[p].label = (DETECTED_PERSON)predictedLabel;
@@ -301,8 +301,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 
 #ifdef SHOW_MARKERS
 							oss.str("");
-							//oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
-							oss << PERSON_NAME[facesInfo[p].label];
+							oss << "D:" << PERSON_NAME[facesInfo[p].label] << ",R:" << PERSON_NAME[predictedLabel] << "-" << confidence;
+							//oss << PERSON_NAME[facesInfo[p].label];
 							facesInfo[p].undetected_counter = 0;
 #endif
 						}
@@ -335,14 +335,9 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 
 #ifdef SHOW_MARKERS
 				oss.str("");
-				//oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
-				//putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
-				//	cv::Scalar(255, 0, 255, 1));
-
-				oss << PERSON_NAME[predictedLabel];
-				cv::Point bot(it->x + it->width, it->y + it->height + 50);
-				putText(*frame, oss.str(), bot, cv::FONT_HERSHEY_SIMPLEX, 4,
-					cv::Scalar(0, 0, 255), 8);
+				oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
+				putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
+					cv::Scalar(255, 0, 255, 1));
 #endif
 			}
 #ifdef SHOW_DEBUG_MESSAGES
@@ -447,9 +442,9 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	}
 
 #ifdef SHOW_MARKERS
-	//oss.str("");
-	//oss << facesInfo.size();
-	//putText(*frame, oss.str(), cv::Size(10, 50), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 255), 2);
+	oss.str("");
+	oss << facesInfo.size();
+	putText(*frame, oss.str(), cv::Size(10, 50), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 255), 2);
 #endif
 
 #ifdef SAVE_IMAGES

@@ -382,9 +382,6 @@ void ObstacleDetection::output()
 	flip(obstacleMasktemp, obstacleMasktemp, 1);
 	imshow("obstacleMask", obstacleMasktemp);
 #endif
-	bitwise_not(GroundMat, GroundMat);
-	GroundMat &= obstacleMask;
-	bitwise_not(GroundMat, GroundMat);
 
 	int path = findPathByMassCenter();
 
@@ -443,7 +440,9 @@ void ObstacleDetection::output()
 	}
 #endif	
 #ifdef DISPLAY_DIR_LINE
-
+	bitwise_not(GroundMat, GroundMat);
+	GroundMat &= obstacleMask;
+	bitwise_not(GroundMat, GroundMat);
 	if (path != NO_PATH){
 		Scalar groundIndicator = Scalar(0, 128, 0);
 		cvtColor(outputDepth8bit, outputDepth8bit, CV_GRAY2RGB);

@@ -151,14 +151,16 @@ void Multithreading::ObstacleDetectionThread_Process()
 			
 		m_obstacle.getOutputDepthImg(&depth8bit);
 		
-		t = 1/(((double)getTickCount() - t) / getTickFrequency());
+		/*t = 1/(((double)getTickCount() - t) / getTickFrequency());
 		String fps = std::to_string(t) + "fps";
 		putText(depth8bit, fps, Point(20,20), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
+		*/
 		//std::cout << " Total used : " << t << " seconds" << std::endl;
+		flip(depth8bit, depth8bit, 1);
 		cv::imshow("DEPTH", depth8bit);
-		Mat resizeColor = Mat(Size(320, 240), colorImg.type());
-		resize(colorImg, resizeColor, Size(320, 240), 0, 0, 1);
-		flip(resizeColor, resizeColor, 1);
+		//Mat resizeColor = Mat(Size(320, 240), colorImg.type());
+		//resize(colorImg, resizeColor, Size(320, 240), 0, 0, 1);
+		//flip(resizeColor, resizeColor, 1);
 		//cv::imshow("resizeColor", resizeColor);
 		//waitKey();
 		//cv::imshow("COLOR", colorImg);
@@ -226,7 +228,7 @@ void Multithreading::FaceDetectionThread_Process()
 			m_face.addFace(colorImg);
 		else
 			m_face.runFaceRecognizer(&colorImg);
-
+		resize(colorImg, colorImg, Size(320, 240));
 		cv::imshow("FACE DETECTION", colorImg);
 	}
 
@@ -245,7 +247,10 @@ void Multithreading::SignDetectionThread_Process()
 		m_Kinect.getColor(colorImg);
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
 		m_sign.runRecognizer(colorImg);
+		resize(colorImg, colorImg, Size(320, 240));
 		cv::imshow("SIGN DETECTION", colorImg);
+
+
 	}
 
 	//m_sign.testExample();
@@ -265,25 +270,22 @@ void Multithreading::StairDetectionThread_Process()
 		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
 		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
 		if (!stairConvexHull.empty()) {
-			if (previousFound > foundThreshold) {
+			StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+			if (previousFound >= foundThreshold) {
 				TextToSpeech::pushBack(string("Stairs Found"));
-				StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
-				if (previousFound >= foundThreshold) {
-					TextToSpeech::pushBack(string("Stairs Found"));
-					++previousFound;
-				}
-				else {
-					++previousFound;
-				}
+				++previousFound;
 			}
-			else
-			{
-				--previousFound;
-				if (previousFound < 0)
-					previousFound = 0;
+			else {
+				++previousFound;
 			}
-			stairConvexHull.clear();
 		}
+		else
+		{
+			--previousFound;
+			if (previousFound < 0)
+				previousFound = 0;
+		}
+		stairConvexHull.clear();
 	}
 }
 

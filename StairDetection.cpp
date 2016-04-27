@@ -244,7 +244,7 @@ void StairDetection::DetermineStairAngle(std::vector<std::vector<int>> &angles, 
 
 // Finds the intersection of two lines, or returns false.
 // The lines are defined by (o1, p1) and (o2, p2).
-bool StairDetection::intersection(cv::Point2f o1, cv::Point2f p1, cv::Point2f o2, cv::Point2f p2, cv::Point r)
+bool StairDetection::intersection(cv::Point2f o1, cv::Point2f p1, cv::Point2f o2, cv::Point2f p2, cv::Point &r)
 {
 	cv::Point2f x = o2 - o1;
 	cv::Point2f d1 = p1 - o1;

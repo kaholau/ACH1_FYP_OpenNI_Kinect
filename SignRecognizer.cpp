@@ -287,7 +287,6 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 #ifdef SHOW_DEBUG_MESSAGES
 			std::cout << "SavedContour[" << k << "] text: " << text << "_Floor";
 #endif
-			std::cout << "SavedContour[" << k << "] text: " << text << "_Floor";
 			std::wstring out;
 			if (!getResultString(text, out)) {
 				std::cerr << std::endl << "Error on getResultString()" << std::endl;
