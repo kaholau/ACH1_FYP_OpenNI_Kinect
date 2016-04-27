@@ -228,7 +228,7 @@ void Multithreading::FaceDetectionThread_Process()
 			m_face.addFace(colorImg);
 		else
 			m_face.runFaceRecognizer(&colorImg);
-		resize(colorImg, colorImg, Size(320, 240));
+
 		cv::imshow("FACE DETECTION", colorImg);
 	}
 
@@ -247,10 +247,8 @@ void Multithreading::SignDetectionThread_Process()
 		m_Kinect.getColor(colorImg);
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
 		m_sign.runRecognizer(colorImg);
-		resize(colorImg, colorImg, Size(320, 240));
-		cv::imshow("SIGN DETECTION", colorImg);
 
-
+		//cv::imshow("SIGN DETECTION", colorImg);
 	}
 
 	//m_sign.testExample();

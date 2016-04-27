@@ -118,6 +118,7 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 	curCount = cv::getTickCount();
 #endif
 
+	bool isDetected = false;
 	std::ostringstream sout;
 	int k = 0;
 	cv::Mat frameGray;
@@ -137,7 +138,7 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 #endif
 	std::vector<int> savedSigns_index;
 	std::vector<int>::iterator it_end_index;
-	for (k = (int)contours_all.size() - 1; k >= 0; --k)
+	for (k = (int)contours_all.size() - 1; k >= 0 && !isDetected; --k)
 	{
 		area = contourArea(contours_all[k]);
 		//std::cout << "Area = " << area << ",\t";
@@ -292,6 +293,7 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 				std::cerr << std::endl << "Error on getResultString()" << std::endl;
 				continue;
 			}
+			isDetected = true;
 			TextToSpeech::pushBack(out);
 
 			cv::putText(frame, text, cv::Point(contours_all[k][1].x, contours_all[k][1].y-10), cv::FONT_HERSHEY_SIMPLEX, 4,
@@ -332,11 +334,17 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 			sign = NULL;
 		}
 	}
+
+	if (isDetected)
+	{
+		resize(frame, frame, cv::Size(480, 360));
+		namedWindow("Sign Detection", CV_WINDOW_NORMAL);
+		cv::imshow("Sign Detection", frame);
+	}
+
 #ifdef SHOW_DEBUG_MESSAGES
 	std::cout << std::endl << "No of Contours saved = " << savedSigns_index.size() << std::endl;
 #endif
-
-	//resize(frame, frame, cv::Size(480, 360));
 
 #ifdef SHOW_IMAGE_AND_RESULT
 #ifdef SAVE_IMAGE_AND_RESULT
