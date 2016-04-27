@@ -91,12 +91,13 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	detector.getFaces(*frame, newFacePos);
 	cv::vector<cv::Rect>::iterator it = newFacePos.begin();
 
-#ifdef TEST_FACE
 	if (newFacePos.size() == 0)
 	{
+#ifdef TEST_FACE
 		fout << image_num << ",,N/A," << isFace << ",1,0,,N/A,N/A,N/A,N/A" << std::endl;
-	}
 #endif
+		cv::waitKey(800);
+	}
 
 	removeFaceWithClosedPos();
 
