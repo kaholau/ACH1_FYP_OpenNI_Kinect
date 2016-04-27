@@ -30,15 +30,27 @@ void StairDetection::Run(cv::InputArray colorImg, cv::InputArray depthImg, std::
 	CannyThreshold(scaledColor, detected_edges);
 	ApplyFilter(detected_edges, scaledDepth, 254, 255, CV_THRESH_BINARY);
 	Probabilistic_Hough(detected_edges, allLines);
-	cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
-	for (cv::Vec4i vec : allLines) {
-		cv::Point p1(vec[0], vec[1]);
-		cv::Point p2(vec[2], vec[3]);
-		cv::line(detected_edges_inv, p1, p2, cv::Scalar(0, 255, 0), 3);
-	}
+
 
 	SortLinesByAngle(allLines, angles);
 	DetermineStairAngle(angles, stairsAngle);
+
+	cv::Mat detected_edges_inv2;
+	cv::cvtColor(detected_edges, detected_edges_inv, CV_GRAY2BGR);
+	cv::cvtColor(detected_edges, detected_edges_inv2, CV_GRAY2BGR);
+
+	for (cv::Vec4i vec : allLines) {
+		cv::Point p1(vec[0], vec[1]);
+		cv::Point p2(vec[2], vec[3]);
+		cv::line(detected_edges_inv2, p1, p2, cv::Scalar(0, 255, 0), 3);
+	}
+	for (int index : angles[stairsAngle]) {
+		cv::Vec4i vec = allLines[index];
+		cv::Point p1(vec[0], vec[1]);
+		cv::Point p2(vec[2], vec[3]);
+		cv::line(detected_edges_inv, p1, p2, cv::Scalar(255, 255, 0), 3);
+	}
+	cv::imwrite("stairs1.png", detected_edges_inv2);
 
 	// stairs angle not found.
 	if (stairsAngle == -999)
