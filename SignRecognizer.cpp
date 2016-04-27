@@ -139,14 +139,6 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 	std::vector<int>::iterator it_end_index;
 	for (k = (int)contours_all.size() - 1; k >= 0; --k)
 	{
-		//cv::Rect rect = boundingRect(contours_all[k]);
-		//if (rect.width > MAX_SIGN_WIDTH || rect.width < MIN_SIGN_WIDTH ||
-		//	rect.height > MAX_SIGN_HEIGHT || rect.height < MIN_SIGN_HEIGHT)
-		//{
-		//	//std::cout << "Contoure Too wide / narror, width = " << rect.width << std::endl;
-		//	continue;
-		//}
-
 		area = contourArea(contours_all[k]);
 		//std::cout << "Area = " << area << ",\t";
 		if ((area < CONTOUR_AREA_THRESHOLD) || (area > CONTOUR_AREA_MAX_THRESHOLD))
@@ -216,11 +208,17 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 #endif
 
 #ifdef SHOW_MARKERS
-			ellipse(frame, rrect, Scalar(0, MAX_VALUE_8BITS / 2, MAX_VALUE_8BITS), 2); // Draw the ellipse on the image
+			ellipse(frame, rrect, Scalar(0, MAX_VALUE_8BITS / 2, MAX_VALUE_8BITS), 3); // Draw the ellipse on the image
 #endif
 
 			// Binarize the sign
 			sign = new Mat(frameGray(rect) & ellipseMask);
+#ifdef SAVE_IMAGE_AND_RESULT
+			sout.str("");
+			sout << fName << "_sign_original" << k << ".bmp";
+			cv::imwrite(sout.str(), *sign);
+#endif
+
 			avg_tmp = cv::mean(*sign, ellipseMask)[0];
 			avg_tmp *= AVG_GRAYSCALE_SCALE;
 
@@ -297,8 +295,8 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 			}
 			TextToSpeech::pushBack(out);
 
-			cv::putText(frame, text, contours_all[k][1], cv::FONT_HERSHEY_SIMPLEX, 1,
-				cv::Scalar(0, 128, 255), 2);
+			cv::putText(frame, text, cv::Point(contours_all[k][1].x, contours_all[k][1].y-10), cv::FONT_HERSHEY_SIMPLEX, 4,
+				cv::Scalar(0, 128, 255), 8);
 			savedSigns_index.push_back(k);
 
 #ifdef TEST_SIGN
@@ -323,12 +321,13 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 #endif
 #endif
 
-//#ifdef SHOW_IMAGE_AND_RESULT
-//			sout.str("");
-//			sout << fName << "_Contours_" << k;
-//			cv::imshow(sout.str(), contourImg);
-//			cv::imwrite(sout.str(), contourImg);
-//#endif
+#ifdef SHOW_IMAGE_AND_RESULT
+			sout.str("");
+			sout << fName << "_Contours_" << k << IMAGE_EXTENSION;
+			cv::imshow(sout.str(), contourImg);
+			cv::imwrite(sout.str(), contourImg);
+			waitKey(10);
+#endif
 
 			lastDet = text;
 			sign = NULL;
@@ -338,7 +337,7 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 	std::cout << std::endl << "No of Contours saved = " << savedSigns_index.size() << std::endl;
 #endif
 
-	resize(frame, frame, cv::Size(480, 360));
+	//resize(frame, frame, cv::Size(480, 360));
 
 #ifdef SHOW_IMAGE_AND_RESULT
 #ifdef SAVE_IMAGE_AND_RESULT
@@ -489,10 +488,12 @@ void SignRecognizer::getContoursOfFrame(cv::Mat &frame, cv::Mat &grayOut, std::v
 
 #ifdef SHOW_IMAGE_AND_RESULT
 	// Use Canny's output as a mask and display the canny's result
-	cv::Mat dst(frame.size(), frame.type(), Scalar::all(0));
-	frame.copyTo(dst, canny);
-	cv::imshow(WINDOW_NAME_EDGE_MASK, dst);
-	cv::imwrite("_edge_mask.bmp", dst);
+	//cv::Mat dst(frame.size(), frame.type(), Scalar::all(0));
+	//frame.copyTo(dst, canny);
+	//cv::imshow(WINDOW_NAME_EDGE_MASK, dst);
+	//cv::imwrite("_edge_mask.bmp", dst);
+	cv::imwrite("_edge_mask.bmp", canny);
+	waitKey(100);
 #endif
 
 	// Finds contourts from the frame
@@ -570,21 +571,35 @@ void SignRecognizer::testExample(void)
 
 
 
-	for (int i = 0; i < 1000; i++)
-	{
-		oss.str("");
-		oss << "bye2/" << i << "_colour.png";
-		Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
-		if (!src.data)
-		{
-			//std::cout << oss.str() << " is not loaded" << std::endl;
-			continue;
 
-		}
-		oss.str("");
-		oss << "bye2/result/" << i;
-		this->runRecognizer(src, oss.str());
-	}
+	oss.str("");
+	oss << "bye2/132_colour.png";
+	Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
+	if (!src.data)
+		return;
+
+	oss.str("");
+	oss << "bye2/result/_yeah_";
+	this->runRecognizer(src, oss.str());
+
+
+
+
+
+	//for (int i = 0; i < 1000; i++)
+	//{
+	//	oss.str("");
+	//	oss << "bye2/" << i << "_colour.png";
+	//	Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
+	//	if (!src.data)
+	//	{
+	//		continue;
+
+	//	}
+	//	oss.str("");
+	//	oss << "bye2/result/" << i;
+	//	this->runRecognizer(src, oss.str());
+	//}
 
 
 

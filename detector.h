@@ -16,7 +16,7 @@
 #define ORIGINAL_WIDTH     1280
 #define ORIGINAL_HEIGHT    960
 
-#define RESIZE_TO_SMALLER
+//#define RESIZE_TO_SMALLER
 #ifdef RESIZE_TO_SMALLER
 	#define RESIZE_SCALE       (8.0/3.0)
 	#define RESIZE_WIDTH       (int)((float)ORIGINAL_WIDTH / RESIZE_SCALE)

@@ -38,8 +38,8 @@
 /* Macros */
 //#define DURATION_CHECK
 //#define SHOW_DEBUG_MESSAGES
-#define SHOW_IMAGE_AND_RESULT
-#define SAVE_IMAGE_AND_RESULT
+//#define SHOW_IMAGE_AND_RESULT
+//#define SAVE_IMAGE_AND_RESULT
 //#define USE_TRACKBAR
 
 #define WINDOW_NAME_EDGE_MASK	"_Edge_Mask"

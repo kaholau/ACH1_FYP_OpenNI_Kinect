@@ -61,8 +61,8 @@ void Multithreading::CreateAsyncThreads()
 		return;
 
 	//TextToSpeechThread_Future = std::async(std::launch::async, &Multithreading::TextToSpeechThread_Process, this);
-	ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
-	FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
+	//ObstacleDetectionThread_Future = std::async(std::launch::async, &Multithreading::ObstacleDetectionThread_Process, this);
+	//FaceDetectionThread_Future = std::async(std::launch::async, &Multithreading::FaceDetectionThread_Process, this);
 	//SignDetectionThread_Future = std::async(std::launch::async, &Multithreading::SignDetectionThread_Process, this);
 	StairDetectionThread_Future = std::async(std::launch::async, &Multithreading::StairDetectionThread_Process, this);
 }
@@ -390,10 +390,35 @@ void Multithreading::StairDetectionThread_Process()
 	depthRaw.convertTo(depth8bit, CV_8U, 255.0 / max);
 
 	m_stairs.Run(colorImg, depth8bit, stairConvexHull);
-	if (stairConvexHull.empty())
-		std::cout << "ASDFSADFASDF" << std::endl; 
-	StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
-	cv::waitKey();
+	//cv::waitKey();
+
+
+	m_sign.runRecognizer(colorImg);
+	m_face.runFaceRecognizer(&colorImg);
+
+	for (int i = 0; i < stairConvexHull.size(); i++)
+	{
+		stairConvexHull[i].x *= 4;
+		stairConvexHull[i].y *= 4;
+	}
+
+	std::vector<std::vector<cv::Point> > hull(1);
+	cv::Scalar color = cv::Scalar(cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255), cv::theRNG().uniform(0, 255));
+	hull.push_back(stairConvexHull);
+	for (int i = 0; i<hull.size(); ++i) {
+		drawContours(colorImg, hull, i, color, 8, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
+	}
+
+	//StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
+
+	imshow("FINAL", colorImg);
+	imwrite("FINAL.png", colorImg);
+	waitKey(1);
+
+
+
+
+
 	//while (waitKey(1) != ESCAPE_KEY) {
 	//	if (finished)
 	//		return;

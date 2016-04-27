@@ -10,9 +10,9 @@
 
 /* Defines */
 //#define DURATION_CHECK_FACE
-//#define SAVE_IMAGES
-//#define SAVE_FACES
-//#define SAVE_MASKS
+#define SAVE_IMAGES
+#define SAVE_FACES
+#define SAVE_MASKS
 //#define DISPLAY_FACES_AND_MASKS
 //#define DISPLAY_IMAGES
 #define COMPARE_FACE_COLOUR
