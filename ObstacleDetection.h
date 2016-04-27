@@ -27,6 +27,7 @@
 #include "SerialClass.h"
 
 using namespace cv;
+#define TEST false
 //#define FOR_REPORT
 //#define DISPLAY_HIST
 //#define DISPLAY_HEIGHT	
@@ -36,7 +37,7 @@ using namespace cv;
 #define DISPLAY_DIR_LINE
 
 /*Ground detection*/
-#define  GROUND_HEIGHT 460		//mm
+#define  GROUND_HEIGHT 360		//mm
 #define  INIT_CAMERA_ANGLE -6//degree
 #define SQUARE_PLANE_EDGE 8 
 #define SQUARE_PLANE_AREA (SQUARE_PLANE_EDGE * SQUARE_PLANE_EDGE)
@@ -49,7 +50,7 @@ using namespace cv;
 #define HOLE_DETECED_CONFIRM_COUNT 7
 #define HOLE_DETECTED_SPEECH "hole detected"
 #define NO_HOLE_DETECTED_SPEECH "no hole"
-#define MOTOR_LOOK_DOWN	-27
+#define MOTOR_LOOK_DOWN	-21
 /*Obstacle detection*/
 #define HISTOGRAM_SIZE 256 // bin size = 2^pixelDepth / histSize
 #define  TOO_FAR_PIXEL_VALUE 60		//pixel value
@@ -98,6 +99,10 @@ class ObstacleDetection
 	/*Path direction*/
 	int currentPathDir; // 
 	int currentPathDirCol; //col value of the center of mass of ground
+	int right_line = 82; 
+	int right_middle_line = 127;
+	int left_middle_line = 172;
+	int left_line = 217;
 	Serial serial;
 
 private:
@@ -136,6 +141,8 @@ public:
 	void getOutputDepthImg(Mat* depth);
 	//find hole
 	int findHole();
+	
+	bool test = TEST;
 };
 
 

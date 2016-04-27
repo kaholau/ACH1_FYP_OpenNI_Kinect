@@ -5,6 +5,7 @@ ObstacleDetection::ObstacleDetection(int userHeight)
 	: serial("COM7")
 {
 	mUserHeight = userHeight;
+	DepthMatSize = Size(320, 240);
 };
 
 
@@ -63,7 +64,10 @@ void ObstacleDetection::GroundMaskCreate()
 		GroundBoolMat.setTo(Scalar(0));
 	}
 #ifdef DISPLAY_ARROW
-	Mat whitePaper = Mat(DepthMatRow * 4, DepthMatCol * 4, CV_8UC1, Scalar(255));
+	Mat whitePaper = Mat(DepthMatSize * 3, CV_8UC1, Scalar(255));
+#endif
+#ifdef DISPLAY_HEIGHT
+	Mat heightdisplay = Mat(DepthMatSize * 3, CV_8UC1, Scalar(255));
 #endif
 	float vec1_y = (float)(startPoint.y - startPoint.y - m_edge / 2);
 	float vec2_y = (float)(startPoint.y + m_edge - startPoint.y - m_edge / 2);
@@ -84,6 +88,11 @@ void ObstacleDetection::GroundMaskCreate()
 			putText(whitePaper, std::to_string(CameraAngle), Point(50, 50), FONT_HERSHEY_PLAIN, 0.9, Scalar(128), 1);
 			GroundArrowDrawOnWhitePaper(whitePaper, crossProduct, Point(center_c + interval_c * 2, center_r + interval_r * 2));
 #endif
+#ifdef DISPLAY_HEIGHT
+			int h = (int)GetHeight(center_r, currentDepth16bit.at<ushort>(Point(center_c , center_r  )));
+			putText(heightdisplay, std::to_string(h), Point(center_c + interval_c * 2, center_r + interval_r * 2), FONT_HERSHEY_PLAIN, 0.7, Scalar(0, 0, 255), 1);
+			circle(heightdisplay, Point(center_c + interval_c * 2, center_r + interval_r * 2), 0.5, Scalar(50), 3);
+#endif
 
 		}
 
@@ -101,6 +110,9 @@ void ObstacleDetection::GroundMaskCreate()
 
 #ifdef DISPLAY_ARROW
 	imshow("whitePaper", whitePaper);
+#endif
+#ifdef DISPLAY_HEIGHT
+	imshow("heightdisplay", heightdisplay);
 #endif
 
 }
@@ -192,8 +204,7 @@ int ObstacleDetection::findHole()
 		}
 
 	}
-
-	if (holeDetectedInOneFrame)
+	else
 	{
 		//reset holeDetectedInOneFrame,holeDetectedCountInOneFrame
 		holeDetectedInOneFrame = false;
@@ -401,27 +412,7 @@ void ObstacleDetection::output()
 	imshow("hulldisplay", hulldisplay);
 	//waitKey();
 #endif
-#ifdef DISPLAY_HEIGHT
-	Mat heightdisplay = Mat(currentDepth8bit.size(), currentDepth8bit.type(), Scalar(255, 255, 255));
-	vector<Point> test;
-	for (int y = 10; y < currentDepth8bit.rows; y += 24)
-	{
-		for (int x = 10; x < currentDepth8bit.cols; x += 32)
-		{
-			test.push_back(Point(x, y));
-		}
-	}
 
-	for (Point p : test)
-	{
-		int y = (int)GetHeight(p.y, currentDepth16bit.at<ushort>(p));
-		putText(heightdisplay, std::to_string(y), p, FONT_HERSHEY_PLAIN, 0.7, Scalar(0, 0, 255), 1);
-		circle(heightdisplay, p, 1, Scalar(0, 0, 255), 3);
-		//	putText(currentColor, std::to_string(y), p, FONT_HERSHEY_PLAIN, 1.1, Scalar(0, 0, 255), 1);
-		//	circle(currentColor, p, 1, Scalar(0, 0, 255), 3);
-		imshow("heightdisplay", heightdisplay);
-	}
-#endif
 #ifdef DISPLAY_DISTANCE
 	vector<Point> test;
 	for (int y = 10; y < currentDepth8bit.rows; y += 24)
@@ -466,17 +457,17 @@ void ObstacleDetection::output()
 	int realColStart = 20;
 	int realColEnd = GroundMat.cols - 2;
 
-	line(outputDepth8bit, Point(realColStart + realDepthColsWidth / 4, outputDepth8bit.rows),
-		Point(realColStart + realDepthColsWidth / 4, 0),
+	line(outputDepth8bit, Point(realColStart + right_line, outputDepth8bit.rows),
+		Point(realColStart + right_line, 0),
 		Scalar(255), 2, 8, 0);
-	line(outputDepth8bit, Point(realColStart + realDepthColsWidth * 5 / 12, outputDepth8bit.rows),
-		Point(realColStart + realDepthColsWidth * 5 / 12, 0),
+	line(outputDepth8bit, Point(realColStart + right_middle_line, outputDepth8bit.rows),
+		Point(realColStart + right_middle_line, 0),
 		Scalar(255), 2, 8, 0);
-	line(outputDepth8bit, Point(realColStart + realDepthColsWidth * 7 / 12, outputDepth8bit.rows),
-		Point(realColStart + realDepthColsWidth * 7 / 12, 0),
+	line(outputDepth8bit, Point(realColStart + left_middle_line, outputDepth8bit.rows),
+		Point(realColStart + left_middle_line, 0),
 		Scalar(255), 2, 8, 0);
-	line(outputDepth8bit, Point(realColStart + realDepthColsWidth * 3 / 4, outputDepth8bit.rows),
-		Point(realColStart + realDepthColsWidth * 3 / 4, 0),
+	line(outputDepth8bit, Point(realColStart + left_line, outputDepth8bit.rows),
+		Point(realColStart + left_line, 0),
 		Scalar(255), 2, 8, 0);
 	Scalar dir = Scalar(0, 0, 0);
 	if (currentPathDir == TURN_LEFT)
@@ -490,7 +481,7 @@ void ObstacleDetection::output()
 	if (currentPathDir == TURN_RIGHT)
 		dir = Scalar(255, 0, 0);
 	arrowedLine(outputDepth8bit, Point(currentPathDirCol, outputDepth8bit.rows), Point(currentPathDirCol, outputDepth8bit.rows - 20), dir, 3, 8, 0, 0.6);
-
+	flip(outputDepth8bit, outputDepth8bit, 1);
 #endif
 
 }
@@ -656,17 +647,17 @@ int  ObstacleDetection::findPathByMassCenter()
 	if (mu[maxAreaIndex].m00 < (SQUARE_PLANE_AREA*(DILATION_SIZE * 2 + 1)*(DILATION_SIZE * 2 + 1)))
 		return NO_PATH;
 	currentPathDirCol = mu[maxAreaIndex].m10 / mu[maxAreaIndex].m00;
-	if ((currentPathDirCol > 0) && (currentPathDirCol <= realColStart + realDepthColsWidth / 4))
+	if ((currentPathDirCol > 0) && (currentPathDirCol <= realColStart + right_line))
 		return TURN_RIGHT;
 
-	if ((currentPathDirCol > realColStart + realDepthColsWidth* 3/ 12) && (currentPathDirCol <= realColStart + realDepthColsWidth * 5 / 12))
+	if ((currentPathDirCol > realColStart + right_line) && (currentPathDirCol <= realColStart + right_middle_line))
 		return MIDDLE_RIGHT;
-	if ((currentPathDirCol > realColStart + realDepthColsWidth* 5/ 12) && (currentPathDirCol <= realColStart + realDepthColsWidth * 7 / 12))
+	if ((currentPathDirCol > realColStart + right_middle_line) && (currentPathDirCol <= realColStart + left_middle_line))
 		return MIDDLE_MIDDLE;
-	if ((currentPathDirCol > realColStart + realDepthColsWidth* 7 / 12) && (currentPathDirCol <= realColStart + realDepthColsWidth * 9 / 12))
+	if ((currentPathDirCol > realColStart + left_middle_line) && (currentPathDirCol <= left_line))
 		return MIDDLE_LEFT;
 
-	if ((currentPathDirCol > realColStart + realDepthColsWidth * 9 / 12) && (currentPathDirCol < realColStart + realDepthColsWidth))
+	if ((currentPathDirCol > realColStart + left_line) && (currentPathDirCol < realColStart + realDepthColsWidth))
 		return TURN_LEFT;
 
 	return NO_PATH;
