@@ -46,8 +46,8 @@ using namespace cv;
 #define DILATION_SIZE 2 //if 1, the size is 2*dilation_size1+1
 /*hole detection*/
 #define GROUND_MIN_HIEGHT -200
-#define HOLE_DETECED_ONE_CONFIRM_COUNT 10
-#define HOLE_DETECED_CONFIRM_COUNT 7
+#define HOLE_DETECED_ONE_CONFIRM_COUNT 20
+#define HOLE_DETECED_CONFIRM_COUNT 10
 #define HOLE_DETECTED_SPEECH "hole detected"
 #define NO_HOLE_DETECTED_SPEECH "no hole"
 #define MOTOR_LOOK_DOWN	-21

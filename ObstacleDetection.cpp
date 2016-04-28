@@ -159,12 +159,12 @@ void ObstacleDetection::GroundBoolMatToGroundMat()
 	findContours(temp, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, Point(0, 0));
 	//imshow("bool", boolMat);
 	if (contours.size() < 1)	return;
-	vector<vector<Point> >hull(contours.size());
+	//vector<vector<Point> >hull(contours.size());
 	
 	for (int i = 0; i < contours.size(); i++)
 		if (contours[i].size()>contours[maxIndex].size())
 			maxIndex = i;
-	convexHull(Mat(contours[maxIndex]), hull[maxIndex], false);
+	//convexHull(Mat(contours[maxIndex]), hull[maxIndex], false);
 #ifdef FOR_REPORT
 	Mat temp1 = Mat(GroundBoolMat.size(), GroundBoolMat.type(), Scalar(0));
 	drawContours(temp1, hull, maxIndex, Scalar(255), 1, 8);
@@ -181,7 +181,7 @@ void ObstacleDetection::GroundBoolMatToGroundMat()
 	*/
 	for (int i = 0; i < GroundBoolMat.rows; i++)
 		for (int j = 0; j < GroundBoolMat.cols; j++)
-			if ((GroundBoolMat.at<uchar>(i, j) == 255) && pointPolygonTest(hull[maxIndex], Point(j, i), 0) != -1)
+			if ((GroundBoolMat.at<uchar>(i, j) == 255) && pointPolygonTest(contours[maxIndex], Point(j, i), 0) != -1)
 				//if ((boolMat.at<uchar>(i, j) == 255))
 			{
 				int edge = SQUARE_PLANE_EDGE;
