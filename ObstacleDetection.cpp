@@ -18,6 +18,9 @@ void ObstacleDetection::init(Size depthResolution)
 	DepthMatSize = depthResolution;
 	DepthMatRow = DepthMatSize.height;
 	DepthMatCol = DepthMatSize.width;
+	/*init for ground detection*/
+	GroundMat = Mat(DepthMatSize, CV_8UC1, Scalar(255));
+	GroundBoolMat = Mat(DepthMatRow / SQUARE_PLANE_EDGE, DepthMatCol / SQUARE_PLANE_EDGE, CV_8UC1, Scalar(0));
 	/*initialise for obstacle detection*/
 	pThreasholdImageList = new Mat[MAX_NUM_LOCALMINMA];
 	for (int i = 0; i < MAX_NUM_LOCALMINMA; i++)
@@ -42,7 +45,7 @@ void ObstacleDetection::run(Mat* depth8bit, Mat* depth16bit, int angle)
 	ObstacleList.clear();	
 #endif
 	GroundMaskCreate();	
-	Segmentation();
+	//Segmentation();
 	output();
 
 }
@@ -53,21 +56,14 @@ void ObstacleDetection::GroundMaskCreate()
 	int m_edge = SQUARE_PLANE_EDGE;
 	//(col,row)=(x,y)
 	Point startPoint = Point(0, DepthMatRow / 2 - 1);
-	if (GroundMat.empty())
-	{
-		GroundMat = Mat(DepthMatSize, CV_8UC1, Scalar(255));
-		GroundBoolMat = Mat(DepthMatRow / m_edge, DepthMatCol / m_edge, CV_8UC1, Scalar(0));
-	}
-	else
-	{
-		GroundMat.setTo(Scalar(255));
-		GroundBoolMat.setTo(Scalar(0));
-	}
+	GroundMat.setTo(Scalar(255));
+	GroundBoolMat.setTo(Scalar(0));
+
 #ifdef DISPLAY_ARROW
 	Mat whitePaper = Mat(DepthMatSize * 3, CV_8UC1, Scalar(255));
 #endif
 #ifdef DISPLAY_HEIGHT
-	Mat heightdisplay = Mat(DepthMatSize * 3, CV_8UC1, Scalar(255));
+	Mat heightdisplay = Mat(DepthMatSize * 4, CV_8UC1, Scalar(255));
 #endif
 	float vec1_y = (float)(startPoint.y - startPoint.y - m_edge / 2);
 	float vec2_y = (float)(startPoint.y + m_edge - startPoint.y - m_edge / 2);
@@ -90,8 +86,8 @@ void ObstacleDetection::GroundMaskCreate()
 #endif
 #ifdef DISPLAY_HEIGHT
 			int h = (int)GetHeight(center_r, currentDepth16bit.at<ushort>(Point(center_c , center_r  )));
-			putText(heightdisplay, std::to_string(h), Point(center_c + interval_c * 2, center_r + interval_r * 2), FONT_HERSHEY_PLAIN, 0.7, Scalar(0, 0, 255), 1);
-			circle(heightdisplay, Point(center_c + interval_c * 2, center_r + interval_r * 2), 0.5, Scalar(50), 3);
+			putText(heightdisplay, std::to_string(h), Point(center_c + interval_c * 2.8, center_r + interval_r * 2.8), FONT_HERSHEY_PLAIN, 0.7, Scalar(0, 0, 255), 1);
+			circle(heightdisplay, Point(center_c + interval_c * 2.8, center_r + interval_r * 2.8), 0.5, Scalar(50), 3);
 #endif
 
 		}
@@ -163,12 +159,15 @@ void ObstacleDetection::GroundBoolMatToGroundMat()
 	findContours(temp, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, Point(0, 0));
 	//imshow("bool", boolMat);
 	if (contours.size() < 1)	return;
+	vector<vector<Point> >hull(contours.size());
+	
 	for (int i = 0; i < contours.size(); i++)
 		if (contours[i].size()>contours[maxIndex].size())
 			maxIndex = i;
+	convexHull(Mat(contours[maxIndex]), hull[maxIndex], false);
 #ifdef FOR_REPORT
 	Mat temp1 = Mat(GroundBoolMat.size(), GroundBoolMat.type(), Scalar(0));
-	drawContours(temp1, contours, maxIndex, Scalar(255), 1, 8);
+	drawContours(temp1, hull, maxIndex, Scalar(255), 1, 8);
 	imshow("OLDtemp", temp1);
 #endif
 	/*
@@ -182,7 +181,7 @@ void ObstacleDetection::GroundBoolMatToGroundMat()
 	*/
 	for (int i = 0; i < GroundBoolMat.rows; i++)
 		for (int j = 0; j < GroundBoolMat.cols; j++)
-			if ((GroundBoolMat.at<uchar>(i, j) == 255) && pointPolygonTest(contours[maxIndex], Point(j, i), 0) != -1)
+			if ((GroundBoolMat.at<uchar>(i, j) == 255) && pointPolygonTest(hull[maxIndex], Point(j, i), 0) != -1)
 				//if ((boolMat.at<uchar>(i, j) == 255))
 			{
 				int edge = SQUARE_PLANE_EDGE;

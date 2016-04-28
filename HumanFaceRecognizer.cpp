@@ -96,7 +96,7 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #ifdef TEST_FACE
 		fout << image_num << ",,N/A," << isFace << ",1,0,,N/A,N/A,N/A,N/A" << std::endl;
 #endif
-		cv::waitKey(800);
+		cv::waitKey(100);
 	}
 
 	removeFaceWithClosedPos();
@@ -480,7 +480,11 @@ void HumanFaceRecognizer::addFace(cv::Mat &frame)
 	facesInfo.clear();
 
 #ifdef RESIZE_TO_SMALLER
-	cv::Mat original = detector.resizeToSmaller(&frame);
+	//cv::Mat original = detector.resizeToSmaller(&frame);
+
+	cv::Mat original = frame.clone();
+	const cv::Size size(320, 240);
+	cv::resize(frame, frame, size);
 #else
 	cv::Mat original = (*frame).clone();
 #endif

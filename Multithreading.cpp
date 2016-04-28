@@ -115,12 +115,11 @@ void Multithreading::TextToSpeechThread_Process()
 {
 	m_tts.Initialize();
 
-	while (1) {
+	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
 
 		m_tts.speak();
-
 	}
 }
 
@@ -139,6 +138,10 @@ void Multithreading::ObstacleDetectionThread_Process()
 		{
 			if (finished)
 				return;
+
+			if (m_face.getisAddFace())
+				continue;
+
 			double t = (double)getTickCount();
 			m_Kinect.getMatrix(m_Kinect.All, colorImg, depthRaw, depth8bit);
 
@@ -172,7 +175,7 @@ void Multithreading::ObstacleDetectionThread_Process()
 		depthRaw.convertTo(depth8bit, CV_8U, 255.0 / max);
 
 		m_obstacle.run(&depth8bit, &depthRaw, -17*2);
-
+		m_obstacle.getOutputDepthImg(&depth8bit);
 		cv::imshow("DEPTH", depth8bit);
 		resize(colorImg, colorImg, Size(320, 240), 0, 0, 1);
 		cv::imshow("colorImg", colorImg);
@@ -255,9 +258,12 @@ void Multithreading::SignDetectionThread_Process()
 {
 	cv::Mat colorImg;
 
-	while (waitKey(1) != ESCAPE_KEY) {
+	while (waitKey(20) != ESCAPE_KEY) {
 		if (finished)
 			return;
+
+		if (m_face.getisAddFace())
+			continue;
 
 		m_Kinect.getColor(colorImg);
 		m_sign.setFrameSize(colorImg.cols, colorImg.rows);
@@ -279,6 +285,9 @@ void Multithreading::StairDetectionThread_Process()
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
+
+		if (m_face.getisAddFace())
+			continue;
 
 		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
 		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
