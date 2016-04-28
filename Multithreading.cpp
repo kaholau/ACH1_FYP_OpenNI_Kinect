@@ -70,6 +70,10 @@ void Multithreading::CreateAsyncThreads()
 /* Idle Main thread to prevent from closing */
 void Multithreading::Hold()
 {
+	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD events;
+	std::string faceName;
+
 	// Use getMatrix's time return to prevent over spam.
 	uint64_t curTime = 0;
 	namedWindow("Main Idle Window");
@@ -82,6 +86,50 @@ void Multithreading::Hold()
 			break;
 		}
 		m_Kinect.getMatrix(m_Kinect.None, Mat(), Mat(), Mat());
+
+
+		INPUT_RECORD buffer;
+		PeekConsoleInput(handle, &buffer, 1, &events);
+		if (events > 0 && !m_Kinect.recording)
+		{
+			ReadConsoleInput(handle, &buffer, 1, &events);
+			switch (buffer.Event.KeyEvent.wVirtualKeyCode)
+			{
+			case 0x41:
+				if (!m_face.getisAddFace())
+				{
+					while (true)
+					{
+						std::cout << "Please enter person's name to be added: ";
+						std::getline(std::cin, faceName);
+						if ((strcmp(faceName.c_str(), "") != 0) &&
+							(strcmp(faceName.c_str(), "0") != 0) &&
+							(strcmp(faceName.c_str(), "1") != 0))
+						{
+							m_face.setNameStr(faceName);
+							break;
+						}
+					}
+					m_face.setisAddFace(true);
+					m_face.setisUpdated(true);
+				}
+				break;
+
+			case 0x53:
+				m_face.clearNameStr();
+				m_face.setisAddFace(false);
+				break;
+
+			case 0x4F:
+				std::cout << "Play" << cv::getTickCount() << std::endl;
+				m_Kinect.setPlayspeed(1);
+				break;
+			case 0x50:
+				std::cout << "Pause" << cv::getTickCount() << std::endl;
+				m_Kinect.setPlayspeed(-1);
+				break;
+			}
+		}
 	}
 
 	std::cout << "Exit Program!" << std::endl;
@@ -189,56 +237,9 @@ void Multithreading::FaceDetectionThread_Process()
 {
 	cv::Mat colorImg;
 
-	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
-	DWORD events;
-	std::string faceName;
-
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
-
-		INPUT_RECORD buffer;
-		PeekConsoleInput(handle, &buffer, 1, &events);
-		if (events > 0 && !m_Kinect.recording)
-		{
-			ReadConsoleInput(handle, &buffer, 1, &events);
-			switch (buffer.Event.KeyEvent.wVirtualKeyCode)
-			{
-			case 0x30:
-				if (!m_face.getisAddFace())
-				{
-					while (true)
-					{
-						std::cout << "Please enter person's name to be added: ";
-						std::getline(std::cin, faceName);
-						if ((strcmp(faceName.c_str(), "") != 0) &&
-							(strcmp(faceName.c_str(), "0") != 0) &&
-							(strcmp(faceName.c_str(), "1") != 0))
-						{
-							m_face.setNameStr(faceName);
-							break;
-						}
-					}
-					m_face.setisAddFace(true);
-					m_face.setisUpdated(true);
-				}
-				break;
-
-			case 0x31:
-				m_face.clearNameStr();
-				m_face.setisAddFace(false);
-				break;
-
-			case 0x4F:
-				std::cout << "Play" << cv::getTickCount() << std::endl;
-				m_Kinect.setPlayspeed(1);
-				break;
-			case 0x50:
-				std::cout << "Pause" << cv::getTickCount() << std::endl;
-				m_Kinect.setPlayspeed(-1);
-				break;
-			}
-		}
 
 		m_Kinect.getColor(colorImg);
 
