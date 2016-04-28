@@ -337,7 +337,15 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 
 	if (isDetected)
 	{
-		resize(frame, frame, cv::Size(480, 360));
+		Size smsize(480, 360);
+		resize(frame, frame, smsize);
+		if (isLaterallyInverted)
+		{
+			Mat image_lateralInvert(frame.size(), frame.type());
+			updateMap(smsize);
+			remap(frame, image_lateralInvert, map_x, map_y, CV_INTER_LINEAR);
+			frame = image_lateralInvert;
+		}
 		namedWindow("Sign Detection", CV_WINDOW_NORMAL);
 		cv::imshow("Sign Detection", frame);
 	}

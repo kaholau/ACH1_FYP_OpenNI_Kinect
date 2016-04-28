@@ -96,7 +96,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #ifdef TEST_FACE
 		fout << image_num << ",,N/A," << isFace << ",1,0,,N/A,N/A,N/A,N/A" << std::endl;
 #endif
-		cv::waitKey(100);
+		if (facesInfo.size() == 0)
+			cv::waitKey(300);
 	}
 
 	removeFaceWithClosedPos();
@@ -137,7 +138,7 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 #ifdef SHOW_MARKERS
 			oss.str("");
-			oss << "++";
+			oss << "und";
 			putText(*frame, oss.str(), facesInfo[p].centerPos, cv::FONT_HERSHEY_SIMPLEX, 0.6,
 				cv::Scalar(0, 128, 255), 2);
 #endif
@@ -274,7 +275,14 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 								std::cout << "detected: " << predictedLabel << '\n';
 #endif
 								/* Text to Speech */
-								str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
+								if (center.x < RESIZE_WIDTH / 3)
+									str = std::string(RIGHT_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
+								else if (center.x >(RESIZE_WIDTH * 2 / 3))
+									str = std::string(LEFT_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
+								else
+									str = std::string(CENTER_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
+
+								//str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
 								TextToSpeech::pushBack(str);
 							}
 #ifdef SHOW_MARKERS
@@ -297,7 +305,14 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 								facesInfo[p].label = (DETECTED_PERSON)predictedLabel;
 
 								/* Text to Speech */
-								TextToSpeech::pushBack(std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]));
+								if (center.x < RESIZE_WIDTH / 3)
+									TextToSpeech::pushBack(std::string(RIGHT_MESSAGE) + std::string(PERSON_NAME[predictedLabel]));
+								else if (center.x >(RESIZE_WIDTH * 2 / 3))
+									TextToSpeech::pushBack(std::string(LEFT_MESSAGE) + std::string(PERSON_NAME[predictedLabel]));
+								else
+									TextToSpeech::pushBack(std::string(CENTER_MESSAGE) + std::string(PERSON_NAME[predictedLabel]));
+								
+								//TextToSpeech::pushBack(std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]));
 							}
 
 #ifdef SHOW_MARKERS
@@ -314,11 +329,10 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 						}
 #endif
 					}
-#ifdef SHOW_MARKERS
-					putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
-						cv::Scalar(0, 0, 255), 1);
-
-#endif
+//#ifdef SHOW_MARKERS
+//					putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
+//						cv::Scalar(0, 0, 255), 1);
+//#endif
 					isExistedFace = true;
 				}
 			}
@@ -337,8 +351,6 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #ifdef SHOW_MARKERS
 				oss.str("");
 				oss << "maybe " << PERSON_NAME[predictedLabel] << "-" << confidence;
-				putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
-					cv::Scalar(255, 0, 255, 1));
 #endif
 			}
 #ifdef SHOW_DEBUG_MESSAGES
@@ -346,7 +358,10 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 
 #ifdef SHOW_MARKERS
-			ellipse(*frame, center, cv::Size(it->width*0.5, it->height*0.5), 0, 0, 360, cv::Scalar(0, 0, 255), 6, 8, 0);
+			putText(*frame, oss.str(), top, cv::FONT_HERSHEY_SIMPLEX, 0.5,
+				cv::Scalar(255, 0, 255, 1));
+			ellipse(*frame, center, cv::Size(it->width/2, it->height/2), 0,
+				0, 360, cv::Scalar(0, 0, 255), 6, 8, 0);
 #endif
 
 #ifdef SAVE_IMAGES
