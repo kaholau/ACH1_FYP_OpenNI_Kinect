@@ -119,8 +119,7 @@ private:
 	float GroundDirection(Vec3f& vector);
 	
 	//Histogram Segmentation for obstacle detection
-	Mat HistogramCal();
-	vector<int> HistogramLocalMinima(Mat& hist);
+	vector<int> HistogramCal();
 	int getColorIndex(int pixelValue, int index[], int indexSize);
 	void Segmentation();
 	void SegementLabel(vector<int> &localMin);

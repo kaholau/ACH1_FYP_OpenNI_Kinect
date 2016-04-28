@@ -45,7 +45,7 @@ void ObstacleDetection::run(Mat* depth8bit, Mat* depth16bit, int angle)
 	ObstacleList.clear();	
 #endif
 	GroundMaskCreate();	
-	//Segmentation();
+	Segmentation();
 	output();
 
 }
@@ -167,7 +167,7 @@ void ObstacleDetection::GroundBoolMatToGroundMat()
 	//convexHull(Mat(contours[maxIndex]), hull[maxIndex], false);
 #ifdef FOR_REPORT
 	Mat temp1 = Mat(GroundBoolMat.size(), GroundBoolMat.type(), Scalar(0));
-	drawContours(temp1, hull, maxIndex, Scalar(255), 1, 8);
+	drawContours(temp1, contours, maxIndex, Scalar(255), 1, 8);
 	imshow("OLDtemp", temp1);
 #endif
 	/*
@@ -296,8 +296,7 @@ float ObstacleDetection::GroundDirection(Vec3f& vector)
 
 void ObstacleDetection::Segmentation()
 {
-	Mat hist = HistogramCal();
-	vector<int> LocalMinima = HistogramLocalMinima(hist);	
+	vector<int> LocalMinima = HistogramCal();
 	SegementLabel(LocalMinima);
 }
 
@@ -309,7 +308,7 @@ int ObstacleDetection::getColorIndex(int pixelValue, int index[], int indexSize)
 	return indexSize;
 }
 
-Mat ObstacleDetection::HistogramCal()
+vector<int> ObstacleDetection::HistogramCal()
 {
 	int depth = 8;
 	int numOfbin = HISTOGRAM_SIZE;
@@ -350,20 +349,15 @@ Mat ObstacleDetection::HistogramCal()
 			Scalar(100, 0, 0), 2, 8, 0);
 		
 	}
-	imshow("histImgRaw", histImg);
+	//imshow("histImgRaw", histImg);
 #endif
-	return hist;
-}
-
-vector<int> ObstacleDetection::HistogramLocalMinima(Mat& hist)
-{
-
+	
 	struct buffer{
 		struct buffer *prev;
-		float data=0;
+		float data = 0;
 		struct buffer *next;
 	};
-	struct buffer node1,node2,node3;
+	struct buffer node1, node2, node3;
 	node1.next = &node2; node2.next = &node3; node3.next = &node1;
 	node3.prev = &node2; node2.prev = &node1; node1.prev = &node3;
 	struct buffer* current = &node1;
@@ -379,10 +373,21 @@ vector<int> ObstacleDetection::HistogramLocalMinima(Mat& hist)
 	}
 	localMinIndex.push_back(HISTOGRAM_SIZE - TOO_FAR_PIXEL_VALUE);
 
+#ifdef DISPLAY_HIST
+
+	for (int j = 0; j < localMinIndex.size(); j++)
+	{
+
+		line(histImg, Point(bin_w*(localMinIndex[j]), hist_h - cvRound(tempHist.at<float>(localMinIndex[j]) - 10)),
+			Point(bin_w*(localMinIndex[j]), hist_h - cvRound(tempHist.at<float>(localMinIndex[j]) + 10)),
+			Scalar(0, 0, 0), 2, 8, 0);
+	}
+
+	imshow("histImg", histImg);
+#endif
 
 	return localMinIndex;
 }
-
 
 void ObstacleDetection::output()
 {
