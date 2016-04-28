@@ -275,12 +275,12 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 								std::cout << "detected: " << predictedLabel << '\n';
 #endif
 								/* Text to Speech */
-								if (center.x < RESIZE_WIDTH / 3)
-									str = std::string(RIGHT_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
-								else if (center.x >(RESIZE_WIDTH * 2 / 3))
-									str = std::string(LEFT_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
+								if (center.x < RIGHT_THREASHOLD)
+									str = std::string(PERSON_NAME[predictedLabel]) + std::string(RIGHT_MESSAGE);
+								else if (center.x > LEFT_THREASHOLD)
+									str = std::string(PERSON_NAME[predictedLabel]) + std::string(LEFT_MESSAGE);
 								else
-									str = std::string(CENTER_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
+									str = std::string(PERSON_NAME[predictedLabel]) + std::string(CENTER_MESSAGE);
 
 								//str = std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]);
 								TextToSpeech::pushBack(str);
@@ -305,12 +305,12 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 								facesInfo[p].label = (DETECTED_PERSON)predictedLabel;
 
 								/* Text to Speech */
-								if (center.x < RESIZE_WIDTH / 3)
-									TextToSpeech::pushBack(std::string(RIGHT_MESSAGE) + std::string(PERSON_NAME[predictedLabel]));
-								else if (center.x >(RESIZE_WIDTH * 2 / 3))
-									TextToSpeech::pushBack(std::string(LEFT_MESSAGE) + std::string(PERSON_NAME[predictedLabel]));
+								if (center.x < RIGHT_THREASHOLD)
+									TextToSpeech::pushBack(std::string(PERSON_NAME[predictedLabel]) + std::string(RIGHT_MESSAGE));
+								else if (center.x > LEFT_THREASHOLD)
+									TextToSpeech::pushBack(std::string(PERSON_NAME[predictedLabel]) + std::string(LEFT_MESSAGE));
 								else
-									TextToSpeech::pushBack(std::string(CENTER_MESSAGE) + std::string(PERSON_NAME[predictedLabel]));
+									TextToSpeech::pushBack(std::string(PERSON_NAME[predictedLabel]) + std::string(CENTER_MESSAGE));
 								
 								//TextToSpeech::pushBack(std::string(HELLO_MESSAGE) + std::string(PERSON_NAME[predictedLabel]));
 							}
