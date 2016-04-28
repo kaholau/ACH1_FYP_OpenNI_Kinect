@@ -33,9 +33,13 @@
 
 #define DETECTING          "detecting..."
 #define HELLO_MESSAGE      "This is "
-#define LEFT_MESSAGE       " on the left"
-#define RIGHT_MESSAGE      " on the right"
+#define LEFT_MESSAGE       " on the left."
+#define RIGHT_MESSAGE      " on the right."
 #define CENTER_MESSAGE     " at center."
+
+#define LEFT_RIGHT_OFFSET  15
+#define LEFT_THREASHOLD    (RESIZE_WIDTH * 2 / 3 + LEFT_RIGHT_OFFSET)
+#define RIGHT_THREASHOLD   (RESIZE_WIDTH / 3 - LEFT_RIGHT_OFFSET)
 
 #define FACE_REC_SIZE			120
 #define FACE_POS_OFFSET			40
