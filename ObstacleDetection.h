@@ -84,7 +84,6 @@ class ObstacleDetection
 	Mat GroundMat;
 	Mat GroundBoolMat;
 	/*detect hole*/
-	bool angleSetToLookDown = false;
 	bool holeDetectedInOneFrame = false;
 	bool holeDetected = false;
 	bool restoreAngle = false;
@@ -142,6 +141,7 @@ public:
 	int findHole();
 	
 	bool test = TEST;
+	static bool angleSetToLookDown;
 };
 
 

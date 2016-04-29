@@ -191,6 +191,8 @@ void ObstacleDetection::GroundBoolMatToGroundMat()
 			}
 }
 
+bool ObstacleDetection::angleSetToLookDown = false;
+
 int ObstacleDetection::findHole()
 {
 	if (!holeDetectedInOneFrame)
