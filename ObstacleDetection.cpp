@@ -28,9 +28,9 @@ void ObstacleDetection::init(Size depthResolution)
 	obstacleMask = Mat(DepthMatSize, CV_8UC1, Scalar(255));
 	MaskLayer1 = Mat(DepthMatSize, CV_8UC1, Scalar(255));
 	MaskLayer2 = Mat(DepthMatSize, CV_8UC1, Scalar(255));
-	for (int i = 1; i <= 5; i += 2)
-		rectangle(MaskLayer1, Point(DepthMatCol*i / 5, 0), Point(DepthMatCol * (i + 1) / 5, DepthMatRow), 0, CV_FILLED, 8, 0);
-
+	for (int i = 1; i <= 3; i += 2)
+		rectangle(MaskLayer1, Point(DepthMatCol*i / 3, 0), Point(DepthMatCol * (i + 1) / 3, DepthMatRow), 0, CV_FILLED, 8, 0);
+	
 	bitwise_not(MaskLayer1, MaskLayer2);
 }
 void ObstacleDetection::run(Mat* depth8bit, Mat* depth16bit, int angle)
@@ -45,7 +45,9 @@ void ObstacleDetection::run(Mat* depth8bit, Mat* depth16bit, int angle)
 	ObstacleList.clear();	
 #endif
 	GroundMaskCreate();	
+#ifdef ENABLE_SEGMENTATION
 	Segmentation();
+#endif
 	output();
 
 }
@@ -591,7 +593,7 @@ void ObstacleDetection::createObstacle(vector<Point> contour, Point center)
 double ObstacleDetection::GetPointAngle(const int pointY)
 {
 	//myfile << "CameraAngle: " << CameraAngle << std::endl;
-	return CameraAngle + (double)(currentDepth8bit.rows / 2.0-(double)pointY) / (double)currentDepth8bit.rows * 43;
+	return CameraAngle + (double)(currentDepth8bit.rows / 2.0 - (double)pointY) / (double)currentDepth8bit.rows * KINECT_ANGLE_RANGE;
 }
 
 double ObstacleDetection::GetHeight(const int pointY, const int depth)

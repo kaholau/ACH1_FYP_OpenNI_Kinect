@@ -35,25 +35,27 @@ using namespace cv;
 //#define DISPLAY_HULL
 //#define DISPLAY_ARROW
 #define DISPLAY_DIR_LINE
+#define ENABLE_SEGMENTATION
 
 /*Ground detection*/
 #define  GROUND_HEIGHT 460		//mm
-#define  INIT_CAMERA_ANGLE -6//degree
+#define  INIT_CAMERA_ANGLE 10//degree
 #define SQUARE_PLANE_EDGE 8 
 #define SQUARE_PLANE_AREA (SQUARE_PLANE_EDGE * SQUARE_PLANE_EDGE)
 #define MAX_TH_NORMAL 0.5	//angle of surface normal vector 
 #define MIN_TH_NORMAL 0.01	//angle of surface normal vector 
-#define DILATION_SIZE 2 //if 1, the size is 2*dilation_size1+1
+#define DILATION_SIZE 1 //if 1, the size is 2*dilation_size1+1
+#define KINECT_ANGLE_RANGE 43
 /*hole detection*/
-#define GROUND_MIN_HIEGHT -200
+#define GROUND_MIN_HIEGHT -250
 #define HOLE_DETECED_ONE_CONFIRM_COUNT 20
 #define HOLE_DETECED_CONFIRM_COUNT 10
 #define HOLE_DETECTED_SPEECH "hole detected"
 #define NO_HOLE_DETECTED_SPEECH "no hole"
-#define MOTOR_LOOK_DOWN	-21
+#define MOTOR_LOOK_DOWN	-27
 /*Obstacle detection*/
 #define HISTOGRAM_SIZE 256 // bin size = 2^pixelDepth / histSize
-#define  TOO_FAR_PIXEL_VALUE 60		//pixel value
+#define TOO_FAR_PIXEL_VALUE 60		//pixel value
 #define OBSTACLE_SIZE_IGNORE SQUARE_PLANE_EDGE*2  
 #define MAX_NUM_LOCALMINMA 15
 /*Path direction*/

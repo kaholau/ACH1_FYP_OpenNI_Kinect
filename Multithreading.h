@@ -20,7 +20,6 @@ class Multithreading
 	bool finished = false;
 	uint64_t startRecordingTime = 0;
 	const uint64_t recordingDuration = 21 ; //second
-	bool StreamMode = false;
 
 	std::future<void> KinectThread_Future;
 	std::future<void> TextToSpeechThread_Future;

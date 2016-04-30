@@ -42,13 +42,13 @@ const std::wstring SignRecognizer::STRING_UPPER_FLOOR[8] =
 	L"sixth floor",
 	L"seventh floor"
 };
-const std::wstring SignRecognizer::STRING_LG1 = L"LG1";
-const std::wstring SignRecognizer::STRING_LG2 = L"LG2";
-const std::wstring SignRecognizer::STRING_LG3 = L"LG3";
-const std::wstring SignRecognizer::STRING_LG4 = L"LG4";
-const std::wstring SignRecognizer::STRING_LG5 = L"LG5";
-const std::wstring SignRecognizer::STRING_LG6 = L"LG6";
-const std::wstring SignRecognizer::STRING_LG7 = L"LG7";
+const std::wstring SignRecognizer::STRING_LG1 = L"LG one";
+const std::wstring SignRecognizer::STRING_LG2 = L"LG two";
+const std::wstring SignRecognizer::STRING_LG3 = L"LG three";
+const std::wstring SignRecognizer::STRING_LG4 = L"LG four";
+const std::wstring SignRecognizer::STRING_LG5 = L"LG five";
+const std::wstring SignRecognizer::STRING_LG6 = L"LG six";
+const std::wstring SignRecognizer::STRING_LG7 = L"LG seven";
 
 SignRecognizer::SignRecognizer()
 {
@@ -407,7 +407,7 @@ bool SignRecognizer::getResultString(std::string &in, std::wstring &out)
 		case '4':
 		case '5':
 		case '6':
-		case '7':
+		//case '7':
 			out = std::wstring(STRING_UPPER_FLOOR[(int)c - 48]);
 			return true;
 			break;
@@ -418,43 +418,45 @@ bool SignRecognizer::getResultString(std::string &in, std::wstring &out)
 		}
 	}
 
-	/* if (strcmp(in.c_str(), "1") == 0)
-	{
-		out = std::wstring(STRING_FIRST_FLOOR);
-	}*/
 	if ((strcmp(in.c_str(), "LG7") == 0) || (strcmp(in.c_str(), "G7") == 0)
 		|| (strcmp(in.c_str(), "67") == 0) || (strcmp(in.c_str(), "L67") == 0)
 		|| (strcmp(in.c_str(), "L7") == 0) || (strcmp(in.c_str(), "767") == 0))
 	{
-		out = std::wstring(L"LG7");
+		out = STRING_LG7;
 	}
 	else if ((strcmp(in.c_str(), "LG1") == 0) || (strcmp(in.c_str(), "G1") == 0)
 		|| (strcmp(in.c_str(), "61") == 0) || (strcmp(in.c_str(), "L61") == 0)
 		|| (strcmp(in.c_str(), "L1") == 0) || (strcmp(in.c_str(), "761") == 0))
 	{
-		out = std::wstring(L"LG1");
+		out = STRING_LG1;
 	}
 	else if ((strcmp(in.c_str(), "LG5") == 0) || (strcmp(in.c_str(), "G5") == 0)
 		|| (strcmp(in.c_str(), "65") == 0) || (strcmp(in.c_str(), "L65") == 0)
 		|| (strcmp(in.c_str(), "L5") == 0) || (strcmp(in.c_str(), "765") == 0))
 	{
-		out = std::wstring(L"LG5");
+		out = STRING_LG5;
 	}
 	else if ((strcmp(in.c_str(), "LG3") == 0) || (strcmp(in.c_str(), "G3") == 0)
 		|| (strcmp(in.c_str(), "63") == 0) || (strcmp(in.c_str(), "L63") == 0)
 		|| (strcmp(in.c_str(), "L3") == 0) || (strcmp(in.c_str(), "763") == 0))
 	{
-		out = std::wstring(L"LG3");
+		out = STRING_LG3;
 	}
-	else if ((strcmp(in.c_str(), "LG2") == 0) || (strcmp(in.c_str(), "G2") == 0)
-		|| (strcmp(in.c_str(), "62") == 0) || (strcmp(in.c_str(), "L62") == 0)
-		|| (strcmp(in.c_str(), "L2") == 0) || (strcmp(in.c_str(), "762") == 0))
+	else if ((strcmp(in.c_str(), "LG4") == 0) || (strcmp(in.c_str(), "G4") == 0)
+		|| (strcmp(in.c_str(), "64") == 0) || (strcmp(in.c_str(), "L64") == 0)
+		|| (strcmp(in.c_str(), "L4") == 0) || (strcmp(in.c_str(), "764") == 0))
 	{
-		out = std::wstring(L"LG7");
+		out = STRING_LG4;
 	}
+	//else if ((strcmp(in.c_str(), "LG2") == 0) || (strcmp(in.c_str(), "G2") == 0)
+	//	|| (strcmp(in.c_str(), "62") == 0) || (strcmp(in.c_str(), "L62") == 0)
+	//	|| (strcmp(in.c_str(), "L2") == 0) || (strcmp(in.c_str(), "762") == 0))
+	//{
+	//	out = STRING_LG2;
+	//}
 	else
 	{
-		out = std::wstring(in.begin(), in.end());
+		//out = std::wstring(in.begin(), in.end());
 		return false;
 	}
 
