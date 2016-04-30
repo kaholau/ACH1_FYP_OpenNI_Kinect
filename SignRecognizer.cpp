@@ -291,7 +291,7 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 #endif
 			std::wstring out;
 			if (!getResultString(text, out)) {
-				std::cerr << std::endl << "Error on getResultString()" << std::endl;
+				//std::cerr << std::endl << "Error on getResultString()" << std::endl;
 				continue;
 			}
 			isDetected = true;
@@ -394,7 +394,7 @@ bool SignRecognizer::getResultString(std::string &in, std::wstring &out)
 	if (in.length() == 1)
 	{
 		char c = *(in.c_str());
-		std::cout << "\t\t found: " << c << std::endl;
+		//std::cout << "\t\t found: " << c << std::endl;
 		switch (c)
 		{
 		case 'G':
