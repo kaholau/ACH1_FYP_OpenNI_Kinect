@@ -26,7 +26,7 @@ HumanFaceRecognizer::HumanFaceRecognizer()
 	model = cv::createLBPHFaceRecognizer();
 	model->load(DB_FACE_FILE_PATH);
 
-	min_percent = 0.484;
+	min_percent = 0.47;
 	max_percent = 0.65;
 	num_of_person_in_db = 0;
 
@@ -86,6 +86,7 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 	double confidence = 0.0;
 	double confidence_threshold = 100.0;
 	bool isExistedFace = false;
+	bool isFace = false;
 
 	// Apply the classifier to the frame
 	detector.getFaces(*frame, newFacePos);
@@ -204,6 +205,10 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 		cv::cvtColor(face, face_grey, CV_BGR2GRAY);
 #endif
 		{
+#ifdef TEST_FACE
+			isFace = true;
+#endif
+
 #ifdef DURATION_CHECK_FACE
 			double time = 0;
 			uint64_t oldCount = 0, curCount = 0;
@@ -455,6 +460,8 @@ int HumanFaceRecognizer::runFaceRecognizer(cv::Mat *frame)
 #endif
 		totalConfidence += confidence;
 		num_of_face_detected++;
+
+		isFace = false;
 	}
 
 #ifdef SHOW_MARKERS
@@ -704,17 +711,17 @@ void HumanFaceRecognizer::testExample(void)
 
 	std::stringstream oss;
 
-	for (currPer = 2; currPer <= 2; currPer++)
+	for (currPer = 3; currPer <= 3; currPer++)
 	{
 		oss.str("");
-		oss << "_Test_Face_B" << currPer << "/out.csv";
+		oss << "_Test_Face_" << currPer+5 << "/out.csv";
 		fout.open(oss.str(), std::fstream::out);
 		if (!fout.is_open())
 			std::cout << "Cannot open out.csv" << std::endl;
 		else
 			fout << "Frame No,Face Num,similarity,isFace,isFaceInThisFrame,isCorr,,prediction,confidence,isRecCorr,isTrackRecCorr" << std::endl;
 
-		for (int i = 0; i < 320; i++)
+		for (int i = 0; i < 200; i++)
 		{
 			oss.str("");
 			//oss << "7_image_frame320/" << i << "_image.bmp";
@@ -722,7 +729,7 @@ void HumanFaceRecognizer::testExample(void)
 			//oss << "_Test_Face_A2/" << i << "_image.bmp";
 			//oss << "_Test_Face_3/" << i << "_image.bmp";
 
-			oss << "_Test_Face_B" << currPer << "/" << i << "_image.bmp";
+			oss << "_Test_Face_" << currPer+5 << "/" << i << "_image.bmp";
 
 			Mat src = imread(oss.str(), CV_LOAD_IMAGE_COLOR);
 			if (!src.data)

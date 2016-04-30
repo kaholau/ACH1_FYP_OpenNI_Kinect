@@ -26,7 +26,7 @@
 #define IMAGE_NAME_POSTFIX "_image"
 #define FACE_NAME_POSTFIX  "_face"
 #define MASK_NAME_POSTFIX  "_face_mask"
-#define IMAGE_EXTENSION    ".png"
+#define IMAGE_EXTENSION    ".bmp"
 
 #define DB_FACE_FILE_PATH  "db/lbp_face.xml"
 #define DB_NAME_FILE_PATH  "db/name.csv"

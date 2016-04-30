@@ -236,12 +236,18 @@ void Multithreading::ObstacleDetectionThread_Process()
 
 void Multithreading::FaceDetectionThread_Process()
 {
+#ifndef TEST_FACE
+#ifdef EXTRACT_FRAME_FOR_FACE
+	int image_num = 0;
+#endif
 	cv::Mat colorImg;
 
 	while (waitKey(1) != ESCAPE_KEY) {
 		if (finished)
 			return;
 
+
+#ifndef EXTRACT_FRAME_FOR_FACE
 		m_Kinect.getColor(colorImg);
 
 		if (m_face.getisAddFace())
@@ -250,10 +256,25 @@ void Multithreading::FaceDetectionThread_Process()
 			m_face.runFaceRecognizer(&colorImg);
 
 		cv::imshow("FACE DETECTION", colorImg);
+
+#else
+		m_Kinect.getColor(colorImg);
+
+		if (!colorImg.empty())
+		{
+			std::stringstream oss;
+			oss.str("");
+			oss << IMAGE_DIR << image_num++ << IMAGE_NAME_POSTFIX << IMAGE_EXTENSION;
+			cv::imwrite(oss.str(), colorImg);
+
+			colorImg.release();
+			waitKey(80);
+		}
+#endif
 	}
-
-
-	//m_face.testExample();
+#else
+	m_face.testExample();
+#endif
 }
 
 void Multithreading::SignDetectionThread_Process()
