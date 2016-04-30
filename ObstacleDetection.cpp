@@ -28,8 +28,8 @@ void ObstacleDetection::init(Size depthResolution)
 	obstacleMask = Mat(DepthMatSize, CV_8UC1, Scalar(255));
 	MaskLayer1 = Mat(DepthMatSize, CV_8UC1, Scalar(255));
 	MaskLayer2 = Mat(DepthMatSize, CV_8UC1, Scalar(255));
-	for (int i = 1; i <= 3; i += 2)
-		rectangle(MaskLayer1, Point(DepthMatCol*i / 3, 0), Point(DepthMatCol * (i + 1) / 3, DepthMatRow), 0, CV_FILLED, 8, 0);
+	for (int i = 1; i <= 5; i += 2)
+		rectangle(MaskLayer1, Point(DepthMatCol*i / 5, 0), Point(DepthMatCol * (i + 1) / 5, DepthMatRow), 0, CV_FILLED, 8, 0);
 	
 	bitwise_not(MaskLayer1, MaskLayer2);
 }
@@ -533,7 +533,6 @@ void ObstacleDetection::SegementLabel(vector<int> &localMin)
 
 		temp = (MaskLayer2&pThreasholdImageList[i]);
 		obstacleDetect(temp, obstacleMask);
-		
 	}
 
 }

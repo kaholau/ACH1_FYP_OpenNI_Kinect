@@ -77,6 +77,7 @@ void Multithreading::Hold()
 	// Use getMatrix's time return to prevent over spam.
 	uint64_t curTime = 0;
 	namedWindow("Main Idle Window");
+	imshow("Main Idle Window", cv::Mat(cv::Size(50, 50), CV_8UC3));
 	while (waitKey(1) != ESCAPE_KEY) {
 		curTime = cv::getTickCount() / cv::getTickFrequency();
 		if (m_Kinect.recording && ((curTime - startRecordingTime) > recordingDuration))
@@ -258,7 +259,8 @@ void Multithreading::FaceDetectionThread_Process()
 void Multithreading::SignDetectionThread_Process()
 {
 	cv::Mat colorImg;
-
+	namedWindow("Sign Detection");
+	imshow("Sign Detection", cv::Mat(cv::Size(320, 240), CV_8UC3));
 	while (waitKey(20) != ESCAPE_KEY) {
 		if (finished)
 			return;

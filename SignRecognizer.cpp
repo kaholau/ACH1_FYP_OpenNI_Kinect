@@ -112,6 +112,7 @@ SignRecognizer::~SignRecognizer()
 
 void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 {
+
 #ifdef DURATION_CHECK
 	double time = 0;
 	uint64_t oldCount = 0, curCount = 0;
@@ -297,7 +298,7 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 			TextToSpeech::pushBack(out);
 
 			cv::putText(frame, text, cv::Point(contours_all[k][1].x, contours_all[k][1].y-10), cv::FONT_HERSHEY_SIMPLEX, 4,
-				cv::Scalar(0, 128, 255), 8);
+				cv::Scalar(0, 128, 255), 18);
 			savedSigns_index.push_back(k);
 
 #ifdef TEST_SIGN
@@ -346,7 +347,7 @@ void SignRecognizer::runRecognizer(cv::Mat &frame, std::string fName)
 			remap(frame, image_lateralInvert, map_x, map_y, CV_INTER_LINEAR);
 			frame = image_lateralInvert;
 		}
-		namedWindow("Sign Detection", CV_WINDOW_NORMAL);
+		resize(frame, frame, Size(320, 240));
 		cv::imshow("Sign Detection", frame);
 	}
 

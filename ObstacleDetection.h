@@ -39,7 +39,7 @@ using namespace cv;
 
 /*Ground detection*/
 #define  GROUND_HEIGHT 460		//mm
-#define  INIT_CAMERA_ANGLE 10//degree
+#define  INIT_CAMERA_ANGLE -6//degree
 #define SQUARE_PLANE_EDGE 8 
 #define SQUARE_PLANE_AREA (SQUARE_PLANE_EDGE * SQUARE_PLANE_EDGE)
 #define MAX_TH_NORMAL 0.5	//angle of surface normal vector 

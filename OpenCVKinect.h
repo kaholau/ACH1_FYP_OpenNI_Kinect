@@ -61,7 +61,7 @@ public:
 	std::ofstream file;
 	LONG angle = 0;
 	bool recording = false;
-	bool replay = true;
+	bool replay = false;
 
 	bool init();
 	
