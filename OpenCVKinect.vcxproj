@@ -41,8 +41,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(OPENCV_DIR)\build\include;$(OPENNI2_INCLUDE);$(OPENCV_DIR)\build\include\opencv;$(KINECTSDK10_DIR)\inc;$(TESSERACT_INCLUDE);$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENNI2_LIB);$(OPENCV_DIR)\build\x86\vc12\lib;$(KINECTSDK10_DIR)\lib\x86;$(TESSERACT_LIB);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)\redist\OpenNI2\include;$(ProjectDir)\redist\opencv2\include;$(ProjectDir)\redist\KinectSDK\inc;$(ProjectDir)\redist\tesseract\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)\redist\OpenNI2\lib;$(ProjectDir)\redist\opencv2\lib;$(ProjectDir)\redist\KinectSDK\lib;$(ProjectDir)\redist\tesseract\lib;$(ProjectDir)\redist\sapi\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -56,13 +56,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(OPENNI2_INCLUDE)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\redist\OpenNI2\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\OpenNI2\Redist\OpenNI2\Drivers;$(OPENNI2_LIB);$(OPENCV_DIR)\build\x86\vc12\lib;$(KINECTSDK10_DIR)\lib\x86</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_core$(OPENCV_VER)d.lib;opencv_imgproc$(OPENCV_VER)d.lib;opencv_highgui$(OPENCV_VER)d.lib;opencv_features2d$(OPENCV_VER)d.lib;opencv_ml$(OPENCV_VER)d.lib;opencv_objdetect$(OPENCV_VER)d.lib;opencv_calib3d$(OPENCV_VER)d.lib;opencv_contrib$(OPENCV_VER)d.lib;opencv_flann$(OPENCV_VER)d.lib;opencv_video$(OPENCV_VER)d.lib;OpenNI2.lib;Comctl32.lib;Kinect10.lib;libtesseract302.lib;liblept168.lib;sapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)\redist\OpenNI2\lib;$(ProjectDir)\redist\opencv2\lib;$(ProjectDir)\redist\KinectSDK\lib;$(ProjectDir)\redist\sapi\lib;$(ProjectDir)\redist\tesseract\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_core2411d.lib;opencv_imgproc2411d.lib;opencv_highgui2411d.lib;opencv_features2d2411d.lib;opencv_ml2411d.lib;opencv_objdetect2411d.lib;opencv_calib3d2411d.lib;opencv_contrib2411d.lib;opencv_flann2411d.lib;opencv_video2411d.lib;OpenNI2.lib;Kinect10.lib;libtesseract302.lib;liblept168.lib;sapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

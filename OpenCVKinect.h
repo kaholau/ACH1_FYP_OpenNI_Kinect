@@ -4,8 +4,6 @@
 #include <stdlib.h>
 
 #include <OpenNI.h>
-#include <cv.h>
-#include <highgui.h>
 #include <vector>
 #include <mutex>
 
