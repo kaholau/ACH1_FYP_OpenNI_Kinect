@@ -34,7 +34,7 @@ class OpenCVKinect
 	bool m_alignedStreamStatus, m_colorStreamStatus, m_depthStreamStatus;
 
 	//std::string timestamp = "608398116473";  //Yumi at stair
-	std::string timestamp = "608398116473";
+	std::string timestamp = "250994780507_03";
 	std::string path = "D:/New folder/";
 	std::queue<int> angles;
 	std::queue<int> frameIndexFromFile;

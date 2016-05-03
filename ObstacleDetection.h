@@ -34,7 +34,8 @@ using namespace cv;
 //#define DISPLAY_DISTANCE
 //#define DISPLAY_HULL
 //#define DISPLAY_ARROW
-#define DISPLAY_DIR_LINE
+#define DISPLAY_PATH_DIRECTION
+#define DISPLAY_VIBRATION
 #define ENABLE_SEGMENTATION
 
 /*Ground detection*/

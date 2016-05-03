@@ -438,7 +438,7 @@ void ObstacleDetection::output()
 		circle(outputDepth8bit, p, 1, Scalar(0, 0, 255), 3);
 	}
 #endif	
-#ifdef DISPLAY_DIR_LINE
+#ifdef DISPLAY_PATH_DIRECTION
 	bitwise_not(GroundMat, GroundMat);
 	GroundMat &= obstacleMask;
 	bitwise_not(GroundMat, GroundMat);
@@ -490,6 +490,24 @@ void ObstacleDetection::output()
 		dir = Scalar(255, 0, 0);
 	arrowedLine(outputDepth8bit, Point(currentPathDirCol, outputDepth8bit.rows), Point(currentPathDirCol, outputDepth8bit.rows - 20), dir, 3, 8, 0, 0.6);
 	flip(outputDepth8bit, outputDepth8bit, 1);
+#endif
+#ifdef DISPLAY_VIBRATION
+	int w = 320; int h = 30;
+	Scalar lightUp = Scalar(0,255,255);
+	Mat vi = Mat(Size(w, h), CV_8UC3, Scalar(255,255,255));
+	if (currentPathDir == TURN_LEFT)
+		rectangle(vi, Rect(Point(0, h), Point(w / 3, 0)), lightUp, CV_FILLED, 8, 0);
+	if (currentPathDir == MIDDLE_LEFT)
+		rectangle(vi, Rect(Point(0, h), Point(w * 2 / 3, 0)), lightUp, CV_FILLED, 8, 0);
+	if (currentPathDir == MIDDLE_MIDDLE)
+		rectangle(vi, Rect(Point(w / 3, h), Point(w * 2 / 3, 0)), lightUp, CV_FILLED, 8, 0);
+	if (currentPathDir == MIDDLE_RIGHT)
+		rectangle(vi, Rect(Point(w / 3, h), Point(w, 0)), lightUp, CV_FILLED, 8, 0);
+	if (currentPathDir == TURN_RIGHT)
+		rectangle(vi, Rect(Point(w * 2 / 3, h), Point(w, 0)), lightUp, CV_FILLED, 8, 0);
+	line(vi, Point(h, w / 3), Point(0, w / 3), Scalar(0,0,0), 3, 8, 0);
+	line(vi, Point(h, w * 2 / 3), Point(0, w * 2 / 3), Scalar(0,0,0), 3, 8, 0);
+	imshow("vibration motor pattern", vi);
 #endif
 
 }
