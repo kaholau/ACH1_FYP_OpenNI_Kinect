@@ -316,12 +316,13 @@ void Multithreading::StairDetectionThread_Process()
 		m_Kinect.getMatrix(m_Kinect.ColorDepth8bit, colorImg, Mat(), depth8bit);
 		m_stairs.Run(colorImg, depth8bit, stairConvexHull);
 		if (!stairConvexHull.empty()) {
-			StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
 			if (previousFound >= foundThreshold) {
 				if (ObstacleDetection::angleSetToLookDown)
 					TextToSpeech::pushBack(string("Downstairs found"));
 				else
 					TextToSpeech::pushBack(string("Upstairs found"));
+
+				StairDetection::drawStairs("Stairs", colorImg, stairConvexHull);
 				++previousFound;
 			}
 			else {
