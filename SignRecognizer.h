@@ -37,6 +37,7 @@
 
 /* Macros */
 //#define DURATION_CHECK
+//#define SHOW_RCNG_RESULT
 //#define SHOW_DEBUG_MESSAGES
 //#define SHOW_IMAGE_AND_RESULT
 //#define SAVE_IMAGE_AND_RESULT
