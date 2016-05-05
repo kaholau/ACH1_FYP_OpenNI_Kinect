@@ -82,38 +82,6 @@ void Detector::compareFaceColour( cv::Mat &image, cv::Mat &outputMask)
 {
     int j, k, l;
 
-#ifdef LOCAL_FACE_COLOUR
-    int rows = 0, cols = 0;
-    int face_pixel = 0;
-    double face_color_avg[NUMBER_OF_CHANNELS] = { 0 };
-
-    // Calculate the average colour of the faces
-    double face_color_dev[NUMBER_OF_CHANNELS] = { 0 };
-    double face_color_var[NUMBER_OF_CHANNELS] = { 0 };
-    Mat tmpMat = image;
-    face_pixel = tmpMat.rows * tmpMat.cols; // find out the number of pixels of a face
-
-    for(j=0; j<NUMBER_OF_CHANNELS; ++j)
-    {
-        face_color_avg[j] = cv::sum(tmpMat)[j]; // sum all the pixels of each channel of a face
-        face_color_avg[j] /= face_pixel;
-    }
-
-    cout << "face [ ] = " << face_color_avg[0] << ",\t" << face_color_avg[1] << ",\t" << face_color_avg[2] << "\t|" << face_pixel << endl;
-
-    // Calculate the variance and standard deviation of the faces
-    for(j=0; j < tmpMat.rows; ++j)
-    {
-        for(k=0; k < tmpMat.cols; ++k)
-        {
-            for(l=0; l < NUMBER_OF_CHANNELS; ++l)
-            {
-                face_color_var[l] += pow( (*(tmpMat.data + ((j*tmpMat.cols+k) * NUMBER_OF_CHANNELS + l)) - face_color_avg[l]), 2 );
-            }
-        }
-    }
-#endif
-
     double threshold[NUMBER_OF_CHANNELS][2];
 
     for(l=0; l < NUMBER_OF_CHANNELS; ++l)
@@ -142,15 +110,8 @@ void Detector::compareFaceColour( cv::Mat &image, cv::Mat &outputMask)
 					(*(outputMask.data + ((j*outputMask.cols + k) * NUMBER_OF_CHANNELS + l)) <= threshold[l][MAX_ITEM]))
                 {
                     *(outputMask.data + ((j*outputMask.cols+k) * NUMBER_OF_CHANNELS + l)) = 255;
-//                    *(outputMask.data + ((j*outputMask.cols+k) * NUMBER_OF_CHANNELS + 0)) = 255;
-//                    *(outputMask.data + ((j*outputMask.cols+k) * NUMBER_OF_CHANNELS + 1)) = 255;
-//                    *(outputMask.data + ((j*outputMask.cols+k) * NUMBER_OF_CHANNELS + 2)) = 255;
                 } else {
                     *(outputMask.data + ((j*outputMask.cols+k) * NUMBER_OF_CHANNELS + l)) = 0;
-//                    *(outputMask.data + ((j*outputMask.cols+k) * NUMBER_OF_CHANNELS + 0)) = 0;
-//                    *(outputMask.data + ((j*outputMask.cols+k) * NUMBER_OF_CHANNELS + 1)) = 0;
-//                    *(outputMask.data + ((j*outputMask.cols+k) * NUMBER_OF_CHANNELS + 2)) = 0;
-//                    l = 2;
                 }
             }
         }
